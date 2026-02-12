@@ -43,7 +43,7 @@
       margin: 2rem auto;
       padding: 0 1.5rem;
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 1.5rem;
     }
 
@@ -252,6 +252,47 @@
     .line-label {
       font-size: 0.8125rem;
       color: #8a8275;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .help-tip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 1px solid #3a3730;
+      font-size: 0.625rem;
+      font-weight: 600;
+      color: #6b6459;
+      cursor: help;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .help-tip:hover {
+      border-color: #d4a27a;
+      color: #d4a27a;
+    }
+
+    .help-tip:hover::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #141310;
+      color: #e8e0d5;
+      font-size: 0.6875rem;
+      font-weight: 400;
+      padding: 0.375rem 0.625rem;
+      border-radius: 6px;
+      border: 1px solid #3a3730;
+      white-space: nowrap;
+      z-index: 10;
     }
 
     .line-value {
@@ -312,23 +353,9 @@
       margin-top: 0.25rem;
     }
 
-    @media (max-width: 900px) {
-      main {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .results-card-standalone {
-        grid-column: 1 / -1;
-      }
-    }
-
     @media (max-width: 640px) {
       main {
         grid-template-columns: 1fr;
-      }
-
-      .results-card {
-        position: static;
       }
     }
   </style>
@@ -391,8 +418,8 @@
           <option value="NT">Northern Territory</option>
         </select>
         <div class="computed-display">
-          <span class="computed-value" id="stampDutyValue">-</span>
-          <span class="computed-note">estimated stamp duty</span>
+          <span class="help-tip" data-tip="Populates values based on state averages">?</span>
+          <span class="computed-note">Populates values based on state averages</span>
         </div>
       </div>
 
@@ -425,14 +452,6 @@
           <input type="number" id="weeklyRent" value="500" min="0" step="10">
         </div>
       </div>
-
-      <div class="form-group">
-        <label for="expectedGrowth">Expected Annual Growth</label>
-        <div class="input-wrapper has-suffix">
-          <input type="number" id="expectedGrowth" value="3" min="-20" max="50" step="0.5">
-          <span class="suffix">%</span>
-        </div>
-      </div>
     </div>
 
     <div class="card results-card">
@@ -456,11 +475,11 @@
         <span class="line-value" id="resDeposit">-</span>
       </div>
       <div class="line-item">
-        <span class="line-label">Stamp Duty</span>
+        <span class="line-label">Stamp Duty <span class="help-tip" data-tip="Based on state selected">?</span></span>
         <span class="line-value" id="resStampDuty">-</span>
       </div>
       <div class="line-item">
-        <span class="line-label">Conveyancing</span>
+        <span class="line-label">Conveyancing <span class="help-tip" data-tip="Based on averages for state selected">?</span></span>
         <span class="line-value" id="resConveyancing">-</span>
       </div>
       <div class="line-item total">
@@ -479,7 +498,7 @@
         <span class="line-value" id="resManagement">-</span>
       </div>
       <div class="line-item">
-        <span class="line-label">Insurance</span>
+        <span class="line-label">Insurance <span class="help-tip" data-tip="Based on averages for state selected">?</span></span>
         <span class="line-value" id="resInsurance">-</span>
       </div>
       <div class="line-item">
@@ -487,11 +506,11 @@
         <span class="line-value" id="resCouncil">-</span>
       </div>
       <div class="line-item">
-        <span class="line-label">Vacancy Allowance</span>
+        <span class="line-label">Vacancy Allowance <span class="help-tip" data-tip="Assumed 2 weeks per year">?</span></span>
         <span class="line-value" id="resVacancy">-</span>
       </div>
       <div class="line-item">
-        <span class="line-label">Maintenance Allowance</span>
+        <span class="line-label">Maintenance Allowance <span class="help-tip" data-tip="Estimated at 0.5% of property value">?</span></span>
         <span class="line-value" id="resMaintenance">-</span>
       </div>
       <div class="line-item total">
@@ -519,6 +538,18 @@
         <div class="result-label">Net Yield</div>
         <div class="result-value" id="netYield">-</div>
         <div class="result-sub">After all expenses</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Projections</h2>
+
+      <div class="form-group">
+        <label for="expectedGrowth">Expected Annual Growth</label>
+        <div class="input-wrapper has-suffix">
+          <input type="number" id="expectedGrowth" value="3" min="-20" max="50" step="0.5">
+          <span class="suffix">%</span>
+        </div>
       </div>
     </div>
   </main>
@@ -679,7 +710,7 @@
 
       // Allowances
       const vacancyAllowance = weeklyRent * 2;
-      const maintenanceAllowance = purchasePrice * 0.01;
+      const maintenanceAllowance = purchasePrice * 0.005;
 
       // Annual expenses
       const totalExpenses = annualLoanPayment + annualManagementFee + insurance + councilFees + vacancyAllowance + maintenanceAllowance;
@@ -696,9 +727,6 @@
 
       // Startup expenses
       const totalUpfront = deposit + stampDuty + conveyancing;
-
-      // Update DOM — Input computed displays
-      document.getElementById('stampDutyValue').textContent = formatCurrency(stampDuty);
 
       // Update DOM — Start Up Expenses
       document.getElementById('resDeposit').textContent = formatCurrency(deposit);
