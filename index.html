@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrueReturn - Property Investment Calculator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Söhne', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1915;
+      color: #e8e0d5;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #141310;
+      color: #e8e0d5;
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid #2a2720;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #d4a27a;
+    }
+
+    header p {
+      color: #8a8275;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    main {
+      max-width: 1280px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: #23211d;
+      border-radius: 12px;
+      padding: 2rem;
+      border: 1px solid #2e2b26;
+    }
+
+    .card h2 {
+      font-size: 1.125rem;
+      margin-bottom: 1.5rem;
+      color: #e8e0d5;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #8a8275;
+      margin-bottom: 0.375rem;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper .prefix,
+    .input-wrapper .suffix {
+      position: absolute;
+      color: #6b6459;
+      font-size: 0.875rem;
+      pointer-events: none;
+    }
+
+    .input-wrapper .prefix {
+      left: 12px;
+    }
+
+    .input-wrapper .suffix {
+      right: 12px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 0.625rem 0.75rem;
+      border: 1px solid #3a3730;
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      transition: border-color 0.2s;
+      -moz-appearance: textfield;
+      background: #1a1915;
+      color: #e8e0d5;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #d4a27a;
+      box-shadow: 0 0 0 3px rgba(212, 162, 122, 0.15);
+    }
+
+    select {
+      width: 100%;
+      padding: 0.625rem 0.75rem;
+      border: 1px solid #3a3730;
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      transition: border-color 0.2s;
+      background: #1a1915;
+      color: #e8e0d5;
+      cursor: pointer;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #d4a27a;
+      box-shadow: 0 0 0 3px rgba(212, 162, 122, 0.15);
+    }
+
+    select option {
+      background: #23211d;
+      color: #e8e0d5;
+    }
+
+    .computed-display {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-top: 0.375rem;
+    }
+
+    .computed-value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #d4a27a;
+    }
+
+    .computed-note {
+      font-size: 0.75rem;
+      color: #6b6459;
+    }
+
+    .input-section-header {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.75rem 0 0.5rem;
+      margin-top: 1.25rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid #2e2b26;
+    }
+
+    .input-section-header:first-of-type {
+      margin-top: 0;
+    }
+
+    .input-section-header.purchase {
+      color: #d4a27a;
+    }
+
+    .input-section-header.expenses-input {
+      color: #e87c6c;
+    }
+
+    .input-section-header.income-input {
+      color: #6bc985;
+    }
+
+    .has-prefix input {
+      padding-left: 1.75rem;
+    }
+
+    .has-suffix input {
+      padding-right: 2.25rem;
+    }
+
+    .results-card {
+      align-self: start;
+    }
+
+    .results-card-standalone {
+      position: sticky;
+      top: 2rem;
+      align-self: start;
+    }
+
+    .section-header {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.75rem 0 0.5rem;
+      margin-top: 0.75rem;
+      border-bottom: 2px solid #2e2b26;
+    }
+
+    .section-header:first-of-type {
+      margin-top: 0;
+    }
+
+    .section-header.income {
+      color: #6bc985;
+      border-color: #2d4a35;
+    }
+
+    .section-header.startup {
+      color: #d4a27a;
+      border-color: #4a3a2d;
+    }
+
+    .section-header.expenses {
+      color: #e87c6c;
+      border-color: #4a2d2d;
+    }
+
+    .section-header.results-heading {
+      color: #d4a27a;
+      border-color: #4a3a2d;
+    }
+
+    .line-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #2a2720;
+    }
+
+    .line-item:last-child {
+      border-bottom: none;
+    }
+
+    .line-label {
+      font-size: 0.8125rem;
+      color: #8a8275;
+    }
+
+    .line-value {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #e8e0d5;
+    }
+
+    .line-item.total {
+      border-top: 1px solid #3a3730;
+      border-bottom: none;
+      padding-top: 0.625rem;
+      margin-top: 0.25rem;
+    }
+
+    .line-item.total .line-label {
+      font-weight: 600;
+      color: #e8e0d5;
+    }
+
+    .line-item.total .line-value {
+      font-size: 1.0625rem;
+    }
+
+    .result-item {
+      padding: 1rem 0;
+      border-bottom: 1px solid #2a2720;
+    }
+
+    .result-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .result-label {
+      font-size: 0.8125rem;
+      color: #6b6459;
+      margin-bottom: 0.25rem;
+    }
+
+    .result-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #e8e0d5;
+    }
+
+    .result-value.positive {
+      color: #6bc985;
+    }
+
+    .result-value.negative {
+      color: #e87c6c;
+    }
+
+    .result-sub {
+      font-size: 0.75rem;
+      color: #6b6459;
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .results-card-standalone {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 640px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .results-card {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TrueReturn</h1>
+    <p>Property Investment Calculator</p>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Property Details</h2>
+
+      <!-- Purchase section -->
+      <div class="input-section-header purchase">Purchase</div>
+
+      <div class="form-group">
+        <label for="purchasePrice">Purchase Price</label>
+        <div class="input-wrapper has-prefix">
+          <span class="prefix">$</span>
+          <input type="number" id="purchasePrice" value="500000" min="0" step="1000">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="depositPct">Deposit</label>
+        <div class="input-wrapper has-suffix">
+          <input type="number" id="depositPct" value="20" min="0" max="100" step="1">
+          <span class="suffix">%</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="loanType">Loan Type</label>
+        <select id="loanType">
+          <option value="IO">Interest Only</option>
+          <option value="PI">Principal & Interest</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="loanTermGroup" style="display:none;">
+        <label for="loanTerm">Loan Term</label>
+        <div class="input-wrapper has-suffix">
+          <input type="number" id="loanTerm" value="30" min="1" max="40" step="1">
+          <span class="suffix">yrs</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="state">State</label>
+        <select id="state">
+          <option value="NSW">New South Wales</option>
+          <option value="VIC">Victoria</option>
+          <option value="QLD">Queensland</option>
+          <option value="SA">South Australia</option>
+          <option value="WA">Western Australia</option>
+          <option value="TAS">Tasmania</option>
+          <option value="ACT">Australian Capital Territory</option>
+          <option value="NT">Northern Territory</option>
+        </select>
+        <div class="computed-display">
+          <span class="computed-value" id="stampDutyValue">-</span>
+          <span class="computed-note">estimated stamp duty</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="interestRate">Interest Rate</label>
+        <div class="input-wrapper has-suffix">
+          <input type="number" id="interestRate" value="6.0" min="0" max="20" step="0.1">
+          <span class="suffix">%</span>
+        </div>
+      </div>
+
+      <!-- Expenses section -->
+      <div class="input-section-header expenses-input">Expenses</div>
+
+      <div class="form-group">
+        <label for="managementFee">Property Management Fee</label>
+        <div class="input-wrapper has-suffix">
+          <input type="number" id="managementFee" value="8" min="0" max="100" step="0.5">
+          <span class="suffix">%</span>
+        </div>
+      </div>
+
+      <!-- Income section -->
+      <div class="input-section-header income-input">Income</div>
+
+      <div class="form-group">
+        <label for="weeklyRent">Expected Weekly Rent</label>
+        <div class="input-wrapper has-prefix">
+          <span class="prefix">$</span>
+          <input type="number" id="weeklyRent" value="500" min="0" step="10">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="expectedGrowth">Expected Annual Growth</label>
+        <div class="input-wrapper has-suffix">
+          <input type="number" id="expectedGrowth" value="3" min="-20" max="50" step="0.5">
+          <span class="suffix">%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card results-card">
+      <h2>Breakdown</h2>
+
+      <!-- Income -->
+      <div class="section-header income">Income</div>
+      <div class="line-item">
+        <span class="line-label">Weekly Rent</span>
+        <span class="line-value" id="resWeeklyRent">-</span>
+      </div>
+      <div class="line-item total">
+        <span class="line-label">Annual Rent</span>
+        <span class="line-value" id="resAnnualRent">-</span>
+      </div>
+
+      <!-- Start Up Expenses -->
+      <div class="section-header startup">Start Up Expenses</div>
+      <div class="line-item">
+        <span class="line-label">Deposit</span>
+        <span class="line-value" id="resDeposit">-</span>
+      </div>
+      <div class="line-item">
+        <span class="line-label">Stamp Duty</span>
+        <span class="line-value" id="resStampDuty">-</span>
+      </div>
+      <div class="line-item">
+        <span class="line-label">Conveyancing</span>
+        <span class="line-value" id="resConveyancing">-</span>
+      </div>
+      <div class="line-item total">
+        <span class="line-label">Total Upfront</span>
+        <span class="line-value" id="resTotalUpfront">-</span>
+      </div>
+
+      <!-- Annual Expenses -->
+      <div class="section-header expenses">Annual Expenses</div>
+      <div class="line-item">
+        <span class="line-label">Loan Payment</span>
+        <span class="line-value" id="resLoanPayment">-</span>
+      </div>
+      <div class="line-item">
+        <span class="line-label">Property Management</span>
+        <span class="line-value" id="resManagement">-</span>
+      </div>
+      <div class="line-item">
+        <span class="line-label">Insurance</span>
+        <span class="line-value" id="resInsurance">-</span>
+      </div>
+      <div class="line-item">
+        <span class="line-label">Council Rates</span>
+        <span class="line-value" id="resCouncil">-</span>
+      </div>
+      <div class="line-item">
+        <span class="line-label">Vacancy Allowance</span>
+        <span class="line-value" id="resVacancy">-</span>
+      </div>
+      <div class="line-item">
+        <span class="line-label">Maintenance Allowance</span>
+        <span class="line-value" id="resMaintenance">-</span>
+      </div>
+      <div class="line-item total">
+        <span class="line-label">Total Annual Expenses</span>
+        <span class="line-value" id="resTotalExpenses">-</span>
+      </div>
+    </div>
+
+    <div class="card results-card-standalone">
+      <h2>Results</h2>
+
+      <div class="result-item">
+        <div class="result-label">Annual Cash Flow</div>
+        <div class="result-value" id="annualCashFlow">-</div>
+        <div class="result-sub" id="monthlyCashFlow"></div>
+      </div>
+
+      <div class="result-item">
+        <div class="result-label">Gross Yield</div>
+        <div class="result-value" id="grossYield">-</div>
+        <div class="result-sub">Annual rent / purchase price</div>
+      </div>
+
+      <div class="result-item">
+        <div class="result-label">Net Yield</div>
+        <div class="result-value" id="netYield">-</div>
+        <div class="result-sub">After all expenses</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const inputs = document.querySelectorAll('input[type="number"]');
+    const stateSelect = document.getElementById('state');
+    const loanTypeSelect = document.getElementById('loanType');
+    const loanTermGroup = document.getElementById('loanTermGroup');
+
+    // Show/hide loan term based on loan type
+    loanTypeSelect.addEventListener('change', function() {
+      loanTermGroup.style.display = this.value === 'PI' ? '' : 'none';
+      calculate();
+    });
+
+    function getVal(id) {
+      return parseFloat(document.getElementById(id).value) || 0;
+    }
+
+    function formatCurrency(amount) {
+      const abs = Math.abs(amount);
+      const formatted = abs >= 1000
+        ? '$' + abs.toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+        : '$' + abs.toFixed(0);
+      return amount < 0 ? '-' + formatted : formatted;
+    }
+
+    // State-based average estimates (annual)
+    const stateDefaults = {
+      NSW: { conveyancing: 1800, insurance: 1800, council: 2000 },
+      VIC: { conveyancing: 1100, insurance: 1500, council: 1900 },
+      QLD: { conveyancing: 900,  insurance: 2200, council: 1800 },
+      SA:  { conveyancing: 1000, insurance: 1300, council: 1600 },
+      WA:  { conveyancing: 1300, insurance: 1500, council: 1800 },
+      TAS: { conveyancing: 1000, insurance: 1200, council: 1400 },
+      ACT: { conveyancing: 1100, insurance: 1300, council: 2100 },
+      NT:  { conveyancing: 1000, insurance: 2500, council: 1700 },
+    };
+
+    // Stamp duty calculators by state (general/investor rates, not FHB)
+    function calcStampDuty(state, price) {
+      if (price <= 0) return 0;
+
+      switch (state) {
+        case 'NSW':
+          if (price <= 14000) return price * 0.0125;
+          if (price <= 31000) return 175 + (price - 14000) * 0.015;
+          if (price <= 83000) return 430 + (price - 31000) * 0.0175;
+          if (price <= 313000) return 1340 + (price - 83000) * 0.035;
+          if (price <= 1043000) return 9390 + (price - 313000) * 0.045;
+          if (price <= 3721000) return 42240 + (price - 1043000) * 0.055;
+          return price * 0.07;
+
+        case 'VIC':
+          if (price <= 25000) return price * 0.014;
+          if (price <= 130000) return 350 + (price - 25000) * 0.024;
+          if (price <= 960000) return 2870 + (price - 130000) * 0.06;
+          if (price <= 2000000) return price * 0.055;
+          return 110000 + (price - 2000000) * 0.065;
+
+        case 'QLD':
+          if (price <= 5000) return 0;
+          if (price <= 75000) return (price - 5000) * 0.015;
+          if (price <= 540000) return 1050 + (price - 75000) * 0.035;
+          if (price <= 1000000) return 17325 + (price - 540000) * 0.045;
+          return 38025 + (price - 1000000) * 0.0575;
+
+        case 'SA':
+          if (price <= 12000) return price * 0.01;
+          if (price <= 30000) return 120 + (price - 12000) * 0.02;
+          if (price <= 50000) return 480 + (price - 30000) * 0.03;
+          if (price <= 100000) return 1080 + (price - 50000) * 0.035;
+          if (price <= 200000) return 2830 + (price - 100000) * 0.04;
+          if (price <= 250000) return 6830 + (price - 200000) * 0.0425;
+          if (price <= 300000) return 8955 + (price - 250000) * 0.0475;
+          if (price <= 500000) return 11330 + (price - 300000) * 0.05;
+          return 21330 + (price - 500000) * 0.055;
+
+        case 'WA':
+          if (price <= 120000) return price * 0.019;
+          if (price <= 150000) return 2280 + (price - 120000) * 0.0285;
+          if (price <= 360000) return 3135 + (price - 150000) * 0.038;
+          if (price <= 725000) return 11115 + (price - 360000) * 0.0475;
+          return 28453 + (price - 725000) * 0.0515;
+
+        case 'TAS':
+          if (price <= 3000) return 50;
+          if (price <= 25000) return 50 + (price - 3000) * 0.0175;
+          if (price <= 75000) return 435 + (price - 25000) * 0.0225;
+          if (price <= 200000) return 1560 + (price - 75000) * 0.035;
+          if (price <= 375000) return 5935 + (price - 200000) * 0.04;
+          if (price <= 725000) return 12935 + (price - 375000) * 0.0425;
+          return 27810 + (price - 725000) * 0.045;
+
+        case 'ACT':
+          if (price <= 260000) return price * 0.0049;
+          if (price <= 300000) return 1040 + (price - 260000) * 0.022;
+          if (price <= 500000) return 1920 + (price - 300000) * 0.034;
+          if (price <= 750000) return 8720 + (price - 500000) * 0.0432;
+          if (price <= 1000000) return 19520 + (price - 750000) * 0.059;
+          if (price <= 1455000) return 34270 + (price - 1000000) * 0.064;
+          return price * 0.0454;
+
+        case 'NT':
+          if (price <= 525000) {
+            const v = price / 1000;
+            return (0.06571441 * v * v + 15 * v);
+          }
+          if (price <= 3000000) return price * 0.0495;
+          if (price <= 5000000) return price * 0.0575;
+          return price * 0.0595;
+
+        default:
+          return 0;
+      }
+    }
+
+    function calculate() {
+      const purchasePrice = getVal('purchasePrice');
+      const depositPct = getVal('depositPct') / 100;
+      const state = stateSelect.value;
+      const defaults = stateDefaults[state];
+      const stampDuty = Math.round(calcStampDuty(state, purchasePrice));
+      const loanType = loanTypeSelect.value;
+      const loanTerm = getVal('loanTerm');
+      const interestRate = getVal('interestRate') / 100;
+      const weeklyRent = getVal('weeklyRent');
+      const managementFeePct = getVal('managementFee') / 100;
+      const expectedGrowth = getVal('expectedGrowth') / 100;
+
+      // State-based values
+      const conveyancing = defaults.conveyancing;
+      const insurance = defaults.insurance;
+      const councilFees = defaults.council;
+
+      // Core figures
+      const deposit = purchasePrice * depositPct;
+      const loanAmount = purchasePrice - deposit;
+
+      // Loan payment calculation
+      let annualLoanPayment;
+      if (loanType === 'IO' || interestRate === 0) {
+        annualLoanPayment = loanAmount * interestRate;
+      } else {
+        // P&I: M = P * [r(1+r)^n] / [(1+r)^n - 1]
+        const monthlyRate = interestRate / 12;
+        const numPayments = loanTerm * 12;
+        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+        annualLoanPayment = monthlyPayment * 12;
+      }
+
+      // Annual income
+      const annualRent = weeklyRent * 52;
+
+      // Management fee
+      const annualManagementFee = annualRent * managementFeePct;
+
+      // Allowances
+      const vacancyAllowance = weeklyRent * 2;
+      const maintenanceAllowance = purchasePrice * 0.01;
+
+      // Annual expenses
+      const totalExpenses = annualLoanPayment + annualManagementFee + insurance + councilFees + vacancyAllowance + maintenanceAllowance;
+
+      // Cash flow (interest-only basis)
+      const annualCashFlow = annualRent - totalExpenses;
+      const monthlyCashFlow = annualCashFlow / 12;
+
+      // Yields
+      const grossYield = purchasePrice > 0 ? (annualRent / purchasePrice) * 100 : 0;
+      const netYield = purchasePrice > 0
+        ? ((annualRent - totalExpenses) / purchasePrice) * 100
+        : 0;
+
+      // Startup expenses
+      const totalUpfront = deposit + stampDuty + conveyancing;
+
+      // Update DOM — Input computed displays
+      document.getElementById('stampDutyValue').textContent = formatCurrency(stampDuty);
+
+      // Update DOM — Start Up Expenses
+      document.getElementById('resDeposit').textContent = formatCurrency(deposit);
+      document.getElementById('resStampDuty').textContent = formatCurrency(stampDuty);
+      document.getElementById('resConveyancing').textContent = formatCurrency(conveyancing);
+      document.getElementById('resTotalUpfront').textContent = formatCurrency(totalUpfront);
+
+      // Update DOM — Income
+      document.getElementById('resWeeklyRent').textContent = formatCurrency(weeklyRent) + '/wk';
+      document.getElementById('resAnnualRent').textContent = formatCurrency(annualRent) + '/yr';
+
+      // Update DOM — Expenses
+      document.getElementById('resLoanPayment').textContent = formatCurrency(annualLoanPayment) + '/yr';
+      document.getElementById('resManagement').textContent = formatCurrency(annualManagementFee) + '/yr';
+      document.getElementById('resInsurance').textContent = formatCurrency(insurance) + '/yr';
+      document.getElementById('resCouncil').textContent = formatCurrency(councilFees) + '/yr';
+      document.getElementById('resVacancy').textContent = formatCurrency(vacancyAllowance) + '/yr';
+      document.getElementById('resMaintenance').textContent = formatCurrency(maintenanceAllowance) + '/yr';
+      document.getElementById('resTotalExpenses').textContent = formatCurrency(totalExpenses) + '/yr';
+
+      // Update DOM — Results
+      const cashFlowEl = document.getElementById('annualCashFlow');
+      cashFlowEl.textContent = formatCurrency(annualCashFlow) + '/yr';
+      cashFlowEl.className = 'result-value ' + (annualCashFlow >= 0 ? 'positive' : 'negative');
+      document.getElementById('monthlyCashFlow').textContent = formatCurrency(monthlyCashFlow) + '/month';
+
+      document.getElementById('grossYield').textContent = grossYield.toFixed(2) + '%';
+
+      const netYieldEl = document.getElementById('netYield');
+      netYieldEl.textContent = netYield.toFixed(2) + '%';
+      netYieldEl.className = 'result-value ' + (netYield >= 0 ? 'positive' : 'negative');
+    }
+
+    inputs.forEach(input => input.addEventListener('input', calculate));
+    stateSelect.addEventListener('change', calculate);
+    calculate();
+  </script>
+</body>
+</html>
