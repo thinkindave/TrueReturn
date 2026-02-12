@@ -208,8 +208,6 @@
     }
 
     .results-card-standalone {
-      position: sticky;
-      top: 2rem;
       align-self: start;
     }
 
@@ -257,9 +255,12 @@
       border-color: #2d4a35;
     }
 
-    .line-item.muted .line-label,
-    .line-item.muted .line-value {
+    .line-item.muted .line-label {
       color: #6b6459;
+    }
+
+    .line-item.muted .line-value {
+      color: #8a8275;
     }
 
     .line-item {
@@ -569,24 +570,27 @@
         <div class="result-label">Gross Yield</div>
         <div class="result-value" id="grossYield">-</div>
         <div class="result-sub">Annual rent / purchase price</div>
+        <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">A gross rental yield of 5% or higher is often considered strong for residential property. Capital city yields commonly sit around 3–5%, while regional properties may achieve 5–8% or more. Yields below 4% may suggest the property is priced for growth rather than income.</div>
       </div>
 
       <div class="result-item">
         <div class="result-label">Net Yield</div>
         <div class="result-value" id="netYield">-</div>
         <div class="result-sub">After all expenses</div>
+        <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Net yield measures rental return after costs and is a more realistic indicator of cash flow than gross yield.</div>
       </div>
     </div>
 
     <div class="card full-width">
       <h2>Projections</h2>
 
-      <div class="form-group" style="max-width: 260px;">
+      <div class="form-group" style="max-width: 460px;">
         <label for="expectedGrowth">Expected Annual Growth</label>
-        <div class="input-wrapper has-suffix">
+        <div class="input-wrapper has-suffix" style="max-width: 260px;">
           <input type="number" id="expectedGrowth" value="3" min="-20" max="50" step="0.5">
           <span class="suffix">%</span>
         </div>
+        <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Australian residential property prices have grown at approximately 6–7% per year over the past 20 years, but returns vary significantly by location and market cycle. Past performance does not guarantee future results.</div>
       </div>
 
       <div class="projections-grid">
@@ -600,6 +604,10 @@
           <div class="line-item">
             <span class="line-label">Capital Growth</span>
             <span class="line-value" id="proj5Growth">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Principal Paid Down</span>
+            <span class="line-value" id="proj5Principal">-</span>
           </div>
           <div class="line-item muted">
             <span class="line-label">Remaining Loan</span>
@@ -631,6 +639,10 @@
           <div class="line-item">
             <span class="line-label">Capital Growth</span>
             <span class="line-value" id="proj10Growth">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Principal Paid Down</span>
+            <span class="line-value" id="proj10Principal">-</span>
           </div>
           <div class="line-item muted">
             <span class="line-label">Remaining Loan</span>
@@ -895,6 +907,8 @@
         // Update DOM
         document.getElementById(`proj${years}Value`).textContent = formatCurrency(futureValue);
         document.getElementById(`proj${years}Growth`).textContent = formatCurrency(capitalGrowth);
+        const principalPaid = loanAmount - remainingLoan;
+        document.getElementById(`proj${years}Principal`).textContent = formatCurrency(principalPaid);
         document.getElementById(`proj${years}Loan`).textContent = formatCurrency(remainingLoan);
         document.getElementById(`proj${years}Equity`).textContent = formatCurrency(equity);
         document.getElementById(`proj${years}Rent`).textContent = formatCurrency(futureWeeklyRent) + '/wk';
