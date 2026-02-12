@@ -235,9 +235,19 @@
       border-color: #4a3a2d;
     }
 
+    .section-header.monthly {
+      color: #7cacf0;
+      border-color: #2d3a4a;
+    }
+
     .section-header.expenses {
       color: #e87c6c;
       border-color: #4a2d2d;
+    }
+
+    .section-header.taxbenefit {
+      color: #6bc985;
+      border-color: #2d4a35;
     }
 
     .section-header.results-heading {
@@ -253,6 +263,16 @@
     .section-header.cashflow {
       color: #6bc985;
       border-color: #2d4a35;
+    }
+
+    .section-header.cashout {
+      color: #c9a6e8;
+      border-color: #3d2d4a;
+    }
+
+    .section-header.performance {
+      color: #d4c97a;
+      border-color: #4a462d;
     }
 
     .line-item.muted .line-label {
@@ -525,11 +545,34 @@
         <span class="line-value" id="resTotalUpfront">-</span>
       </div>
 
+      <!-- Month-to-Month Picture -->
+      <div class="section-header monthly">Month-to-Month Picture</div>
+      <div class="line-item">
+        <span class="line-label">Rent In</span>
+        <span class="line-value positive" id="resMonthlyRent">-</span>
+      </div>
+      <div class="line-item">
+        <span class="line-label">Property Management</span>
+        <span class="line-value" id="resMonthlyMgmt">-</span>
+      </div>
+      <div class="line-item">
+        <span class="line-label">Loan Payment</span>
+        <span class="line-value" id="resMonthlyLoan">-</span>
+      </div>
+      <div class="line-item total">
+        <span class="line-label">Monthly Cash Flow</span>
+        <span class="line-value" id="resMonthlyCashFlow">-</span>
+      </div>
+
       <!-- Annual Expenses -->
       <div class="section-header expenses">Annual Expenses</div>
       <div class="line-item">
         <span class="line-label">Loan Payment</span>
         <span class="line-value" id="resLoanPayment">-</span>
+      </div>
+      <div id="loanBreakdown" style="display: flex; flex-direction: column; align-items: flex-end; margin-top: -0.25rem; margin-bottom: 0.25rem;">
+        <span class="computed-note" id="resPrincipalPortion">-</span>
+        <span class="computed-note" id="resInterestPortion">-</span>
       </div>
       <div class="line-item">
         <span class="line-label">Property Management</span>
@@ -555,6 +598,22 @@
         <span class="line-label">Total Annual Expenses</span>
         <span class="line-value" id="resTotalExpenses">-</span>
       </div>
+
+      <!-- Tax Benefit -->
+      <div class="section-header taxbenefit">Potential Tax Benefit</div>
+      <div class="line-item muted">
+        <span class="line-label">Deductible Expenses</span>
+        <span class="line-value" id="resDeductible">-</span>
+      </div>
+      <div class="line-item muted">
+        <span class="line-label">Net Rental Position</span>
+        <span class="line-value" id="resNetRental">-</span>
+      </div>
+      <div class="line-item">
+        <span class="line-label">Est. Tax Benefit <span class="help-tip" data-tip="Assumed 30% marginal tax rate. Actual rate depends on your taxable income.">?</span></span>
+        <span class="line-value positive" id="resTaxBenefit">-</span>
+      </div>
+      <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Deductible expenses include loan interest, property management, insurance, council rates, and maintenance. If these exceed rental income, the loss can be offset against your other taxable income (negative gearing). The benefit is estimated at 30% of the rental loss. Does not include depreciation. Note: potential tax benefit is not included in Annual Cash Flow as it depends heavily on your individual tax situation.</div>
     </div>
 
     <div class="card results-card-standalone">
@@ -578,6 +637,12 @@
         <div class="result-value" id="netYield">-</div>
         <div class="result-sub">After all expenses</div>
         <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Net yield measures rental return after costs and is a more realistic indicator of cash flow than gross yield.</div>
+      </div>
+
+      <div class="result-item">
+        <div class="result-label">Cash on Cash Return</div>
+        <div class="result-value" id="cashOnCash">-</div>
+        <div class="result-sub">Annual cash flow / total cash invested</div>
       </div>
     </div>
 
@@ -627,6 +692,54 @@
             <span class="line-label">Est. Annual Cash Flow</span>
             <span class="line-value" id="proj5CashFlow">-</span>
           </div>
+
+          <div class="section-header cashout">Cash Out Position</div>
+          <div class="line-item">
+            <span class="line-label">Sale Price</span>
+            <span class="line-value" id="proj5Sale">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Sales Costs <span class="help-tip" data-tip="Estimated at 3% of sale price (agent fees, legal, marketing)">?</span></span>
+            <span class="line-value" id="proj5SaleCosts">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Remaining Loan Payout</span>
+            <span class="line-value" id="proj5LoanPayout">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Net Proceeds Before Tax</span>
+            <span class="line-value" id="proj5NetProceeds">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="50% CGT discount applied. Assumed 30% marginal tax rate based on median Australian salary. Actual rate depends on your taxable income.">?</span></span>
+            <span class="line-value" id="proj5CGT">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">True Cash Return</span>
+            <span class="line-value" id="proj5TrueReturn">-</span>
+          </div>
+
+          <div class="section-header performance">Investment Performance</div>
+          <div class="line-item muted">
+            <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
+            <span class="line-value" id="proj5CashInvested">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
+            <span class="line-value" id="proj5CumCashFlow">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Total Profit <span class="help-tip" data-tip="True cash return minus cash invested, plus cumulative cash flow">?</span></span>
+            <span class="line-value" id="proj5TotalProfit">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Total Return on Cash <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
+            <span class="line-value" id="proj5ReturnOnCash">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Annualised Return <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+            <span class="line-value" id="proj5AnnualisedReturn">-</span>
+          </div>
         </div>
 
         <!-- 10 Year -->
@@ -661,6 +774,54 @@
           <div class="line-item">
             <span class="line-label">Est. Annual Cash Flow</span>
             <span class="line-value" id="proj10CashFlow">-</span>
+          </div>
+
+          <div class="section-header cashout">Cash Out Position</div>
+          <div class="line-item">
+            <span class="line-label">Sale Price</span>
+            <span class="line-value" id="proj10Sale">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Sales Costs <span class="help-tip" data-tip="Estimated at 3% of sale price (agent fees, legal, marketing)">?</span></span>
+            <span class="line-value" id="proj10SaleCosts">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Remaining Loan Payout</span>
+            <span class="line-value" id="proj10LoanPayout">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Net Proceeds Before Tax</span>
+            <span class="line-value" id="proj10NetProceeds">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="50% CGT discount applied. Assumed 30% marginal tax rate based on median Australian salary. Actual rate depends on your taxable income.">?</span></span>
+            <span class="line-value" id="proj10CGT">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">True Cash Return</span>
+            <span class="line-value" id="proj10TrueReturn">-</span>
+          </div>
+
+          <div class="section-header performance">Investment Performance</div>
+          <div class="line-item muted">
+            <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
+            <span class="line-value" id="proj10CashInvested">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
+            <span class="line-value" id="proj10CumCashFlow">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Total Profit <span class="help-tip" data-tip="True cash return minus cash invested, plus cumulative cash flow">?</span></span>
+            <span class="line-value" id="proj10TotalProfit">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Total Return on Cash <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
+            <span class="line-value" id="proj10ReturnOnCash">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Annualised Return <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+            <span class="line-value" id="proj10AnnualisedReturn">-</span>
           </div>
         </div>
       </div>
@@ -851,14 +1012,47 @@
       document.getElementById('resWeeklyRent').textContent = formatCurrency(weeklyRent) + '/wk';
       document.getElementById('resAnnualRent').textContent = formatCurrency(annualRent) + '/yr';
 
+      // Update DOM — Month-to-Month Picture
+      const monthlyRent = annualRent / 12;
+      const monthlyMgmt = annualManagementFee / 12;
+      const monthlyLoan = annualLoanPayment / 12;
+      const monthlyNet = monthlyRent - monthlyMgmt - monthlyLoan;
+      document.getElementById('resMonthlyRent').textContent = formatCurrency(monthlyRent) + '/mo';
+      document.getElementById('resMonthlyMgmt').textContent = '-' + formatCurrency(monthlyMgmt) + '/mo';
+      document.getElementById('resMonthlyLoan').textContent = '-' + formatCurrency(monthlyLoan) + '/mo';
+      const mCfEl = document.getElementById('resMonthlyCashFlow');
+      mCfEl.textContent = formatCurrency(monthlyNet) + '/mo';
+      mCfEl.className = 'line-value ' + (monthlyNet >= 0 ? 'positive' : 'negative');
+
       // Update DOM — Expenses
       document.getElementById('resLoanPayment').textContent = formatCurrency(annualLoanPayment) + '/yr';
+
+      // Loan payment breakdown: interest vs principal (first year)
+      const annualInterest = loanAmount * interestRate;
+      const annualPrincipal = loanType === 'PI' ? annualLoanPayment - annualInterest : 0;
+      document.getElementById('resInterestPortion').textContent = 'Interest: ' + formatCurrency(annualInterest);
+      document.getElementById('resPrincipalPortion').textContent = 'Principal: ' + formatCurrency(annualPrincipal);
+      document.getElementById('loanBreakdown').style.display = loanType === 'PI' ? 'flex' : 'none';
+
       document.getElementById('resManagement').textContent = formatCurrency(annualManagementFee) + '/yr';
       document.getElementById('resInsurance').textContent = formatCurrency(insurance) + '/yr';
       document.getElementById('resCouncil').textContent = formatCurrency(councilFees) + '/yr';
       document.getElementById('resVacancy').textContent = formatCurrency(vacancyAllowance) + '/yr';
       document.getElementById('resMaintenance').textContent = formatCurrency(maintenanceAllowance) + '/yr';
       document.getElementById('resTotalExpenses').textContent = formatCurrency(totalExpenses) + '/yr';
+
+      // Tax Benefit
+      const annualInterestOnly = loanAmount * interestRate;
+      const deductibleExpenses = annualInterestOnly + annualManagementFee + insurance + councilFees + maintenanceAllowance;
+      const netRentalPosition = annualRent - deductibleExpenses;
+      const taxBenefit = netRentalPosition < 0 ? Math.abs(netRentalPosition) * 0.30 : 0;
+      document.getElementById('resDeductible').textContent = formatCurrency(deductibleExpenses) + '/yr';
+      const nrEl = document.getElementById('resNetRental');
+      nrEl.textContent = formatCurrency(netRentalPosition) + '/yr';
+      nrEl.className = 'line-value ' + (netRentalPosition >= 0 ? 'positive' : 'negative');
+      const tbEl = document.getElementById('resTaxBenefit');
+      tbEl.textContent = taxBenefit > 0 ? formatCurrency(taxBenefit) + '/yr' : '-';
+      tbEl.className = 'line-value ' + (taxBenefit > 0 ? 'positive' : '');
 
       // Update DOM — Results
       const cashFlowEl = document.getElementById('annualCashFlow');
@@ -871,6 +1065,11 @@
       const netYieldEl = document.getElementById('netYield');
       netYieldEl.textContent = netYield.toFixed(2) + '%';
       netYieldEl.className = 'result-value ' + (netYield >= 0 ? 'positive' : 'negative');
+
+      const cashOnCash = totalUpfront > 0 ? (annualCashFlow / totalUpfront) * 100 : 0;
+      const cocEl = document.getElementById('cashOnCash');
+      cocEl.textContent = cashOnCash.toFixed(2) + '%';
+      cocEl.className = 'result-value ' + (cashOnCash >= 0 ? 'positive' : 'negative');
 
       // Projections
       [5, 10].forEach(years => {
@@ -916,6 +1115,59 @@
         const cfEl = document.getElementById(`proj${years}CashFlow`);
         cfEl.textContent = formatCurrency(futureCashFlow) + '/yr';
         cfEl.className = 'line-value ' + (futureCashFlow >= 0 ? 'positive' : 'negative');
+
+        // Cash Out Position
+        const salePrice = futureValue;
+        const salesCosts = salePrice * 0.03;
+        const netProceeds = salePrice - salesCosts - remainingLoan;
+        const costBase = purchasePrice + stampDuty + conveyancing + salesCosts;
+        const capitalGain = salePrice - costBase;
+        const discountedGain = capitalGain > 0 ? capitalGain * 0.50 : 0;
+        const cgt = discountedGain * 0.30;
+        const trueCashReturn = netProceeds - cgt;
+
+        document.getElementById(`proj${years}Sale`).textContent = formatCurrency(salePrice);
+        document.getElementById(`proj${years}SaleCosts`).textContent = formatCurrency(salesCosts);
+        document.getElementById(`proj${years}LoanPayout`).textContent = formatCurrency(remainingLoan);
+        document.getElementById(`proj${years}NetProceeds`).textContent = formatCurrency(netProceeds);
+        document.getElementById(`proj${years}CGT`).textContent = '\u2248 ' + formatCurrency(cgt);
+
+        const trEl = document.getElementById(`proj${years}TrueReturn`);
+        trEl.textContent = formatCurrency(trueCashReturn);
+        trEl.className = 'line-value ' + (trueCashReturn >= 0 ? 'positive' : 'negative');
+
+        // Investment Performance
+        let cumulativeCashFlow = 0;
+        for (let y = 1; y <= years; y++) {
+          const yRent = weeklyRent * Math.pow(1 + expectedGrowth, y) * 52;
+          const yValue = purchasePrice * Math.pow(1 + expectedGrowth, y);
+          const yMgmt = yRent * managementFeePct;
+          const yVacancy = (weeklyRent * Math.pow(1 + expectedGrowth, y)) * 2;
+          const yMaint = yValue * 0.005;
+          const yExpenses = annualLoanPayment + yMgmt + insurance + councilFees + yVacancy + yMaint;
+          cumulativeCashFlow += yRent - yExpenses;
+        }
+
+        const totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow;
+        const returnOnCash = totalUpfront > 0 ? (totalProfit / totalUpfront) * 100 : 0;
+        const annualisedReturn = totalUpfront > 0 ? (Math.pow(1 + totalProfit / totalUpfront, 1 / years) - 1) * 100 : 0;
+
+        document.getElementById(`proj${years}CashInvested`).textContent = formatCurrency(totalUpfront);
+
+        const cumCfEl = document.getElementById(`proj${years}CumCashFlow`);
+        cumCfEl.textContent = formatCurrency(cumulativeCashFlow);
+
+        const tpEl = document.getElementById(`proj${years}TotalProfit`);
+        tpEl.textContent = formatCurrency(totalProfit);
+        tpEl.className = 'line-value ' + (totalProfit >= 0 ? 'positive' : 'negative');
+
+        const rocEl = document.getElementById(`proj${years}ReturnOnCash`);
+        rocEl.textContent = returnOnCash.toFixed(2) + '%';
+        rocEl.className = 'line-value ' + (returnOnCash >= 0 ? 'positive' : 'negative');
+
+        const arEl = document.getElementById(`proj${years}AnnualisedReturn`);
+        arEl.textContent = annualisedReturn.toFixed(2) + '%';
+        arEl.className = 'line-value ' + (annualisedReturn >= 0 ? 'positive' : 'negative');
       });
     }
 
