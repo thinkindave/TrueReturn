@@ -402,6 +402,42 @@
       border-color: #4a462d;
     }
 
+    .section-header.offset {
+      color: #e0c068;
+      border-color: #4a3f2d;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.375rem;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      accent-color: #d4a27a;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+
+    .toggle-row label {
+      font-size: 0.75rem;
+      color: #6b6459;
+      margin-bottom: 0;
+      cursor: pointer;
+    }
+
+    input[type="number"]:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .tab-content.active.two-col-layout {
+      grid-template-columns: 1fr 1fr;
+    }
+
+
     .line-item.muted .line-label {
       color: #6b6459;
     }
@@ -582,6 +618,11 @@
         grid-template-columns: 1fr;
       }
 
+      .tab-content.active.two-col-layout {
+        grid-template-columns: 1fr;
+      }
+
+
       .projections-grid {
         grid-template-columns: 1fr;
       }
@@ -615,6 +656,8 @@
       <div class="sidebar-shared-value">
         <div class="shared-label">Total Upfront</div>
         <div class="shared-amount" id="sidebarUpfront">-</div>
+        <div class="shared-label" style="margin-top: 0.5rem;">Interest Rate</div>
+        <div class="shared-amount" id="sidebarRate">-</div>
       </div>
     </nav>
 
@@ -1023,12 +1066,114 @@
         </div>
       </section>
 
-      <section id="tab-offset" class="tab-content tab-placeholder-layout">
-        <div class="tab-placeholder">
-          <h2>Offset Calculator</h2>
-          <p>See how an offset account reduces your interest and changes your true cost of borrowing.</p>
-          <p>Using your Property investment amount:</p>
-          <div class="placeholder-amount" id="placeholderOffsetAmount">-</div>
+      <section id="tab-offset" class="tab-content two-col-layout">
+        <div class="card">
+          <h2>Offset Details</h2>
+
+          <div class="form-group">
+            <label for="offsetAmount">Offset Amount</label>
+            <div class="input-wrapper has-prefix">
+              <span class="prefix">$</span>
+              <input type="number" id="offsetAmount" value="69900" min="0" step="1000">
+            </div>
+            <div class="toggle-row">
+              <input type="checkbox" id="usePropertyUpfront" checked>
+              <label for="usePropertyUpfront">Use Property Total Upfront</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="offsetLoanBalance">Loan Balance</label>
+            <div class="input-wrapper has-prefix">
+              <span class="prefix">$</span>
+              <input type="number" id="offsetLoanBalance" value="600000" min="0" step="1000">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="offsetInterestRate">Interest Rate</label>
+            <div class="input-wrapper has-suffix">
+              <input type="number" id="offsetInterestRate" value="5.89" min="0" max="20" step="0.01">
+              <span class="suffix">%</span>
+            </div>
+            <div class="toggle-row">
+              <input type="checkbox" id="usePropertyRate" checked>
+              <label for="usePropertyRate">Use Property Rate</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="offsetLoanType">Loan Type</label>
+            <select id="offsetLoanType">
+              <option value="IO">Interest Only</option>
+              <option value="PI" selected>Principal & Interest</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="offsetLoanTermGroup">
+            <label for="offsetLoanTerm">Loan Term</label>
+            <div class="input-wrapper has-suffix">
+              <input type="number" id="offsetLoanTerm" value="30" min="1" max="40" step="1">
+              <span class="suffix">yrs</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card results-card">
+          <h2>Interest Saved</h2>
+
+          <div class="result-item">
+            <div class="result-label">Effective Return</div>
+            <div class="result-value positive" id="offsetEffectiveReturn">-</div>
+            <div class="computed-note" style="margin-top: 0.375rem; line-height: 1.4;">Every dollar in an offset account saves you the loan interest rate in interest, tax-free. This is equivalent to earning the rate in a savings account before tax.</div>
+          </div>
+
+          <div class="line-item" id="offsetTimeSavedRow">
+            <span class="line-label">Time Saved on Loan <span class="help-tip" data-tip="How much sooner the loan is fully paid off with the offset (P&I only)">?</span></span>
+            <span class="line-value positive" id="offsetTimeSaved">-</span>
+          </div>
+
+          <div class="section-header offset">5 Year</div>
+          <div class="line-item">
+            <span class="line-label">Without Offset</span>
+            <span class="line-value" id="offsetNoOffset5">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">With Offset</span>
+            <span class="line-value" id="offsetWithOffset5">-</span>
+          </div>
+          <div class="line-item total">
+            <span class="line-label">Interest Saved</span>
+            <span class="line-value positive" id="offsetSaved5">-</span>
+          </div>
+
+          <div class="section-header offset">10 Year</div>
+          <div class="line-item">
+            <span class="line-label">Without Offset</span>
+            <span class="line-value" id="offsetNoOffset10">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">With Offset</span>
+            <span class="line-value" id="offsetWithOffset10">-</span>
+          </div>
+          <div class="line-item total">
+            <span class="line-label">Interest Saved</span>
+            <span class="line-value positive" id="offsetSaved10">-</span>
+          </div>
+
+          <div class="section-header offset">Lifetime of Loan</div>
+          <div class="line-item">
+            <span class="line-label">Without Offset</span>
+            <span class="line-value" id="offsetNoOffsetLife">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">With Offset</span>
+            <span class="line-value" id="offsetWithOffsetLife">-</span>
+          </div>
+          <div class="line-item total">
+            <span class="line-label">Interest Saved</span>
+            <span class="line-value positive" id="offsetSavedLifetime">-</span>
+          </div>
         </div>
       </section>
 
@@ -1054,7 +1199,7 @@
 
   <script>
     // Shared state
-    window.TrueReturn = { totalUpfront: 0 };
+    window.TrueReturn = { totalUpfront: 0, interestRate: 0 };
 
     // Tab switching
     function initTabs() {
@@ -1071,13 +1216,23 @@
     }
     initTabs();
 
-    function updateSharedUpfront(amount) {
+    function updateSharedUpfront(amount, rate) {
       window.TrueReturn.totalUpfront = amount;
+      window.TrueReturn.interestRate = rate;
       const formatted = formatCurrency(amount);
       document.getElementById('sidebarUpfront').textContent = formatted;
-      document.getElementById('placeholderOffsetAmount').textContent = formatted;
+      document.getElementById('sidebarRate').textContent = rate.toFixed(2) + '%';
       document.getElementById('placeholderStocksAmount').textContent = formatted;
       document.getElementById('placeholderCompareAmount').textContent = formatted;
+
+      // Sync to offset tab if toggles are checked
+      if (document.getElementById('usePropertyUpfront').checked) {
+        document.getElementById('offsetAmount').value = Math.round(amount);
+      }
+      if (document.getElementById('usePropertyRate').checked) {
+        document.getElementById('offsetInterestRate').value = rate;
+      }
+      calculateOffset();
     }
 
     const inputs = document.querySelectorAll('#tab-property input[type="number"]');
@@ -1252,7 +1407,7 @@
 
       // Startup expenses
       const totalUpfront = deposit + stampDuty + conveyancing;
-      updateSharedUpfront(totalUpfront);
+      updateSharedUpfront(totalUpfront, getVal('interestRate'));
 
       // Update DOM — Start Up Expenses
       document.getElementById('resDeposit').textContent = formatCurrency(deposit);
@@ -1425,6 +1580,155 @@
 
     inputs.forEach(input => input.addEventListener('input', calculate));
     stateSelect.addEventListener('change', calculate);
+
+    // --- Offset Calculator ---
+
+    const offsetLoanTypeSelect = document.getElementById('offsetLoanType');
+    const offsetLoanTermGroup = document.getElementById('offsetLoanTermGroup');
+    const usePropertyUpfront = document.getElementById('usePropertyUpfront');
+    const usePropertyRate = document.getElementById('usePropertyRate');
+    const offsetAmountInput = document.getElementById('offsetAmount');
+    const offsetRateInput = document.getElementById('offsetInterestRate');
+
+    // Show/hide offset loan term based on loan type
+    offsetLoanTypeSelect.addEventListener('change', function() {
+      offsetLoanTermGroup.style.display = this.value === 'PI' ? '' : 'none';
+      calculateOffset();
+    });
+
+    // Toggle: Use Property Total Upfront
+    usePropertyUpfront.addEventListener('change', function() {
+      offsetAmountInput.disabled = this.checked;
+      if (this.checked) {
+        offsetAmountInput.value = Math.round(window.TrueReturn.totalUpfront);
+      }
+      calculateOffset();
+    });
+
+    // Toggle: Use Property Rate
+    usePropertyRate.addEventListener('change', function() {
+      offsetRateInput.disabled = this.checked;
+      if (this.checked) {
+        offsetRateInput.value = window.TrueReturn.interestRate;
+      }
+      calculateOffset();
+    });
+
+    // Wire offset inputs
+    document.querySelectorAll('#tab-offset input[type="number"], #tab-offset select').forEach(el => {
+      el.addEventListener('input', calculateOffset);
+      el.addEventListener('change', calculateOffset);
+    });
+
+    function calculateOffset() {
+      const offsetAmount = parseFloat(offsetAmountInput.value) || 0;
+      const loanBalance = parseFloat(document.getElementById('offsetLoanBalance').value) || 0;
+      const rate = (parseFloat(offsetRateInput.value) || 0) / 100;
+      const loanType = offsetLoanTypeSelect.value;
+      const loanTerm = parseFloat(document.getElementById('offsetLoanTerm').value) || 30;
+
+      // Cap offset at loan balance
+      const effectiveOffset = Math.min(offsetAmount, loanBalance);
+
+      let noOffset5 = 0, noOffset10 = 0, withOffset5 = 0, withOffset10 = 0;
+      let totalInterestNoOffset = 0, totalInterestWithOffset = 0;
+      let monthsNoOffset = 0, monthsWithOffset = 0;
+      const isPandI = loanType === 'PI' && rate > 0;
+
+      if (!isPandI) {
+        // Interest-only: simple calculation (loan never pays off)
+        noOffset5 = loanBalance * rate * 5;
+        noOffset10 = loanBalance * rate * 10;
+        withOffset5 = (loanBalance - effectiveOffset) * rate * 5;
+        withOffset10 = (loanBalance - effectiveOffset) * rate * 10;
+        totalInterestNoOffset = loanBalance * rate * loanTerm;
+        totalInterestWithOffset = (loanBalance - effectiveOffset) * rate * loanTerm;
+        monthsNoOffset = 0;
+        monthsWithOffset = 0;
+      } else {
+        // P&I: month-by-month amortisation over full loan term
+        const monthlyRate = rate / 12;
+        const numPayments = loanTerm * 12;
+
+        if (monthlyRate > 0 && numPayments > 0) {
+          const monthlyPayment = loanBalance * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+
+          // Without offset — full term
+          let balance = loanBalance;
+          for (let m = 1; m <= numPayments && balance > 0.01; m++) {
+            const interest = balance * monthlyRate;
+            const principal = Math.min(monthlyPayment - interest, balance);
+            if (m <= 60) noOffset5 += interest;
+            if (m <= 120) noOffset10 += interest;
+            totalInterestNoOffset += interest;
+            balance -= principal;
+            monthsNoOffset = m;
+          }
+
+          // With offset — full term
+          let balanceWithOffset = loanBalance;
+          for (let m = 1; m <= numPayments && balanceWithOffset > 0.01; m++) {
+            const effectiveBal = Math.max(0, balanceWithOffset - effectiveOffset);
+            const interest = effectiveBal * monthlyRate;
+            const principal = Math.min(monthlyPayment - interest, balanceWithOffset);
+            if (m <= 60) withOffset5 += interest;
+            if (m <= 120) withOffset10 += interest;
+            totalInterestWithOffset += interest;
+            balanceWithOffset -= principal;
+            monthsWithOffset = m;
+          }
+        }
+      }
+
+      const saved5 = noOffset5 - withOffset5;
+      const saved10 = noOffset10 - withOffset10;
+      const savedLifetime = totalInterestNoOffset - totalInterestWithOffset;
+
+      // Effective return = the interest rate (each dollar in offset saves you the rate, tax-free)
+      const effectiveReturnPct = effectiveOffset > 0 ? rate * 100 : 0;
+
+      // Time saved (P&I only)
+      const timeSavedRow = document.getElementById('offsetTimeSavedRow');
+      if (isPandI && monthsNoOffset > monthsWithOffset) {
+        const savedMonths = monthsNoOffset - monthsWithOffset;
+        const yrs = Math.floor(savedMonths / 12);
+        const mos = savedMonths % 12;
+        let timeStr = '';
+        if (yrs > 0) timeStr += yrs + (yrs === 1 ? ' yr' : ' yrs');
+        if (yrs > 0 && mos > 0) timeStr += ' ';
+        if (mos > 0) timeStr += mos + (mos === 1 ? ' mo' : ' mos');
+        if (!timeStr) timeStr = '-';
+        document.getElementById('offsetTimeSaved').textContent = timeStr;
+        timeSavedRow.style.display = '';
+      } else {
+        timeSavedRow.style.display = isPandI ? '' : 'none';
+        document.getElementById('offsetTimeSaved').textContent = '-';
+      }
+
+      // Effective return (shown once)
+      document.getElementById('offsetEffectiveReturn').textContent = effectiveReturnPct.toFixed(2) + '%';
+
+      // 5 Year
+      document.getElementById('offsetNoOffset5').textContent = formatCurrency(noOffset5);
+      document.getElementById('offsetWithOffset5').textContent = formatCurrency(withOffset5);
+      document.getElementById('offsetSaved5').textContent = formatCurrency(saved5);
+
+      // 10 Year
+      document.getElementById('offsetNoOffset10').textContent = formatCurrency(noOffset10);
+      document.getElementById('offsetWithOffset10').textContent = formatCurrency(withOffset10);
+      document.getElementById('offsetSaved10').textContent = formatCurrency(saved10);
+
+      // Lifetime
+      document.getElementById('offsetNoOffsetLife').textContent = formatCurrency(totalInterestNoOffset);
+      document.getElementById('offsetWithOffsetLife').textContent = formatCurrency(totalInterestWithOffset);
+      document.getElementById('offsetSavedLifetime').textContent = formatCurrency(savedLifetime);
+    }
+
+    // Set initial disabled state for synced inputs
+    offsetAmountInput.disabled = usePropertyUpfront.checked;
+    offsetRateInput.disabled = usePropertyRate.checked;
+
+    // Run initial calculations
     calculate();
   </script>
 </body>
