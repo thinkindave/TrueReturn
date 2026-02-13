@@ -38,13 +38,140 @@
       margin-top: 0.25rem;
     }
 
-    main {
+    /* Layout: sidebar + content */
+    .app-layout {
+      display: flex;
+      min-height: calc(100vh - 80px);
+    }
+
+    .sidebar {
+      width: 200px;
+      min-width: 200px;
+      background: #141310;
+      border-right: 1px solid #2a2720;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem 0;
+    }
+
+    .sidebar-tab {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      width: 100%;
+      padding: 0.75rem 1.25rem;
+      background: none;
+      border: none;
+      border-left: 3px solid transparent;
+      color: #8a8275;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+      text-align: left;
+    }
+
+    .sidebar-tab:hover {
+      color: #e8e0d5;
+      background: rgba(212, 162, 122, 0.05);
+    }
+
+    .sidebar-tab.active {
+      color: #d4a27a;
+      border-left-color: #d4a27a;
+      background: rgba(212, 162, 122, 0.08);
+    }
+
+    .sidebar-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .sidebar-shared-value {
+      margin-top: auto;
+      padding: 1rem 1.25rem;
+      border-top: 1px solid #2a2720;
+    }
+
+    .sidebar-shared-value .shared-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #6b6459;
+      margin-bottom: 0.25rem;
+    }
+
+    .sidebar-shared-value .shared-amount {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #d4a27a;
+    }
+
+    .content-area {
+      flex: 1;
       max-width: 1280px;
       margin: 2rem auto;
       padding: 0 1.5rem;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 1.5rem;
+    }
+
+    .tab-content.active.tab-placeholder-layout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+    }
+
+    .tab-placeholder {
+      background: #23211d;
+      border-radius: 12px;
+      padding: 3rem;
+      border: 1px solid #2e2b26;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+    }
+
+    .tab-placeholder h2 {
+      font-size: 1.25rem;
+      color: #e8e0d5;
+      margin-bottom: 0.75rem;
+    }
+
+    .tab-placeholder p {
+      color: #8a8275;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      margin-bottom: 0.5rem;
+    }
+
+    .tab-placeholder .placeholder-amount {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #d4a27a;
+      margin-top: 1rem;
     }
 
     .card.full-width {
@@ -408,7 +535,50 @@
     }
 
     @media (max-width: 900px) {
-      main {
+      .app-layout {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        min-width: 0;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 0;
+        border-right: none;
+        border-bottom: 1px solid #2a2720;
+      }
+
+      .sidebar-tab {
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        padding: 0.75rem 1rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .sidebar-tab.active {
+        border-left-color: transparent;
+        border-bottom-color: #d4a27a;
+      }
+
+      .sidebar-shared-value {
+        margin-top: 0;
+        margin-left: auto;
+        border-top: none;
+        border-left: 1px solid #2a2720;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        flex-shrink: 0;
+      }
+
+      .sidebar-shared-value .shared-label {
+        margin-bottom: 0;
+      }
+
+      .tab-content.active {
         grid-template-columns: 1fr;
       }
 
@@ -424,8 +594,33 @@
     <p>Property Investment Calculator</p>
   </header>
 
-  <main>
-    <div class="card">
+  <div class="app-layout">
+    <nav class="sidebar">
+      <button class="sidebar-tab active" data-tab="tab-property">
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg></span>
+        Property
+      </button>
+      <button class="sidebar-tab" data-tab="tab-offset">
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></span>
+        Offset
+      </button>
+      <button class="sidebar-tab" data-tab="tab-stocks">
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></span>
+        Stocks / ETFs
+      </button>
+      <button class="sidebar-tab" data-tab="tab-compare">
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></span>
+        Compare
+      </button>
+      <div class="sidebar-shared-value">
+        <div class="shared-label">Total Upfront</div>
+        <div class="shared-amount" id="sidebarUpfront">-</div>
+      </div>
+    </nav>
+
+    <main class="content-area">
+      <section id="tab-property" class="tab-content active">
+        <div class="card">
       <h2>Property Details</h2>
 
       <!-- Purchase section -->
@@ -825,11 +1020,67 @@
           </div>
         </div>
       </div>
-    </div>
-  </main>
+        </div>
+      </section>
+
+      <section id="tab-offset" class="tab-content tab-placeholder-layout">
+        <div class="tab-placeholder">
+          <h2>Offset Calculator</h2>
+          <p>See how an offset account reduces your interest and changes your true cost of borrowing.</p>
+          <p>Using your Property investment amount:</p>
+          <div class="placeholder-amount" id="placeholderOffsetAmount">-</div>
+        </div>
+      </section>
+
+      <section id="tab-stocks" class="tab-content tab-placeholder-layout">
+        <div class="tab-placeholder">
+          <h2>Stocks / Shares / ETFs</h2>
+          <p>Compare what the same upfront investment could return in the share market over the same period.</p>
+          <p>Using your Property investment amount:</p>
+          <div class="placeholder-amount" id="placeholderStocksAmount">-</div>
+        </div>
+      </section>
+
+      <section id="tab-compare" class="tab-content tab-placeholder-layout">
+        <div class="tab-placeholder">
+          <h2>Compare Investments</h2>
+          <p>Side-by-side comparison of property vs offset vs stocks using the same starting capital.</p>
+          <p>Using your Property investment amount:</p>
+          <div class="placeholder-amount" id="placeholderCompareAmount">-</div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script>
-    const inputs = document.querySelectorAll('input[type="number"]');
+    // Shared state
+    window.TrueReturn = { totalUpfront: 0 };
+
+    // Tab switching
+    function initTabs() {
+      const tabs = document.querySelectorAll('.sidebar-tab');
+      const sections = document.querySelectorAll('.tab-content');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          sections.forEach(s => s.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById(tab.dataset.tab).classList.add('active');
+        });
+      });
+    }
+    initTabs();
+
+    function updateSharedUpfront(amount) {
+      window.TrueReturn.totalUpfront = amount;
+      const formatted = formatCurrency(amount);
+      document.getElementById('sidebarUpfront').textContent = formatted;
+      document.getElementById('placeholderOffsetAmount').textContent = formatted;
+      document.getElementById('placeholderStocksAmount').textContent = formatted;
+      document.getElementById('placeholderCompareAmount').textContent = formatted;
+    }
+
+    const inputs = document.querySelectorAll('#tab-property input[type="number"]');
     const stateSelect = document.getElementById('state');
     const loanTypeSelect = document.getElementById('loanType');
     const loanTermGroup = document.getElementById('loanTermGroup');
@@ -1001,6 +1252,7 @@
 
       // Startup expenses
       const totalUpfront = deposit + stampDuty + conveyancing;
+      updateSharedUpfront(totalUpfront);
 
       // Update DOM — Start Up Expenses
       document.getElementById('resDeposit').textContent = formatCurrency(deposit);
