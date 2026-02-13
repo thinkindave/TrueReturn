@@ -100,7 +100,7 @@
     }
 
     .sidebar-shared-value {
-      margin-top: auto;
+      margin-top: 1rem;
       padding: 1rem 1.25rem;
       border-top: 1px solid #2a2720;
     }
@@ -501,6 +501,18 @@
       font-weight: 600;
     }
 
+    .compare-table .compare-scenario-start td {
+      border-top: 2px solid #3a3730;
+    }
+
+    .compare-table .compare-muted td {
+      color: #6b6459;
+      font-weight: 500;
+    }
+    .compare-table .compare-muted td:first-child {
+      color: #6b6459;
+    }
+
     .toggle-row {
       display: flex;
       align-items: center;
@@ -725,8 +737,8 @@
 </head>
 <body>
   <header>
-    <h1>TrueReturn</h1>
-    <p>Property Investment Calculator</p>
+    <h1><svg width="28" height="32" viewBox="0 0 28 32" style="vertical-align: middle; margin-right: 0.5rem;"><path d="M14 1L2 6v10c0 8.5 5.1 16.4 12 19 6.9-2.6 12-10.5 12-19V6L14 1z" fill="none" stroke="#d4a27a" stroke-width="2"/><text x="14" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#d4a27a" font-family="inherit">TR</text></svg>TrueReturn</h1>
+    <p>Investment Comparison Tool</p>
   </header>
 
   <div class="app-layout">
@@ -748,7 +760,7 @@
         Compare
       </button>
       <div class="sidebar-shared-value">
-        <div class="shared-label">Total Upfront</div>
+        <div class="shared-label">Total Cash Investment</div>
         <div class="shared-amount" id="sidebarUpfront">-</div>
         <div class="shared-label" style="margin-top: 0.5rem;">Interest Rate</div>
         <div class="shared-amount" id="sidebarRate">-</div>
@@ -758,7 +770,7 @@
     <main class="content-area">
       <section id="tab-property" class="tab-content active">
         <div class="card">
-      <h2>Property Details</h2>
+      <h2>Property Purchase Details</h2>
 
       <!-- Purchase section -->
       <div class="input-section-header purchase">Purchase</div>
@@ -776,6 +788,9 @@
         <div class="input-wrapper has-suffix">
           <input type="number" id="depositPct" value="20" min="0" max="100" step="1">
           <span class="suffix">%</span>
+        </div>
+        <div class="computed-display">
+          <span class="computed-value" id="resDepositAmount">$0</span>
         </div>
       </div>
 
@@ -873,7 +888,7 @@
         <span class="line-value" id="resConveyancing">-</span>
       </div>
       <div class="line-item total">
-        <span class="line-label">Total Upfront</span>
+        <span class="line-label">Total Cash Investment</span>
         <span class="line-value" id="resTotalUpfront">-</span>
       </div>
 
@@ -930,6 +945,10 @@
         <span class="line-label">Total Annual Expenses</span>
         <span class="line-value" id="resTotalExpenses">-</span>
       </div>
+      <div class="line-item muted">
+        <span class="line-label">Total Annual Expenses incl Tax Benefit</span>
+        <span class="line-value" id="resTotalExpensesAfterTax">-</span>
+      </div>
 
       <!-- Tax Benefit -->
       <div class="section-header taxbenefit">Potential Tax Benefit</div>
@@ -938,7 +957,7 @@
         <span class="line-value" id="resDeductible">-</span>
       </div>
       <div class="line-item muted">
-        <span class="line-label">Net Rental Position</span>
+        <span class="line-label">Net Rental Position <span class="help-tip" data-tip="Annual rent minus deductible expenses. If negative, the loss can offset your taxable income (negative gearing).">?</span></span>
         <span class="line-value" id="resNetRental">-</span>
       </div>
       <div class="line-item">
@@ -955,6 +974,7 @@
         <div class="result-label">Annual Cash Flow</div>
         <div class="result-value" id="annualCashFlow">-</div>
         <div class="result-sub" id="monthlyCashFlow"></div>
+        <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Includes annual rent income minus loan payments, property management, insurance, council rates, vacancy allowance, and maintenance.</div>
       </div>
 
       <div class="result-item">
@@ -971,11 +991,6 @@
         <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Net yield measures rental return after costs and is a more realistic indicator of cash flow than gross yield.</div>
       </div>
 
-      <div class="result-item">
-        <div class="result-label">Cash on Cash Return</div>
-        <div class="result-value" id="cashOnCash">-</div>
-        <div class="result-sub">Annual cash flow / total cash invested</div>
-      </div>
     </div>
 
     <div class="card full-width">
@@ -1013,6 +1028,10 @@
           <div class="line-item">
             <span class="line-label">Equity</span>
             <span class="line-value" id="proj5Equity">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Usable Equity <span class="help-tip" data-tip="80% of total equity — the maximum most banks will lend against">?</span></span>
+            <span class="line-value" id="proj5UsableEquity">-</span>
           </div>
 
           <div class="section-header cashflow">Cash Flow</div>
@@ -1065,11 +1084,11 @@
             <span class="line-value" id="proj5TotalProfit">-</span>
           </div>
           <div class="line-item">
-            <span class="line-label">Total Return on Cash <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
+            <span class="line-label">Total Cash Return % <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
             <span class="line-value" id="proj5ReturnOnCash">-</span>
           </div>
           <div class="line-item">
-            <span class="line-label">Annualised Return <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+            <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
             <span class="line-value" id="proj5AnnualisedReturn">-</span>
           </div>
         </div>
@@ -1096,6 +1115,10 @@
           <div class="line-item">
             <span class="line-label">Equity</span>
             <span class="line-value" id="proj10Equity">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Usable Equity <span class="help-tip" data-tip="80% of total equity — the maximum most banks will lend against">?</span></span>
+            <span class="line-value" id="proj10UsableEquity">-</span>
           </div>
 
           <div class="section-header cashflow">Cash Flow</div>
@@ -1148,11 +1171,11 @@
             <span class="line-value" id="proj10TotalProfit">-</span>
           </div>
           <div class="line-item">
-            <span class="line-label">Total Return on Cash <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
+            <span class="line-label">Total Cash Return % <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
             <span class="line-value" id="proj10ReturnOnCash">-</span>
           </div>
           <div class="line-item">
-            <span class="line-label">Annualised Return <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+            <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
             <span class="line-value" id="proj10AnnualisedReturn">-</span>
           </div>
         </div>
@@ -1179,6 +1202,10 @@
           <div class="line-item">
             <span class="line-label">Equity</span>
             <span class="line-value" id="projLifeEquity">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Usable Equity <span class="help-tip" data-tip="80% of total equity — the maximum most banks will lend against">?</span></span>
+            <span class="line-value" id="projLifeUsableEquity">-</span>
           </div>
 
           <div class="section-header cashflow">Cash Flow</div>
@@ -1231,11 +1258,11 @@
             <span class="line-value" id="projLifeTotalProfit">-</span>
           </div>
           <div class="line-item">
-            <span class="line-label">Total Return on Cash <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
+            <span class="line-label">Total Cash Return % <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
             <span class="line-value" id="projLifeReturnOnCash">-</span>
           </div>
           <div class="line-item">
-            <span class="line-label">Annualised Return <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+            <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
             <span class="line-value" id="projLifeAnnualisedReturn">-</span>
           </div>
         </div>
@@ -1255,7 +1282,7 @@
             </div>
             <div class="toggle-row">
               <input type="checkbox" id="usePropertyUpfront" checked>
-              <label for="usePropertyUpfront">Use Property Total Upfront</label>
+              <label for="usePropertyUpfront">Use Property Cash Investment Value</label>
             </div>
           </div>
 
@@ -1338,7 +1365,7 @@
             <span class="line-value positive" id="offsetSaved10">-</span>
           </div>
 
-          <div class="section-header offset">Lifetime of Loan</div>
+          <div class="section-header offset" id="offsetLifeHeader">Lifetime</div>
           <div class="line-item">
             <span class="line-label">Without Offset</span>
             <span class="line-value" id="offsetNoOffsetLife">-</span>
@@ -1366,7 +1393,7 @@
             </div>
             <div class="toggle-row">
               <input type="checkbox" id="usePropertyUpfrontStocks" checked>
-              <label for="usePropertyUpfrontStocks">Use Property Total Upfront</label>
+              <label for="usePropertyUpfrontStocks">Use Property Cash Investment Value</label>
             </div>
           </div>
 
@@ -1446,6 +1473,14 @@
             <span class="line-label">Total Return</span>
             <span class="line-value" id="stocks5Return">-</span>
           </div>
+          <div class="line-item muted">
+            <span class="line-label">Conservative</span>
+            <span class="line-value" id="stocks5ConsReturn">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Worst Case</span>
+            <span class="line-value" id="stocks5WorstReturn">-</span>
+          </div>
 
           <div class="section-header stocks">10 Year</div>
           <div class="line-item">
@@ -1468,8 +1503,16 @@
             <span class="line-label">Total Return</span>
             <span class="line-value" id="stocks10Return">-</span>
           </div>
+          <div class="line-item muted">
+            <span class="line-label">Conservative</span>
+            <span class="line-value" id="stocks10ConsReturn">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Worst Case</span>
+            <span class="line-value" id="stocks10WorstReturn">-</span>
+          </div>
 
-          <div class="section-header stocks">Lifetime</div>
+          <div class="section-header stocks" id="stocksLifeHeader">Lifetime</div>
           <div class="line-item">
             <span class="line-label">Portfolio Value</span>
             <span class="line-value" id="stocksLifePortfolio">-</span>
@@ -1489,6 +1532,14 @@
           <div class="line-item total">
             <span class="line-label">Total Return</span>
             <span class="line-value" id="stocksLifeReturn">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Conservative</span>
+            <span class="line-value" id="stocksLifeConsReturn">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Worst Case</span>
+            <span class="line-value" id="stocksLifeWorstReturn">-</span>
           </div>
         </div>
       </section>
@@ -1530,6 +1581,30 @@
                 <td id="cmp5OffsetAnn">-</td>
                 <td id="cmp5StocksAnn">-</td>
               </tr>
+              <tr class="compare-scenario-start compare-muted">
+                <td>Conservative<div class="computed-note" id="cmp5ConsTip"></div></td>
+                <td id="cmp5PropertyCons">-</td>
+                <td id="cmp5OffsetCons">-</td>
+                <td id="cmp5StocksCons">-</td>
+              </tr>
+              <tr class="compare-muted">
+                <td>Annualised</td>
+                <td id="cmp5PropertyConsAnn">-</td>
+                <td id="cmp5OffsetConsAnn">-</td>
+                <td id="cmp5StocksConsAnn">-</td>
+              </tr>
+              <tr class="compare-muted">
+                <td>Worst Case<div class="computed-note" id="cmp5WorstTip"></div></td>
+                <td id="cmp5PropertyWorst">-</td>
+                <td id="cmp5OffsetWorst">-</td>
+                <td id="cmp5StocksWorst">-</td>
+              </tr>
+              <tr class="compare-muted">
+                <td>Annualised</td>
+                <td id="cmp5PropertyWorstAnn">-</td>
+                <td id="cmp5OffsetWorstAnn">-</td>
+                <td id="cmp5StocksWorstAnn">-</td>
+              </tr>
               <tr class="compare-section-row">
                 <td colspan="4">10 Year</td>
               </tr>
@@ -1545,6 +1620,30 @@
                 <td id="cmp10OffsetAnn">-</td>
                 <td id="cmp10StocksAnn">-</td>
               </tr>
+              <tr class="compare-scenario-start compare-muted">
+                <td>Conservative<div class="computed-note" id="cmp10ConsTip"></div></td>
+                <td id="cmp10PropertyCons">-</td>
+                <td id="cmp10OffsetCons">-</td>
+                <td id="cmp10StocksCons">-</td>
+              </tr>
+              <tr class="compare-muted">
+                <td>Annualised</td>
+                <td id="cmp10PropertyConsAnn">-</td>
+                <td id="cmp10OffsetConsAnn">-</td>
+                <td id="cmp10StocksConsAnn">-</td>
+              </tr>
+              <tr class="compare-muted">
+                <td>Worst Case<div class="computed-note" id="cmp10WorstTip"></div></td>
+                <td id="cmp10PropertyWorst">-</td>
+                <td id="cmp10OffsetWorst">-</td>
+                <td id="cmp10StocksWorst">-</td>
+              </tr>
+              <tr class="compare-muted">
+                <td>Annualised</td>
+                <td id="cmp10PropertyWorstAnn">-</td>
+                <td id="cmp10OffsetWorstAnn">-</td>
+                <td id="cmp10StocksWorstAnn">-</td>
+              </tr>
               <tr class="compare-section-row">
                 <td colspan="4" id="cmpLifeHeader">Lifetime</td>
               </tr>
@@ -1559,6 +1658,30 @@
                 <td id="cmpLifePropertyAnn">-</td>
                 <td id="cmpLifeOffsetAnn">-</td>
                 <td id="cmpLifeStocksAnn">-</td>
+              </tr>
+              <tr class="compare-scenario-start compare-muted">
+                <td>Conservative<div class="computed-note" id="cmpLifeConsTip"></div></td>
+                <td id="cmpLifePropertyCons">-</td>
+                <td id="cmpLifeOffsetCons">-</td>
+                <td id="cmpLifeStocksCons">-</td>
+              </tr>
+              <tr class="compare-muted">
+                <td>Annualised</td>
+                <td id="cmpLifePropertyConsAnn">-</td>
+                <td id="cmpLifeOffsetConsAnn">-</td>
+                <td id="cmpLifeStocksConsAnn">-</td>
+              </tr>
+              <tr class="compare-muted">
+                <td>Worst Case<div class="computed-note" id="cmpLifeWorstTip"></div></td>
+                <td id="cmpLifePropertyWorst">-</td>
+                <td id="cmpLifeOffsetWorst">-</td>
+                <td id="cmpLifeStocksWorst">-</td>
+              </tr>
+              <tr class="compare-muted">
+                <td>Annualised</td>
+                <td id="cmpLifePropertyWorstAnn">-</td>
+                <td id="cmpLifeOffsetWorstAnn">-</td>
+                <td id="cmpLifeStocksWorstAnn">-</td>
               </tr>
             </tbody>
           </table>
@@ -1746,6 +1869,7 @@
 
       // Core figures
       const deposit = purchasePrice * depositPct;
+      document.getElementById('resDepositAmount').textContent = formatCurrency(deposit);
       const loanAmount = purchasePrice - deposit;
 
       // Loan payment calculation
@@ -1839,6 +1963,9 @@
       tbEl.textContent = taxBenefit > 0 ? formatCurrency(taxBenefit) + '/yr' : '-';
       tbEl.className = 'line-value ' + (taxBenefit > 0 ? 'positive' : '');
 
+      const totalExpensesAfterTax = totalExpenses - taxBenefit;
+      document.getElementById('resTotalExpensesAfterTax').textContent = formatCurrency(totalExpensesAfterTax) + '/yr';
+
       // Update DOM — Results
       const cashFlowEl = document.getElementById('annualCashFlow');
       cashFlowEl.textContent = formatCurrency(annualCashFlow) + '/yr';
@@ -1850,11 +1977,6 @@
       const netYieldEl = document.getElementById('netYield');
       netYieldEl.textContent = netYield.toFixed(2) + '%';
       netYieldEl.className = 'result-value ' + (netYield >= 0 ? 'positive' : 'negative');
-
-      const cashOnCash = totalUpfront > 0 ? (annualCashFlow / totalUpfront) * 100 : 0;
-      const cocEl = document.getElementById('cashOnCash');
-      cocEl.textContent = cashOnCash.toFixed(2) + '%';
-      cocEl.className = 'result-value ' + (cashOnCash >= 0 ? 'positive' : 'negative');
 
       // Projections
       document.getElementById('projLifeHeader').textContent = loanTerm + ' Year (Lifetime)';
@@ -1897,6 +2019,8 @@
         document.getElementById(`${prefix}Principal`).textContent = formatCurrency(principalPaid);
         document.getElementById(`${prefix}Loan`).textContent = formatCurrency(remainingLoan);
         document.getElementById(`${prefix}Equity`).textContent = formatCurrency(equity);
+        const usableEquity = equity * 0.8;
+        document.getElementById(`${prefix}UsableEquity`).textContent = formatCurrency(usableEquity);
         document.getElementById(`${prefix}Rent`).textContent = formatCurrency(futureWeeklyRent) + '/wk';
 
         const cfEl = document.getElementById(`${prefix}CashFlow`);
@@ -2008,6 +2132,7 @@
       const rate = (parseFloat(offsetRateInput.value) || 0) / 100;
       const loanType = offsetLoanTypeSelect.value;
       const loanTerm = parseFloat(document.getElementById('offsetLoanTerm').value) || 30;
+      document.getElementById('offsetLifeHeader').textContent = loanTerm + ' Year (Lifetime)';
 
       // Cap offset at loan balance
       const effectiveOffset = Math.min(offsetAmount, loanBalance);
@@ -2184,6 +2309,7 @@
       const dividendYield = (parseFloat(stocksDividendInput.value) || 0) / 100;
       const reinvest = document.getElementById('stocksReinvest').checked;
       const period = parseInt(stocksPeriodInput.value) || 30;
+      document.getElementById('stocksLifeHeader').textContent = period + ' Year (Lifetime)';
 
       // Total return p.a.
       const totalReturnPA = (growthRate + dividendYield) * 100;
@@ -2224,6 +2350,48 @@
         retEl.className = 'line-value ' + (totalReturn >= 0 ? 'positive' : 'negative');
       });
 
+      // Conservative & Worst case for stocks display
+      const stkTypeVal = stocksTypeSelect.value;
+
+      const consPreset = stocksConsPresets[stkTypeVal];
+      const worstPreset = stocksWorstPresets[stkTypeVal];
+
+      function calcScenarioReturn(gRate, dRate, yrs) {
+        let v = investment;
+        let cd = 0;
+        for (let yr = 1; yr <= yrs; yr++) {
+          v *= (1 + gRate);
+          const yd = v * dRate;
+          cd += yd;
+          if (reinvest) v += yd;
+        }
+        return (reinvest ? v : v + cd) - investment;
+      }
+
+      let consGr, consDy, worstGr, worstDy;
+      if (stkTypeVal === 'Custom') {
+        consGr = growthRate / 2;
+        consDy = dividendYield / 2;
+        worstGr = -0.05;
+        worstDy = 0;
+      } else {
+        consGr = consPreset.growth / 100;
+        consDy = consPreset.dividend / 100;
+        worstGr = worstPreset.growth / 100;
+        worstDy = worstPreset.dividend / 100;
+      }
+
+      horizons.forEach(({ years, prefix }) => {
+        const consRet = calcScenarioReturn(consGr, consDy, years);
+        const worstRet = calcScenarioReturn(worstGr, worstDy, years);
+        const consEl = document.getElementById(prefix + 'ConsReturn');
+        consEl.textContent = formatCurrency(consRet);
+        consEl.style.color = consRet >= 0 ? '#6bc985' : '#e87c6c';
+        const worstEl = document.getElementById(prefix + 'WorstReturn');
+        worstEl.textContent = formatCurrency(worstRet);
+        worstEl.style.color = worstRet >= 0 ? '#6bc985' : '#e87c6c';
+      });
+
       updateCompare();
     }
 
@@ -2240,6 +2408,126 @@
       row.style.display = visible ? 'none' : '';
       this.textContent = visible ? '\u2212 Assumptions' : '+ Assumptions';
     });
+
+    // --- Worst Case Helpers ---
+
+    function calcPropertyTotalProfit(years, worstGrowth) {
+      const purchasePrice = getVal('purchasePrice');
+      const depositPct = getVal('depositPct') / 100;
+      const state = document.getElementById('state').value;
+      const defaults = stateDefaults[state];
+      const stampDuty = Math.round(calcStampDuty(state, purchasePrice));
+      const lType = document.getElementById('loanType').value;
+      const lTermYrs = getVal('loanTerm');
+      const iRate = getVal('interestRate') / 100;
+      const wRent = getVal('weeklyRent');
+      const mgmtPct = getVal('managementFee') / 100;
+      const deposit = purchasePrice * depositPct;
+      const loan = purchasePrice - deposit;
+      const conv = defaults.conveyancing;
+      const ins = defaults.insurance;
+      const council = defaults.council;
+      const upfront = deposit + stampDuty + conv;
+
+      let annLoan;
+      if (lType === 'IO' || iRate === 0) {
+        annLoan = loan * iRate;
+      } else {
+        const mr = iRate / 12;
+        const np = lTermYrs * 12;
+        annLoan = loan * (mr * Math.pow(1 + mr, np)) / (Math.pow(1 + mr, np) - 1) * 12;
+      }
+
+      const fv = purchasePrice * Math.pow(1 + worstGrowth, years);
+      let remLoan;
+      if (lType === 'IO') {
+        remLoan = loan;
+      } else if (iRate === 0) {
+        remLoan = Math.max(0, loan - (loan / (lTermYrs * 12)) * (years * 12));
+      } else {
+        const mr = iRate / 12;
+        const tp = lTermYrs * 12;
+        const pm = Math.min(years * 12, tp);
+        remLoan = loan * (Math.pow(1 + mr, tp) - Math.pow(1 + mr, pm)) / (Math.pow(1 + mr, tp) - 1);
+        if (remLoan < 0) remLoan = 0;
+      }
+
+      const saleCosts = fv * 0.03;
+      const netProceeds = fv - saleCosts - remLoan;
+      const costBase = purchasePrice + stampDuty + conv + saleCosts;
+      const capGain = fv - costBase;
+      const cgt = capGain > 0 ? capGain * 0.50 * 0.30 : 0;
+      const trueCash = netProceeds - cgt;
+
+      let cumCF = 0;
+      for (let y = 1; y <= years; y++) {
+        const yRent = wRent * Math.pow(1 + worstGrowth, y) * 52;
+        const yVal = purchasePrice * Math.pow(1 + worstGrowth, y);
+        const yExp = annLoan + (yRent * mgmtPct) + ins + council + (wRent * Math.pow(1 + worstGrowth, y) * 2) + (yVal * 0.005);
+        cumCF += yRent - yExp;
+      }
+
+      return (trueCash - upfront) + cumCF;
+    }
+
+    const stocksWorstPresets = {
+      ASX200:     { growth: -3,  dividend: 2    },
+      SP500:      { growth: -7,  dividend: 0.75 },
+      HighGrowth: { growth: -10, dividend: 0.25 },
+      Custom:     { growth: -5,  dividend: 0    },
+    };
+
+    function calcStocksWorstCase(years) {
+      const investment = parseFloat(stocksAmountInput.value) || 0;
+      const type = stocksTypeSelect.value;
+      const worst = stocksWorstPresets[type];
+      const gr = worst.growth / 100;
+      const dy = worst.dividend / 100;
+      const reinvest = document.getElementById('stocksReinvest').checked;
+
+      let value = investment;
+      let cumDiv = 0;
+      for (let y = 1; y <= years; y++) {
+        value *= (1 + gr);
+        const yd = value * dy;
+        cumDiv += yd;
+        if (reinvest) value += yd;
+      }
+      const totalValue = reinvest ? value : value + cumDiv;
+      return totalValue - investment;
+    }
+
+    const stocksConsPresets = {
+      ASX200:     { growth: 3, dividend: 3   },
+      SP500:      { growth: 4, dividend: 1   },
+      HighGrowth: { growth: 5, dividend: 0.3 },
+    };
+
+    function calcStocksConsCase(years) {
+      const investment = parseFloat(stocksAmountInput.value) || 0;
+      const type = stocksTypeSelect.value;
+      let gr, dy;
+      if (type === 'Custom') {
+        gr = ((parseFloat(stocksGrowthInput.value) || 0) / 2) / 100;
+        dy = ((parseFloat(stocksDividendInput.value) || 0) / 2) / 100;
+      } else {
+        const cons = stocksConsPresets[type];
+        gr = cons.growth / 100;
+        dy = cons.dividend / 100;
+      }
+      const reinvest = document.getElementById('stocksReinvest').checked;
+
+      let value = investment;
+      let cumDiv = 0;
+      for (let y = 1; y <= years; y++) {
+        value *= (1 + gr);
+        const yd = value * dy;
+        cumDiv += yd;
+        if (reinvest) value += yd;
+      }
+      const totalValue = reinvest ? value : value + cumDiv;
+      return totalValue - investment;
+    }
 
     function updateCompare() {
       const loanTermVal = window.TrueReturn.loanTerm || 30;
@@ -2301,16 +2589,11 @@
       document.getElementById('cmp10Offset').textContent = saved10;
       document.getElementById('cmpLifeOffset').textContent = savedLife;
 
-      // Offset annualised: interest saved / offset amount / years
-      function offsetAnn(savedStr, years) {
-        if (offsetAmount <= 0 || years <= 0) return '-';
-        const num = parseFloat(savedStr.replace(/[^0-9.\-]/g, ''));
-        if (isNaN(num)) return '-';
-        return ((num / offsetAmount / years) * 100).toFixed(2) + '%';
-      }
-      document.getElementById('cmp5OffsetAnn').textContent = offsetAnn(saved5, 5);
-      document.getElementById('cmp10OffsetAnn').textContent = offsetAnn(saved10, 10);
-      document.getElementById('cmpLifeOffsetAnn').textContent = offsetAnn(savedLife, loanTermVal);
+      // Offset annualised: effective return = the interest rate (tax-free)
+      const offsetAnn = document.getElementById('offsetEffectiveReturn').textContent;
+      document.getElementById('cmp5OffsetAnn').textContent = offsetAnn;
+      document.getElementById('cmp10OffsetAnn').textContent = offsetAnn;
+      document.getElementById('cmpLifeOffsetAnn').textContent = offsetAnn;
 
       // Stocks: Total Return + annualised
       const stocksInvestment = parseFloat(document.getElementById('stocksAmount').value) || 0;
@@ -2335,6 +2618,87 @@
       document.getElementById('cmp5StocksAnn').textContent = stocksAnn('stocks5Return', 5);
       document.getElementById('cmp10StocksAnn').textContent = stocksAnn('stocks10Return', 10);
       document.getElementById('cmpLifeStocksAnn').textContent = stocksAnn('stocksLifeReturn', loanTermVal);
+
+      // --- Scenario helpers ---
+      function setScenarioCell(id, value) {
+        const el = document.getElementById(id);
+        const color = value < 0 ? '#e87c6c' : value > 0 ? '#6bc985' : '';
+        el.innerHTML = `<span style="color:${color}">${formatCurrency(value)}</span>`;
+      }
+
+      function setScenarioCellNA(id) {
+        const el = document.getElementById(id);
+        el.innerHTML = `<span style="color:#6b6459">N/A</span>`;
+      }
+
+      const offsetScenarioTip = 'Offset returns are fixed at the loan rate regardless of market conditions.';
+      const selectedType = stocksTypeSelect.value;
+      const selectedTypeName = stocksTypeSelect.options[stocksTypeSelect.selectedIndex].text;
+      const propUpfront = window.TrueReturn.totalUpfront;
+
+      function scenarioPropertyAnn(profit, years) {
+        if (propUpfront <= 0 || years <= 0) return '-';
+        return (Math.pow(1 + profit / propUpfront, 1 / years) - 1) * 100;
+      }
+
+      function scenarioStocksAnn(returnVal, years) {
+        const inv = parseFloat(stocksAmountInput.value) || 0;
+        if (inv <= 0 || years <= 0) return '-';
+        return (Math.pow((inv + returnVal) / inv, 1 / years) - 1) * 100;
+      }
+
+      function setAnnCell(id, annVal) {
+        const el = document.getElementById(id);
+        if (annVal === '-') { el.textContent = '-'; el.style.color = ''; return; }
+        el.textContent = annVal.toFixed(2) + '%';
+        el.style.color = annVal < 0 ? '#e87c6c' : annVal > 0 ? '#6bc985' : '';
+      }
+
+      // --- Conservative Case ---
+      const propConsTip = 'Assumes 2% p.a. property growth (below long-term average). All other inputs unchanged.';
+      const stkCons = stocksConsPresets[selectedType];
+      const stkConsTip = selectedType === 'Custom'
+        ? `Assumes half your entered growth (${((parseFloat(stocksGrowthInput.value) || 0) / 2).toFixed(1)}%) and half dividend (${((parseFloat(stocksDividendInput.value) || 0) / 2).toFixed(1)}%) as a conservative estimate.`
+        : `Assumes ${stkCons.growth}% growth, ${stkCons.dividend}% dividend — below-average returns for ${selectedTypeName}.`;
+
+      [{ p: 'cmp5', y: 5 }, { p: 'cmp10', y: 10 }, { p: 'cmpLife', y: loanTermVal }].forEach(({ p, y }) => {
+        const propConsProfit = calcPropertyTotalProfit(y, 0.02);
+        const stkConsReturn = calcStocksConsCase(y);
+        setScenarioCell(p + 'PropertyCons', propConsProfit);
+        setScenarioCellNA(p + 'OffsetCons');
+        setScenarioCell(p + 'StocksCons', stkConsReturn);
+        setAnnCell(p + 'PropertyConsAnn', scenarioPropertyAnn(propConsProfit, y));
+        document.getElementById(p + 'OffsetConsAnn').textContent = offsetAnn;
+        setAnnCell(p + 'StocksConsAnn', scenarioStocksAnn(stkConsReturn, y));
+      });
+
+      const consDescription = 'Property: 2% p.a. growth. Stocks: ' + (selectedType === 'Custom' ? 'half entered values.' : stkCons.growth + '% growth, ' + stkCons.dividend + '% dividend.');
+      ['cmp5', 'cmp10', 'cmpLife'].forEach(p => {
+        document.getElementById(p + 'ConsTip').textContent = consDescription;
+      });
+
+      // --- Worst Case ---
+      const propWorstTip = 'Assumes property declines 2% p.a. All other inputs unchanged.';
+      const stkWorst = stocksWorstPresets[selectedType];
+      const stkWorstTip = selectedType === 'Custom'
+        ? 'Assumes -5% growth, 0% dividend as a worst-case stress test.'
+        : `Assumes ${stkWorst.growth}% growth, ${stkWorst.dividend}% dividend based on worst historical rolling returns for ${selectedTypeName}.`;
+
+      [{ p: 'cmp5', y: 5 }, { p: 'cmp10', y: 10 }, { p: 'cmpLife', y: loanTermVal }].forEach(({ p, y }) => {
+        const propWorstProfit = calcPropertyTotalProfit(y, -0.02);
+        const stkWorstReturn = calcStocksWorstCase(y);
+        setScenarioCell(p + 'PropertyWorst', propWorstProfit);
+        setScenarioCellNA(p + 'OffsetWorst');
+        setScenarioCell(p + 'StocksWorst', stkWorstReturn);
+        setAnnCell(p + 'PropertyWorstAnn', scenarioPropertyAnn(propWorstProfit, y));
+        document.getElementById(p + 'OffsetWorstAnn').textContent = offsetAnn;
+        setAnnCell(p + 'StocksWorstAnn', scenarioStocksAnn(stkWorstReturn, y));
+      });
+
+      const worstDescription = 'Property: -2% p.a. decline. Stocks: ' + (selectedType === 'Custom' ? '-5% growth, 0% dividend.' : stkWorst.growth + '% growth, ' + stkWorst.dividend + '% dividend.');
+      ['cmp5', 'cmp10', 'cmpLife'].forEach(p => {
+        document.getElementById(p + 'WorstTip').textContent = worstDescription;
+      });
 
       // Color the return cells
       ['cmp5Property', 'cmp10Property', 'cmpLifeProperty',
