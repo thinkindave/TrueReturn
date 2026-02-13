@@ -1547,6 +1547,10 @@
       <section id="tab-compare" class="tab-content">
         <div class="card full-width">
           <h2>Compare Investments</h2>
+          <div id="cmpMismatchWarning" style="display: none; background: #2e2720; border: 1px solid #4a3a2d; border-radius: 8px; padding: 0.625rem 0.75rem; margin-bottom: 1rem; font-size: 0.8125rem; color: #e0c068; line-height: 1.5;">
+            <span style="margin-right: 0.375rem;">&#9888;</span>
+            <span id="cmpMismatchText"></span>
+          </div>
           <table class="compare-table">
             <thead>
               <tr>
@@ -2533,6 +2537,22 @@
       const loanTermVal = window.TrueReturn.loanTerm || 30;
       document.getElementById('cmpLifeHeader').textContent = loanTermVal + ' Year (Lifetime)';
 
+      // Mismatch warning
+      const propAmount = Math.round(window.TrueReturn.totalUpfront);
+      const offAmount = Math.round(parseFloat(document.getElementById('offsetAmount').value) || 0);
+      const stkAmount = Math.round(parseFloat(document.getElementById('stocksAmount').value) || 0);
+      const mismatches = [];
+      if (offAmount !== propAmount) mismatches.push('Offset (' + formatCurrency(offAmount) + ')');
+      if (stkAmount !== propAmount) mismatches.push('Stocks / ETFs (' + formatCurrency(stkAmount) + ')');
+      const warningEl = document.getElementById('cmpMismatchWarning');
+      if (mismatches.length > 0) {
+        document.getElementById('cmpMismatchText').textContent =
+          mismatches.join(' and ') + ' using a different cash investment amount to Property (' + formatCurrency(propAmount) + '). This comparison is not like-for-like.';
+        warningEl.style.display = '';
+      } else {
+        warningEl.style.display = 'none';
+      }
+
       // Details: Property
       const propPrice = formatCurrency(getVal('purchasePrice'));
       const propDeposit = getVal('depositPct');
@@ -2548,26 +2568,26 @@
         `<span><strong>${propRent}</strong>/wk rent</span>`;
 
       // Details: Offset
-      const offAmount = formatCurrency(parseFloat(document.getElementById('offsetAmount').value) || 0);
+      const offAmountFmt = formatCurrency(parseFloat(document.getElementById('offsetAmount').value) || 0);
       const offBalance = formatCurrency(parseFloat(document.getElementById('offsetLoanBalance').value) || 0);
       const offRate = parseFloat(document.getElementById('offsetInterestRate').value) || 0;
       const offLoanType = document.getElementById('offsetLoanType').value === 'PI' ? 'P&I' : 'Interest Only';
       const offTerm = parseFloat(document.getElementById('offsetLoanTerm').value) || 30;
       document.getElementById('cmpDetailsOffset').innerHTML =
-        `<span><strong>${offAmount}</strong> in offset</span>` +
+        `<span><strong>${offAmountFmt}</strong> in offset</span>` +
         `<span><strong>${offBalance}</strong> loan balance</span>` +
         `<span><strong>${offRate}%</strong> interest · <strong>${offLoanType}</strong></span>` +
         `<span><strong>${offTerm} yr</strong> loan term</span>`;
 
       // Details: Stocks
-      const stkAmount = formatCurrency(parseFloat(document.getElementById('stocksAmount').value) || 0);
+      const stkAmountFmt = formatCurrency(parseFloat(document.getElementById('stocksAmount').value) || 0);
       const stkType = document.getElementById('stocksType').options[document.getElementById('stocksType').selectedIndex].text;
       const stkGrowth = parseFloat(document.getElementById('stocksGrowth').value) || 0;
       const stkDiv = parseFloat(document.getElementById('stocksDividend').value) || 0;
       const stkReinvest = document.getElementById('stocksReinvest').checked ? 'Yes' : 'No';
       const stkPeriod = parseInt(document.getElementById('stocksPeriod').value) || 30;
       document.getElementById('cmpDetailsStocks').innerHTML =
-        `<span><strong>${stkAmount}</strong> invested</span>` +
+        `<span><strong>${stkAmountFmt}</strong> invested</span>` +
         `<span><strong>${stkType}</strong></span>` +
         `<span><strong>${stkGrowth}%</strong> growth · <strong>${stkDiv}%</strong> dividend</span>` +
         `<span>Reinvest: <strong>${stkReinvest}</strong> · <strong>${stkPeriod} yr</strong></span>`;
