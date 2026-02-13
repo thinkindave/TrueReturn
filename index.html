@@ -180,7 +180,7 @@
 
     .projections-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 2rem;
     }
 
@@ -405,6 +405,100 @@
     .section-header.offset {
       color: #e0c068;
       border-color: #4a3f2d;
+    }
+
+    .section-header.stocks {
+      color: #7cacf0;
+      border-color: #2d3a4a;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .compare-table th,
+    .compare-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: right;
+      font-size: 0.875rem;
+    }
+
+    .compare-table th {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #8a8275;
+      border-bottom: 2px solid #2e2b26;
+    }
+
+    .compare-table th:first-child,
+    .compare-table td:first-child {
+      text-align: left;
+    }
+
+    .compare-table td {
+      border-bottom: 1px solid #2a2720;
+      color: #e8e0d5;
+      font-weight: 600;
+    }
+
+    .compare-table td:first-child {
+      color: #8a8275;
+      font-weight: 500;
+    }
+
+    .compare-table .compare-section-row td {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #7cacf0;
+      border-bottom: 2px solid #2d3a4a;
+      padding-top: 1.25rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .compare-table .compare-section-row:first-child td {
+      padding-top: 0.625rem;
+    }
+
+    .compare-toggle-row td {
+      padding-top: 0.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: none;
+    }
+
+    .compare-toggle {
+      cursor: pointer;
+      color: #6b6459;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .compare-toggle:hover {
+      color: #8a8275;
+    }
+
+    .compare-details-row td {
+      padding-top: 0;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #2a2720;
+      font-weight: 400;
+      vertical-align: top;
+    }
+
+    .compare-details-row td span {
+      display: block;
+      color: #6b6459;
+      font-size: 0.75rem;
+      line-height: 1.6;
+    }
+
+    .compare-details-row td strong {
+      color: #8a8275;
+      font-weight: 600;
     }
 
     .toggle-row {
@@ -1062,6 +1156,89 @@
             <span class="line-value" id="proj10AnnualisedReturn">-</span>
           </div>
         </div>
+
+        <!-- Lifetime -->
+        <div>
+          <div class="section-header projection" id="projLifeHeader">Lifetime</div>
+          <div class="line-item">
+            <span class="line-label">Property Value</span>
+            <span class="line-value" id="projLifeValue">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Capital Growth</span>
+            <span class="line-value" id="projLifeGrowth">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Principal Paid Down</span>
+            <span class="line-value" id="projLifePrincipal">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Remaining Loan</span>
+            <span class="line-value" id="projLifeLoan">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Equity</span>
+            <span class="line-value" id="projLifeEquity">-</span>
+          </div>
+
+          <div class="section-header cashflow">Cash Flow</div>
+          <div class="line-item">
+            <span class="line-label">Est. Weekly Rent <span class="help-tip" data-tip="Rent increases in line with property value growth">?</span></span>
+            <span class="line-value" id="projLifeRent">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Est. Annual Cash Flow</span>
+            <span class="line-value" id="projLifeCashFlow">-</span>
+          </div>
+
+          <div class="section-header cashout">Cash Out Position</div>
+          <div class="line-item">
+            <span class="line-label">Sale Price</span>
+            <span class="line-value" id="projLifeSale">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Sales Costs <span class="help-tip" data-tip="Estimated at 3% of sale price (agent fees, legal, marketing)">?</span></span>
+            <span class="line-value" id="projLifeSaleCosts">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Remaining Loan Payout</span>
+            <span class="line-value" id="projLifeLoanPayout">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Net Proceeds Before Tax</span>
+            <span class="line-value" id="projLifeNetProceeds">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="50% CGT discount applied. Assumed 30% marginal tax rate based on median Australian salary. Actual rate depends on your taxable income.">?</span></span>
+            <span class="line-value" id="projLifeCGT">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">True Cash Return</span>
+            <span class="line-value" id="projLifeTrueReturn">-</span>
+          </div>
+
+          <div class="section-header performance">Investment Performance</div>
+          <div class="line-item muted">
+            <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
+            <span class="line-value" id="projLifeCashInvested">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
+            <span class="line-value" id="projLifeCumCashFlow">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Total Profit <span class="help-tip" data-tip="True cash return minus cash invested, plus cumulative cash flow">?</span></span>
+            <span class="line-value" id="projLifeTotalProfit">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Total Return on Cash <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
+            <span class="line-value" id="projLifeReturnOnCash">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Annualised Return <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+            <span class="line-value" id="projLifeAnnualisedReturn">-</span>
+          </div>
+        </div>
       </div>
         </div>
       </section>
@@ -1177,21 +1354,214 @@
         </div>
       </section>
 
-      <section id="tab-stocks" class="tab-content tab-placeholder-layout">
-        <div class="tab-placeholder">
-          <h2>Stocks / Shares / ETFs</h2>
-          <p>Compare what the same upfront investment could return in the share market over the same period.</p>
-          <p>Using your Property investment amount:</p>
-          <div class="placeholder-amount" id="placeholderStocksAmount">-</div>
+      <section id="tab-stocks" class="tab-content two-col-layout">
+        <div class="card">
+          <h2>Investment Details</h2>
+
+          <div class="form-group">
+            <label for="stocksAmount">Investment Amount</label>
+            <div class="input-wrapper has-prefix">
+              <span class="prefix">$</span>
+              <input type="number" id="stocksAmount" value="0" min="0" step="1000">
+            </div>
+            <div class="toggle-row">
+              <input type="checkbox" id="usePropertyUpfrontStocks" checked>
+              <label for="usePropertyUpfrontStocks">Use Property Total Upfront</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="stocksType">Investment Type</label>
+            <select id="stocksType">
+              <option value="ASX200">ASX 200</option>
+              <option value="SP500">S&P 500</option>
+              <option value="HighGrowth">High-Growth ETF</option>
+              <option value="Custom">Custom</option>
+            </select>
+            <div class="computed-note" id="stocksTypeNote" style="margin-top: 0.5rem; line-height: 1.4;"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="stocksGrowth">Annual Growth</label>
+            <div class="input-wrapper has-suffix">
+              <input type="number" id="stocksGrowth" value="7" min="-50" max="100" step="0.5" disabled>
+              <span class="suffix">%</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="stocksDividend">Dividend Yield</label>
+            <div class="input-wrapper has-suffix">
+              <input type="number" id="stocksDividend" value="4" min="0" max="100" step="0.5" disabled>
+              <span class="suffix">%</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="toggle-row" style="margin-top: 0;">
+              <input type="checkbox" id="stocksReinvest" checked>
+              <label for="stocksReinvest">Reinvest Dividends</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="stocksPeriod">Investment Period</label>
+            <div class="input-wrapper has-suffix">
+              <input type="number" id="stocksPeriod" value="30" min="1" max="50" step="1">
+              <span class="suffix">yrs</span>
+            </div>
+            <div class="toggle-row">
+              <input type="checkbox" id="usePropertyTermStocks" checked>
+              <label for="usePropertyTermStocks">Use Property Loan Term</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card results-card">
+          <h2>Investment Returns</h2>
+
+          <div class="result-item">
+            <div class="result-label">Total Return p.a.</div>
+            <div class="result-value positive" id="stocksTotalReturnPA">-</div>
+          </div>
+
+          <div class="section-header stocks">5 Year</div>
+          <div class="line-item">
+            <span class="line-label">Portfolio Value</span>
+            <span class="line-value" id="stocks5Portfolio">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Capital Growth</span>
+            <span class="line-value" id="stocks5Growth">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Dividends Earned</span>
+            <span class="line-value" id="stocks5Dividends">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Total Value</span>
+            <span class="line-value" id="stocks5TotalValue">-</span>
+          </div>
+          <div class="line-item total">
+            <span class="line-label">Total Return</span>
+            <span class="line-value" id="stocks5Return">-</span>
+          </div>
+
+          <div class="section-header stocks">10 Year</div>
+          <div class="line-item">
+            <span class="line-label">Portfolio Value</span>
+            <span class="line-value" id="stocks10Portfolio">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Capital Growth</span>
+            <span class="line-value" id="stocks10Growth">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Dividends Earned</span>
+            <span class="line-value" id="stocks10Dividends">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Total Value</span>
+            <span class="line-value" id="stocks10TotalValue">-</span>
+          </div>
+          <div class="line-item total">
+            <span class="line-label">Total Return</span>
+            <span class="line-value" id="stocks10Return">-</span>
+          </div>
+
+          <div class="section-header stocks">Lifetime</div>
+          <div class="line-item">
+            <span class="line-label">Portfolio Value</span>
+            <span class="line-value" id="stocksLifePortfolio">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Capital Growth</span>
+            <span class="line-value" id="stocksLifeGrowth">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Dividends Earned</span>
+            <span class="line-value" id="stocksLifeDividends">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Total Value</span>
+            <span class="line-value" id="stocksLifeTotalValue">-</span>
+          </div>
+          <div class="line-item total">
+            <span class="line-label">Total Return</span>
+            <span class="line-value" id="stocksLifeReturn">-</span>
+          </div>
         </div>
       </section>
 
-      <section id="tab-compare" class="tab-content tab-placeholder-layout">
-        <div class="tab-placeholder">
+      <section id="tab-compare" class="tab-content">
+        <div class="card full-width">
           <h2>Compare Investments</h2>
-          <p>Side-by-side comparison of property vs offset vs stocks using the same starting capital.</p>
-          <p>Using your Property investment amount:</p>
-          <div class="placeholder-amount" id="placeholderCompareAmount">-</div>
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Property<br><span style="font-weight:400;">Total Profit</span></th>
+                <th>Offset<br><span style="font-weight:400;">Interest Saved</span></th>
+                <th>Stocks / ETFs<br><span style="font-weight:400;">Total Return</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="compare-toggle-row">
+                <td colspan="4"><span class="compare-toggle" id="cmpDetailsToggle">+ Assumptions</span></td>
+              </tr>
+              <tr class="compare-details-row" id="cmpDetailsRow" style="display: none;">
+                <td></td>
+                <td id="cmpDetailsProperty"></td>
+                <td id="cmpDetailsOffset"></td>
+                <td id="cmpDetailsStocks"></td>
+              </tr>
+              <tr class="compare-section-row">
+                <td colspan="4">5 Year</td>
+              </tr>
+              <tr>
+                <td>Return</td>
+                <td id="cmp5Property">-</td>
+                <td id="cmp5Offset">-</td>
+                <td id="cmp5Stocks">-</td>
+              </tr>
+              <tr>
+                <td>Annualised</td>
+                <td id="cmp5PropertyAnn">-</td>
+                <td id="cmp5OffsetAnn">-</td>
+                <td id="cmp5StocksAnn">-</td>
+              </tr>
+              <tr class="compare-section-row">
+                <td colspan="4">10 Year</td>
+              </tr>
+              <tr>
+                <td>Return</td>
+                <td id="cmp10Property">-</td>
+                <td id="cmp10Offset">-</td>
+                <td id="cmp10Stocks">-</td>
+              </tr>
+              <tr>
+                <td>Annualised</td>
+                <td id="cmp10PropertyAnn">-</td>
+                <td id="cmp10OffsetAnn">-</td>
+                <td id="cmp10StocksAnn">-</td>
+              </tr>
+              <tr class="compare-section-row">
+                <td colspan="4" id="cmpLifeHeader">Lifetime</td>
+              </tr>
+              <tr>
+                <td>Return</td>
+                <td id="cmpLifeProperty">-</td>
+                <td id="cmpLifeOffset">-</td>
+                <td id="cmpLifeStocks">-</td>
+              </tr>
+              <tr>
+                <td>Annualised</td>
+                <td id="cmpLifePropertyAnn">-</td>
+                <td id="cmpLifeOffsetAnn">-</td>
+                <td id="cmpLifeStocksAnn">-</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
     </main>
@@ -1199,7 +1569,7 @@
 
   <script>
     // Shared state
-    window.TrueReturn = { totalUpfront: 0, interestRate: 0 };
+    window.TrueReturn = { totalUpfront: 0, interestRate: 0, loanTerm: 30 };
 
     // Tab switching
     function initTabs() {
@@ -1216,14 +1586,13 @@
     }
     initTabs();
 
-    function updateSharedUpfront(amount, rate) {
+    function updateSharedUpfront(amount, rate, term) {
       window.TrueReturn.totalUpfront = amount;
       window.TrueReturn.interestRate = rate;
+      window.TrueReturn.loanTerm = term;
       const formatted = formatCurrency(amount);
       document.getElementById('sidebarUpfront').textContent = formatted;
       document.getElementById('sidebarRate').textContent = rate.toFixed(2) + '%';
-      document.getElementById('placeholderStocksAmount').textContent = formatted;
-      document.getElementById('placeholderCompareAmount').textContent = formatted;
 
       // Sync to offset tab if toggles are checked
       if (document.getElementById('usePropertyUpfront').checked) {
@@ -1233,6 +1602,15 @@
         document.getElementById('offsetInterestRate').value = rate;
       }
       calculateOffset();
+
+      // Sync to stocks tab if toggles are checked
+      if (document.getElementById('usePropertyUpfrontStocks').checked) {
+        document.getElementById('stocksAmount').value = Math.round(amount);
+      }
+      if (document.getElementById('usePropertyTermStocks').checked) {
+        document.getElementById('stocksPeriod').value = term;
+      }
+      calculateStocks();
     }
 
     const inputs = document.querySelectorAll('#tab-property input[type="number"]');
@@ -1407,7 +1785,7 @@
 
       // Startup expenses
       const totalUpfront = deposit + stampDuty + conveyancing;
-      updateSharedUpfront(totalUpfront, getVal('interestRate'));
+      updateSharedUpfront(totalUpfront, getVal('interestRate'), loanTerm);
 
       // Update DOM — Start Up Expenses
       document.getElementById('resDeposit').textContent = formatCurrency(deposit);
@@ -1479,7 +1857,9 @@
       cocEl.className = 'result-value ' + (cashOnCash >= 0 ? 'positive' : 'negative');
 
       // Projections
-      [5, 10].forEach(years => {
+      document.getElementById('projLifeHeader').textContent = loanTerm + ' Year (Lifetime)';
+
+      [{years: 5, prefix: 'proj5'}, {years: 10, prefix: 'proj10'}, {years: loanTerm, prefix: 'projLife'}].forEach(({years, prefix}) => {
         const futureValue = purchasePrice * Math.pow(1 + expectedGrowth, years);
         const capitalGrowth = futureValue - purchasePrice;
 
@@ -1511,15 +1891,15 @@
         const futureCashFlow = futureAnnualRent - futureExpenses;
 
         // Update DOM
-        document.getElementById(`proj${years}Value`).textContent = formatCurrency(futureValue);
-        document.getElementById(`proj${years}Growth`).textContent = formatCurrency(capitalGrowth);
+        document.getElementById(`${prefix}Value`).textContent = formatCurrency(futureValue);
+        document.getElementById(`${prefix}Growth`).textContent = formatCurrency(capitalGrowth);
         const principalPaid = loanAmount - remainingLoan;
-        document.getElementById(`proj${years}Principal`).textContent = formatCurrency(principalPaid);
-        document.getElementById(`proj${years}Loan`).textContent = formatCurrency(remainingLoan);
-        document.getElementById(`proj${years}Equity`).textContent = formatCurrency(equity);
-        document.getElementById(`proj${years}Rent`).textContent = formatCurrency(futureWeeklyRent) + '/wk';
+        document.getElementById(`${prefix}Principal`).textContent = formatCurrency(principalPaid);
+        document.getElementById(`${prefix}Loan`).textContent = formatCurrency(remainingLoan);
+        document.getElementById(`${prefix}Equity`).textContent = formatCurrency(equity);
+        document.getElementById(`${prefix}Rent`).textContent = formatCurrency(futureWeeklyRent) + '/wk';
 
-        const cfEl = document.getElementById(`proj${years}CashFlow`);
+        const cfEl = document.getElementById(`${prefix}CashFlow`);
         cfEl.textContent = formatCurrency(futureCashFlow) + '/yr';
         cfEl.className = 'line-value ' + (futureCashFlow >= 0 ? 'positive' : 'negative');
 
@@ -1533,13 +1913,13 @@
         const cgt = discountedGain * 0.30;
         const trueCashReturn = netProceeds - cgt;
 
-        document.getElementById(`proj${years}Sale`).textContent = formatCurrency(salePrice);
-        document.getElementById(`proj${years}SaleCosts`).textContent = formatCurrency(salesCosts);
-        document.getElementById(`proj${years}LoanPayout`).textContent = formatCurrency(remainingLoan);
-        document.getElementById(`proj${years}NetProceeds`).textContent = formatCurrency(netProceeds);
-        document.getElementById(`proj${years}CGT`).textContent = '\u2248 ' + formatCurrency(cgt);
+        document.getElementById(`${prefix}Sale`).textContent = formatCurrency(salePrice);
+        document.getElementById(`${prefix}SaleCosts`).textContent = formatCurrency(salesCosts);
+        document.getElementById(`${prefix}LoanPayout`).textContent = formatCurrency(remainingLoan);
+        document.getElementById(`${prefix}NetProceeds`).textContent = formatCurrency(netProceeds);
+        document.getElementById(`${prefix}CGT`).textContent = '\u2248 ' + formatCurrency(cgt);
 
-        const trEl = document.getElementById(`proj${years}TrueReturn`);
+        const trEl = document.getElementById(`${prefix}TrueReturn`);
         trEl.textContent = formatCurrency(trueCashReturn);
         trEl.className = 'line-value ' + (trueCashReturn >= 0 ? 'positive' : 'negative');
 
@@ -1559,23 +1939,25 @@
         const returnOnCash = totalUpfront > 0 ? (totalProfit / totalUpfront) * 100 : 0;
         const annualisedReturn = totalUpfront > 0 ? (Math.pow(1 + totalProfit / totalUpfront, 1 / years) - 1) * 100 : 0;
 
-        document.getElementById(`proj${years}CashInvested`).textContent = formatCurrency(totalUpfront);
+        document.getElementById(`${prefix}CashInvested`).textContent = formatCurrency(totalUpfront);
 
-        const cumCfEl = document.getElementById(`proj${years}CumCashFlow`);
+        const cumCfEl = document.getElementById(`${prefix}CumCashFlow`);
         cumCfEl.textContent = formatCurrency(cumulativeCashFlow);
 
-        const tpEl = document.getElementById(`proj${years}TotalProfit`);
+        const tpEl = document.getElementById(`${prefix}TotalProfit`);
         tpEl.textContent = formatCurrency(totalProfit);
         tpEl.className = 'line-value ' + (totalProfit >= 0 ? 'positive' : 'negative');
 
-        const rocEl = document.getElementById(`proj${years}ReturnOnCash`);
+        const rocEl = document.getElementById(`${prefix}ReturnOnCash`);
         rocEl.textContent = returnOnCash.toFixed(2) + '%';
         rocEl.className = 'line-value ' + (returnOnCash >= 0 ? 'positive' : 'negative');
 
-        const arEl = document.getElementById(`proj${years}AnnualisedReturn`);
+        const arEl = document.getElementById(`${prefix}AnnualisedReturn`);
         arEl.textContent = annualisedReturn.toFixed(2) + '%';
         arEl.className = 'line-value ' + (annualisedReturn >= 0 ? 'positive' : 'negative');
       });
+
+      updateCompare();
     }
 
     inputs.forEach(input => input.addEventListener('input', calculate));
@@ -1722,11 +2104,253 @@
       document.getElementById('offsetNoOffsetLife').textContent = formatCurrency(totalInterestNoOffset);
       document.getElementById('offsetWithOffsetLife').textContent = formatCurrency(totalInterestWithOffset);
       document.getElementById('offsetSavedLifetime').textContent = formatCurrency(savedLifetime);
+
+      updateCompare();
     }
 
     // Set initial disabled state for synced inputs
     offsetAmountInput.disabled = usePropertyUpfront.checked;
     offsetRateInput.disabled = usePropertyRate.checked;
+
+    // --- Stocks / ETF Calculator ---
+
+    const stocksTypePresets = {
+      ASX200:     { growth: 7,  dividend: 4   },
+      SP500:      { growth: 10, dividend: 1.5 },
+      HighGrowth: { growth: 12, dividend: 0.5 },
+    };
+
+    const stocksTypeDescriptions = {
+      ASX200: 'Based on the S&P/ASX 200 index, representing the 200 largest companies on the Australian Securities Exchange. Historical average ~7% growth with ~4% dividend yield. Past performance does not guarantee future results.',
+      SP500: 'Based on the S&P 500 index, representing 500 large-cap US companies. Historical average ~10% growth with ~1.5% dividend yield. Returns are in USD and do not account for currency conversion or hedging costs. Past performance does not guarantee future results.',
+      HighGrowth: 'Based on high-growth equity ETFs focused on technology and emerging sectors. These funds carry higher volatility and risk of significant drawdowns. Past performance does not guarantee future results.',
+      Custom: 'Enter your own growth and dividend assumptions. Ensure your estimates are realistic — most diversified portfolios return 6–10% p.a. over the long term.',
+    };
+
+    const stocksTypeSelect = document.getElementById('stocksType');
+    const stocksGrowthInput = document.getElementById('stocksGrowth');
+    const stocksDividendInput = document.getElementById('stocksDividend');
+    const stocksAmountInput = document.getElementById('stocksAmount');
+    const stocksPeriodInput = document.getElementById('stocksPeriod');
+    const usePropertyUpfrontStocks = document.getElementById('usePropertyUpfrontStocks');
+    const usePropertyTermStocks = document.getElementById('usePropertyTermStocks');
+
+    const stocksTypeNote = document.getElementById('stocksTypeNote');
+
+    function updateStocksType() {
+      const type = stocksTypeSelect.value;
+      const isCustom = type === 'Custom';
+      stocksGrowthInput.disabled = !isCustom;
+      stocksDividendInput.disabled = !isCustom;
+      if (!isCustom) {
+        const preset = stocksTypePresets[type];
+        stocksGrowthInput.value = preset.growth;
+        stocksDividendInput.value = preset.dividend;
+      }
+      stocksTypeNote.textContent = stocksTypeDescriptions[type];
+      calculateStocks();
+    }
+
+    // Investment type change — populate presets, disable/enable manual entry
+    stocksTypeSelect.addEventListener('change', updateStocksType);
+
+    // Toggle: Use Property Total Upfront for stocks
+    usePropertyUpfrontStocks.addEventListener('change', function() {
+      stocksAmountInput.disabled = this.checked;
+      if (this.checked) {
+        stocksAmountInput.value = Math.round(window.TrueReturn.totalUpfront);
+      }
+      calculateStocks();
+    });
+
+    // Toggle: Use Property Loan Term for stocks
+    usePropertyTermStocks.addEventListener('change', function() {
+      stocksPeriodInput.disabled = this.checked;
+      if (this.checked) {
+        stocksPeriodInput.value = window.TrueReturn.loanTerm;
+      }
+      calculateStocks();
+    });
+
+    // Wire all stocks inputs
+    document.querySelectorAll('#tab-stocks input[type="number"], #tab-stocks select, #tab-stocks input[type="checkbox"]').forEach(el => {
+      el.addEventListener('input', calculateStocks);
+      el.addEventListener('change', calculateStocks);
+    });
+
+    function calculateStocks() {
+      const investment = parseFloat(stocksAmountInput.value) || 0;
+      const growthRate = (parseFloat(stocksGrowthInput.value) || 0) / 100;
+      const dividendYield = (parseFloat(stocksDividendInput.value) || 0) / 100;
+      const reinvest = document.getElementById('stocksReinvest').checked;
+      const period = parseInt(stocksPeriodInput.value) || 30;
+
+      // Total return p.a.
+      const totalReturnPA = (growthRate + dividendYield) * 100;
+      document.getElementById('stocksTotalReturnPA').textContent = totalReturnPA.toFixed(2) + '%';
+
+      const horizons = [
+        { years: 5,      prefix: 'stocks5' },
+        { years: 10,     prefix: 'stocks10' },
+        { years: period,  prefix: 'stocksLife' },
+      ];
+
+      horizons.forEach(({ years, prefix }) => {
+        let value = investment;
+        let cumulativeDividends = 0;
+
+        for (let y = 1; y <= years; y++) {
+          value *= (1 + growthRate);
+          const yearDiv = value * dividendYield;
+          cumulativeDividends += yearDiv;
+          if (reinvest) {
+            value += yearDiv;
+          }
+        }
+
+        const portfolioValue = value;
+        const capitalGrowth = value - investment;
+        const dividendsEarned = cumulativeDividends;
+        const totalValue = reinvest ? value : value + cumulativeDividends;
+        const totalReturn = totalValue - investment;
+
+        document.getElementById(prefix + 'Portfolio').textContent = formatCurrency(portfolioValue);
+        document.getElementById(prefix + 'Growth').textContent = formatCurrency(capitalGrowth);
+        document.getElementById(prefix + 'Dividends').textContent = formatCurrency(dividendsEarned);
+        document.getElementById(prefix + 'TotalValue').textContent = formatCurrency(totalValue);
+
+        const retEl = document.getElementById(prefix + 'Return');
+        retEl.textContent = formatCurrency(totalReturn);
+        retEl.className = 'line-value ' + (totalReturn >= 0 ? 'positive' : 'negative');
+      });
+
+      updateCompare();
+    }
+
+    // Set initial disabled state for stocks synced inputs
+    stocksAmountInput.disabled = usePropertyUpfrontStocks.checked;
+    stocksPeriodInput.disabled = usePropertyTermStocks.checked;
+    stocksTypeNote.textContent = stocksTypeDescriptions[stocksTypeSelect.value];
+
+    // --- Compare Table ---
+
+    document.getElementById('cmpDetailsToggle').addEventListener('click', function() {
+      const row = document.getElementById('cmpDetailsRow');
+      const visible = row.style.display !== 'none';
+      row.style.display = visible ? 'none' : '';
+      this.textContent = visible ? '\u2212 Assumptions' : '+ Assumptions';
+    });
+
+    function updateCompare() {
+      const loanTermVal = window.TrueReturn.loanTerm || 30;
+      document.getElementById('cmpLifeHeader').textContent = loanTermVal + ' Year (Lifetime)';
+
+      // Details: Property
+      const propPrice = formatCurrency(getVal('purchasePrice'));
+      const propDeposit = getVal('depositPct');
+      const propLoanType = document.getElementById('loanType').value === 'PI' ? 'P&I' : 'Interest Only';
+      const propRate = getVal('interestRate');
+      const propGrowth = getVal('expectedGrowth');
+      const propRent = formatCurrency(getVal('weeklyRent'));
+      document.getElementById('cmpDetailsProperty').innerHTML =
+        `<span><strong>${propPrice}</strong> purchase</span>` +
+        `<span><strong>${propDeposit}%</strong> deposit · <strong>${propLoanType}</strong></span>` +
+        `<span><strong>${propRate}%</strong> interest · <strong>${loanTermVal} yr</strong> term</span>` +
+        `<span><strong>${propGrowth}%</strong> annual growth</span>` +
+        `<span><strong>${propRent}</strong>/wk rent</span>`;
+
+      // Details: Offset
+      const offAmount = formatCurrency(parseFloat(document.getElementById('offsetAmount').value) || 0);
+      const offBalance = formatCurrency(parseFloat(document.getElementById('offsetLoanBalance').value) || 0);
+      const offRate = parseFloat(document.getElementById('offsetInterestRate').value) || 0;
+      const offLoanType = document.getElementById('offsetLoanType').value === 'PI' ? 'P&I' : 'Interest Only';
+      const offTerm = parseFloat(document.getElementById('offsetLoanTerm').value) || 30;
+      document.getElementById('cmpDetailsOffset').innerHTML =
+        `<span><strong>${offAmount}</strong> in offset</span>` +
+        `<span><strong>${offBalance}</strong> loan balance</span>` +
+        `<span><strong>${offRate}%</strong> interest · <strong>${offLoanType}</strong></span>` +
+        `<span><strong>${offTerm} yr</strong> loan term</span>`;
+
+      // Details: Stocks
+      const stkAmount = formatCurrency(parseFloat(document.getElementById('stocksAmount').value) || 0);
+      const stkType = document.getElementById('stocksType').options[document.getElementById('stocksType').selectedIndex].text;
+      const stkGrowth = parseFloat(document.getElementById('stocksGrowth').value) || 0;
+      const stkDiv = parseFloat(document.getElementById('stocksDividend').value) || 0;
+      const stkReinvest = document.getElementById('stocksReinvest').checked ? 'Yes' : 'No';
+      const stkPeriod = parseInt(document.getElementById('stocksPeriod').value) || 30;
+      document.getElementById('cmpDetailsStocks').innerHTML =
+        `<span><strong>${stkAmount}</strong> invested</span>` +
+        `<span><strong>${stkType}</strong></span>` +
+        `<span><strong>${stkGrowth}%</strong> growth · <strong>${stkDiv}%</strong> dividend</span>` +
+        `<span>Reinvest: <strong>${stkReinvest}</strong> · <strong>${stkPeriod} yr</strong></span>`;
+
+      // Property: Total Profit + Annualised Return
+      document.getElementById('cmp5Property').textContent = document.getElementById('proj5TotalProfit').textContent;
+      document.getElementById('cmp10Property').textContent = document.getElementById('proj10TotalProfit').textContent;
+      document.getElementById('cmpLifeProperty').textContent = document.getElementById('projLifeTotalProfit').textContent;
+      document.getElementById('cmp5PropertyAnn').textContent = document.getElementById('proj5AnnualisedReturn').textContent;
+      document.getElementById('cmp10PropertyAnn').textContent = document.getElementById('proj10AnnualisedReturn').textContent;
+      document.getElementById('cmpLifePropertyAnn').textContent = document.getElementById('projLifeAnnualisedReturn').textContent;
+
+      // Offset: Interest Saved + annualised equivalent
+      const offsetAmount = parseFloat(document.getElementById('offsetAmount').value) || 0;
+      const saved5 = document.getElementById('offsetSaved5').textContent;
+      const saved10 = document.getElementById('offsetSaved10').textContent;
+      const savedLife = document.getElementById('offsetSavedLifetime').textContent;
+      document.getElementById('cmp5Offset').textContent = saved5;
+      document.getElementById('cmp10Offset').textContent = saved10;
+      document.getElementById('cmpLifeOffset').textContent = savedLife;
+
+      // Offset annualised: interest saved / offset amount / years
+      function offsetAnn(savedStr, years) {
+        if (offsetAmount <= 0 || years <= 0) return '-';
+        const num = parseFloat(savedStr.replace(/[^0-9.\-]/g, ''));
+        if (isNaN(num)) return '-';
+        return ((num / offsetAmount / years) * 100).toFixed(2) + '%';
+      }
+      document.getElementById('cmp5OffsetAnn').textContent = offsetAnn(saved5, 5);
+      document.getElementById('cmp10OffsetAnn').textContent = offsetAnn(saved10, 10);
+      document.getElementById('cmpLifeOffsetAnn').textContent = offsetAnn(savedLife, loanTermVal);
+
+      // Stocks: Total Return + annualised
+      const stocksInvestment = parseFloat(document.getElementById('stocksAmount').value) || 0;
+      function readCurrency(id) {
+        const txt = document.getElementById(id).textContent;
+        const negative = txt.startsWith('-$');
+        const num = parseFloat(txt.replace(/[^0-9.]/g, ''));
+        return isNaN(num) ? 0 : (negative ? -num : num);
+      }
+
+      document.getElementById('cmp5Stocks').textContent = document.getElementById('stocks5Return').textContent;
+      document.getElementById('cmp10Stocks').textContent = document.getElementById('stocks10Return').textContent;
+      document.getElementById('cmpLifeStocks').textContent = document.getElementById('stocksLifeReturn').textContent;
+
+      function stocksAnn(returnId, years) {
+        if (stocksInvestment <= 0 || years <= 0) return '-';
+        const totalReturn = readCurrency(returnId);
+        const totalValue = stocksInvestment + totalReturn;
+        const ann = (Math.pow(totalValue / stocksInvestment, 1 / years) - 1) * 100;
+        return ann.toFixed(2) + '%';
+      }
+      document.getElementById('cmp5StocksAnn').textContent = stocksAnn('stocks5Return', 5);
+      document.getElementById('cmp10StocksAnn').textContent = stocksAnn('stocks10Return', 10);
+      document.getElementById('cmpLifeStocksAnn').textContent = stocksAnn('stocksLifeReturn', loanTermVal);
+
+      // Color the return cells
+      ['cmp5Property', 'cmp10Property', 'cmpLifeProperty',
+       'cmp5Offset', 'cmp10Offset', 'cmpLifeOffset',
+       'cmp5Stocks', 'cmp10Stocks', 'cmpLifeStocks'].forEach(id => {
+        const el = document.getElementById(id);
+        const txt = el.textContent;
+        if (txt.startsWith('-$')) {
+          el.style.color = '#e87c6c';
+        } else if (txt !== '-') {
+          el.style.color = '#6bc985';
+        } else {
+          el.style.color = '';
+        }
+      });
+    }
 
     // Run initial calculations
     calculate();
