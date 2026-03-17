@@ -60,6 +60,7 @@
       --accent-hover: #059669;
       --accent-bg: rgba(16, 185, 129, 0.08);
       --accent-bg-hover: rgba(16, 185, 129, 0.12);
+      --accent-border: rgba(16, 185, 129, 0.20);
       --focus-ring: rgba(16, 185, 129, 0.25);
       --positive: #10B981;
       --negative: #EF4444;
@@ -108,6 +109,7 @@
       --section-border-warning: #FDE68A;
       --negative-bg: rgba(239, 68, 68, 0.05);
       --secondary-bg: rgba(59, 130, 246, 0.05);
+      --accent-border: rgba(16, 185, 129, 0.30);
     }
 
     * {
@@ -325,9 +327,26 @@
       grid-column: 1 / -1;
     }
 
+    .split-panel {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .split-panel .card {
+      padding: 1.25rem;
+    }
+
     .projections-grid {
       display: grid;
-      gap: 2rem;
+      gap: 1.25rem;
+    }
+
+    .split-panel .projections-grid {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
     }
 
     .card {
@@ -459,10 +478,30 @@
       box-shadow: inset 0 1px 2px var(--shadow-color);
       -webkit-appearance: none;
       appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
       padding-right: 2.25rem;
+    }
+
+    .prop-col:has(select) {
+      position: relative;
+    }
+
+    .prop-col:has(select)::after {
+      content: '';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      background-color: var(--text-secondary);
+      /* SVG stroke colour is irrelevant in mask context — only the alpha channel determines the visible shape */
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+      mask-repeat: no-repeat;
+      mask-position: center;
+      pointer-events: none;
     }
 
     select:hover:not(:disabled):not(:focus) {
@@ -540,12 +579,25 @@
       padding-right: 2.5rem;
     }
 
-    .results-card {
-      align-self: start;
+    .breakdown-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.25rem;
     }
 
-    .results-card-standalone {
-      align-self: start;
+    .breakdown-header h2 {
+      margin-bottom: 0;
+    }
+
+    .breakdown-property-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-border);
+      border-radius: 999px;
+      padding: 0.15rem 0.6rem;
     }
 
     .section-header {
@@ -595,6 +647,49 @@
     .section-header.projection {
       color: var(--color-secondary-500);
       border-color: var(--section-border-secondary);
+    }
+
+    .period-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-secondary-400);
+      margin-bottom: 0.5rem;
+      transition: background var(--transition-fast);
+    }
+
+    .period-header:hover {
+      background: rgba(59,130,246,0.08);
+    }
+
+    .period-header .proj-section-chevron {
+      color: var(--color-secondary-400);
+      flex-shrink: 0;
+    }
+
+    .period-header[aria-expanded="false"] .proj-section-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .period-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .period-body[hidden] {
+      display: none;
     }
 
     .section-header.cashflow {
@@ -935,6 +1030,77 @@
       font-weight: 400;
     }
 
+    /* Fan chart */
+    .chart-container {
+      position: relative;
+      min-height: 280px;
+      max-height: 420px;
+      height: 40vw;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .legend-item::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .legend-base::before  { background: var(--accent); }
+    .legend-cons::before  { background: var(--color-secondary-500); }
+    .legend-worst::before { background: var(--negative); }
+    .legend-invested::before {
+      background: none;
+      border: 2px dashed var(--text-muted);
+    }
+
+    .legend-cmp-prop::before   { background: var(--accent); }
+    .legend-cmp-offset::before { background: var(--color-secondary-500); }
+    .legend-cmp-stocks::before { background: var(--color-warning); }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .chart-header h2 { margin: 0; }
+
+    .chart-scenario-select {
+      font-size: 0.8125rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-default);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .chart-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
     /* Utility classes */
     .text-muted { color: var(--text-muted); }
     .positive { color: var(--positive); }
@@ -1033,10 +1199,11 @@
       }
 
       .sidebar {
-        width: 200px;
-        min-width: 200px;
+        width: 52px;
+        min-width: 52px;
         flex-direction: column;
         overflow-x: visible;
+        overflow: hidden;
         padding: 1rem 0;
         border-right: 1px solid var(--border-default);
         border-bottom: none;
@@ -1045,9 +1212,14 @@
       .sidebar-tab {
         border-bottom: none;
         border-left: 3px solid transparent;
-        padding: 0.75rem 1.25rem;
+        padding: 0.75rem 0;
+        justify-content: center;
         white-space: normal;
         flex-shrink: 1;
+      }
+
+      .sidebar-tab-text {
+        display: none;
       }
 
       .sidebar-tab.active {
@@ -1093,6 +1265,10 @@
       .projections-grid {
         grid-template-columns: 1fr 1fr;
       }
+
+      .split-panel .projections-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     /* 1280px+ — main tab 3 columns, projections 3-col */
@@ -1104,7 +1280,299 @@
       .projections-grid {
         grid-template-columns: 1fr 1fr 1fr;
       }
+
+      .split-panel .projections-grid {
+        grid-template-columns: 1fr;
+      }
     }
+
+  /* Property table — horizontal full-width input layout */
+  .property-table {
+    grid-column: 1 / -1;
+  }
+
+  .property-table h2 {
+    margin-bottom: 1rem;
+  }
+
+  .property-table-labels,
+  .property-row {
+    display: grid;
+    grid-template-columns: 1.5rem 1fr 1.4fr 0.75fr 0.75fr 0.6fr 0.6fr 0.7fr 0.6fr 0.85fr 1fr 0.65fr 0.65fr;
+    gap: 0 0.5rem;
+    align-items: center;
+  }
+
+  .property-table-labels {
+    margin-bottom: 0.25rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .prop-col-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .property-rows {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .property-row {
+    padding: 0.2rem 0;
+  }
+
+  .prop-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .prop-col select {
+    width: 100%;
+  }
+
+  /* Compact inputs inside property rows */
+  .property-row input[type="text"],
+  .property-row input[type="number"],
+  .property-row select {
+    padding: 0.18rem 0.4rem;
+    font-size: 0.78rem;
+    height: 32px;
+    border-radius: 6px;
+  }
+
+  .property-row select {
+    padding-right: 2rem;
+  }
+
+  .property-row .input-wrapper.has-prefix input[type="number"] {
+    padding-left: 1.2rem;
+  }
+
+  .property-row .input-wrapper.has-suffix input[type="number"] {
+    padding-right: 1.2rem;
+  }
+
+  .property-row .input-wrapper .prefix {
+    left: 7px;
+    font-size: 0.7rem;
+  }
+
+  .property-row .input-wrapper .suffix {
+    right: 7px;
+    font-size: 0.7rem;
+  }
+
+  .row-num {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 32px;
+  }
+
+  .property-entry.selected .row-num {
+    color: var(--accent);
+  }
+
+  .prop-col-num {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .delete-row-btn {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 2px;
+    border-radius: 4px;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    transition: color var(--transition-fast);
+  }
+
+  .delete-row-btn:hover {
+    color: var(--negative);
+  }
+
+  .property-entry:hover .row-num {
+    display: none;
+  }
+
+  .property-entry:hover .delete-row-btn {
+    display: flex;
+  }
+
+  .prop-col-result {
+    display: flex;
+    align-items: center;
+  }
+
+  .prop-result-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  .prop-result-value.positive { color: var(--positive); }
+  .prop-result-value.negative { color: var(--negative); }
+
+  .proj-section {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+  }
+
+  .proj-section-header {
+    width: 100%;
+    background: var(--bg-elevated);
+    border: none;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: left;
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+
+  .proj-section-header:hover {
+    background: var(--accent-bg);
+  }
+
+  .proj-section-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    min-width: 5rem;
+  }
+
+  .proj-section-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    flex: 1;
+  }
+
+  .proj-highlight {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .proj-highlight-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    line-height: 1;
+  }
+
+  .proj-highlight-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .proj-section-chevron {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform var(--transition-fast);
+  }
+
+  .proj-section-header[aria-expanded="true"] .proj-section-chevron {
+    transform: rotate(180deg);
+  }
+
+  .proj-section-body {
+    padding: 0.25rem 1rem 0.5rem;
+    border-top: 1px solid var(--border-default);
+  }
+
+  .proj-section-body .line-item {
+    padding: 0.3rem 0;
+  }
+
+  .property-table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .property-table-header h2 {
+    margin-bottom: 0;
+  }
+
+  .add-property-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.375rem 0.75rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background var(--transition-fast);
+  }
+
+  .add-property-btn:hover {
+    background: var(--accent-bg-hover);
+  }
+
+  .property-entry {
+    border-radius: var(--radius-sm);
+    padding: 0.1rem 0.25rem 0.1rem 0.4rem;
+    margin: 0 -0.25rem 0 -0.4rem;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+    border-left: 2px solid transparent;
+  }
+
+  .property-entry:hover {
+    background: var(--bg-elevated);
+  }
+
+  .property-entry.selected {
+    background: var(--accent-bg);
+    border-left-color: var(--accent);
+  }
+
+  .property-entry.selected:hover {
+    background: var(--accent-bg-hover);
+  }
+
+  .property-entry + .property-entry {
+    border-top: 1px solid var(--border-default);
+  }
+
   </style>
 </head>
 <body>
@@ -1125,265 +1593,281 @@
     <nav class="sidebar">
       <button class="sidebar-tab active" data-tab="tab-property">
         <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg></span>
-        Property
+        <span class="sidebar-tab-text">Property</span>
       </button>
-      <button class="sidebar-tab" data-tab="tab-offset">
-        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></span>
-        Offset
-      </button>
-      <button class="sidebar-tab" data-tab="tab-stocks">
-        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></span>
-        Stocks / ETFs
-      </button>
-      <button class="sidebar-tab" data-tab="tab-compare">
-        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></span>
-        Compare
-      </button>
-      <div class="sidebar-shared-value">
-        <label class="shared-label" for="globalCashInvestment">Total Cash Investment</label>
-        <div class="input-wrapper has-prefix sidebar-input">
-          <span class="prefix">$</span>
-          <input type="number" id="globalCashInvestment" value="60000" min="0" step="1000">
-        </div>
-      </div>
+
     </nav>
 
     <main class="content-area">
       <section id="tab-property" class="tab-content active">
-        <div class="card">
-      <h2>Property Purchase Details</h2>
-
-      <!-- Purchase section -->
-      <div class="input-section-header purchase">Purchase</div>
-
-      <div class="form-group">
-        <label for="purchasePrice">Purchase Price</label>
-        <div class="input-wrapper has-prefix">
-          <span class="prefix">$</span>
-          <input type="number" id="purchasePrice" value="295000" min="0" step="1000">
+        <div class="card property-table">
+          <div class="property-table-header">
+            <h2>Properties</h2>
+            <button class="add-property-btn" id="addPropertyBtn">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Property
+            </button>
+          </div>
+          <div class="property-table-labels">
+            <div class="prop-col-label">#</div>
+            <div class="prop-col-label">Name</div>
+            <div class="prop-col-label">Purchase Price</div>
+            <div class="prop-col-label">Deposit</div>
+            <div class="prop-col-label">Type</div>
+            <div class="prop-col-label">Term</div>
+            <div class="prop-col-label">State</div>
+            <div class="prop-col-label">Rate</div>
+            <div class="prop-col-label">Mgmt</div>
+            <div class="prop-col-label">Rent/wk</div>
+            <div class="prop-col-label">Cash Flow/yr</div>
+            <div class="prop-col-label">Gross Yld</div>
+            <div class="prop-col-label">Net Yld</div>
+          </div>
+          <div class="property-rows">
+            <div class="property-entry">
+              <div class="property-row">
+                <div class="prop-col prop-col-num">
+                  <span class="row-num">1</span>
+                  <button class="delete-row-btn" title="Remove property">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                  </button>
+                </div>
+                <div class="prop-col">
+                  <input type="text" data-field="name" placeholder="Property name…">
+                </div>
+                <div class="prop-col">
+                  <div class="input-wrapper has-prefix">
+                    <span class="prefix">$</span>
+                    <input type="number" data-field="purchasePrice" value="295000" min="0" step="1000">
+                  </div>
+                </div>
+                <div class="prop-col">
+                  <div class="input-wrapper has-suffix">
+                    <input type="number" data-field="depositPct" value="20" min="0" max="100" step="1">
+                    <span class="suffix">%</span>
+                  </div>
+                </div>
+                <div class="prop-col">
+                  <select data-field="loanType">
+                    <option value="IO">IO</option>
+                    <option value="PI" selected>P&amp;I</option>
+                  </select>
+                </div>
+                <div class="prop-col">
+                  <div class="loan-term-group">
+                    <div class="input-wrapper has-suffix">
+                      <input type="number" data-field="loanTerm" value="30" min="1" max="40" step="1">
+                      <span class="suffix">yr</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="prop-col">
+                  <select data-field="state">
+                    <option value="NSW">NSW</option>
+                    <option value="VIC">VIC</option>
+                    <option value="QLD" selected>QLD</option>
+                    <option value="SA">SA</option>
+                    <option value="WA">WA</option>
+                    <option value="TAS">TAS</option>
+                    <option value="ACT">ACT</option>
+                    <option value="NT">NT</option>
+                  </select>
+                </div>
+                <div class="prop-col">
+                  <div class="input-wrapper has-suffix">
+                    <input type="number" data-field="interestRate" value="5.89" min="0" max="20" step="0.01">
+                    <span class="suffix">%</span>
+                  </div>
+                </div>
+                <div class="prop-col">
+                  <div class="input-wrapper has-suffix">
+                    <input type="number" data-field="managementFee" value="6.6" min="0" max="100" step="0.1">
+                    <span class="suffix">%</span>
+                  </div>
+                </div>
+                <div class="prop-col">
+                  <div class="input-wrapper has-prefix">
+                    <span class="prefix">$</span>
+                    <input type="number" data-field="weeklyRent" value="420" min="0" step="10">
+                  </div>
+                </div>
+                <div class="prop-col prop-col-result">
+                  <span class="prop-result-value" data-result="annualCashFlow">-</span>
+                </div>
+                <div class="prop-col prop-col-result">
+                  <span class="prop-result-value" data-result="grossYield">-</span>
+                </div>
+                <div class="prop-col prop-col-result">
+                  <span class="prop-result-value" data-result="netYield">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="toggle-row">
-          <input type="checkbox" id="useGlobalCashProperty" checked>
-          <label for="useGlobalCashProperty">Use Total Cash Investment</label>
-        </div>
-      </div>
 
-      <div class="form-group">
-        <label for="depositPct">Deposit</label>
-        <div class="input-wrapper has-suffix">
-          <input type="number" id="depositPct" value="20" min="0" max="100" step="1">
-          <span class="suffix">%</span>
-        </div>
-        <div class="computed-display">
-          <span class="computed-value" id="resDepositAmount">$0</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="loanType">Loan Type</label>
-        <select id="loanType">
-          <option value="IO">Interest Only</option>
-          <option value="PI" selected>Principal & Interest</option>
-        </select>
-      </div>
-
-      <div class="form-group" id="loanTermGroup">
-        <label for="loanTerm">Loan Term</label>
-        <div class="input-wrapper has-suffix">
-          <input type="number" id="loanTerm" value="30" min="1" max="40" step="1">
-          <span class="suffix">yrs</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="state">State</label>
-        <select id="state">
-          <option value="NSW">New South Wales</option>
-          <option value="VIC">Victoria</option>
-          <option value="QLD" selected>Queensland</option>
-          <option value="SA">South Australia</option>
-          <option value="WA">Western Australia</option>
-          <option value="TAS">Tasmania</option>
-          <option value="ACT">Australian Capital Territory</option>
-          <option value="NT">Northern Territory</option>
-        </select>
-        <div class="computed-display">
-          <span class="help-tip" data-tip="Populates values based on state averages">?</span>
-          <span class="computed-note">Populates values based on state averages</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="interestRate">Interest Rate</label>
-        <div class="input-wrapper has-suffix">
-          <input type="number" id="interestRate" value="5.89" min="0" max="20" step="0.01">
-          <span class="suffix">%</span>
-        </div>
-      </div>
-
-      <!-- Expenses section -->
-      <div class="input-section-header expenses-input">Expenses</div>
-
-      <div class="form-group">
-        <label for="managementFee">Property Management Fee</label>
-        <div class="input-wrapper has-suffix">
-          <input type="number" id="managementFee" value="6.6" min="0" max="100" step="0.1">
-          <span class="suffix">%</span>
-        </div>
-      </div>
-
-      <!-- Income section -->
-      <div class="input-section-header income-input">Income</div>
-
-      <div class="form-group">
-        <label for="weeklyRent">Expected Weekly Rent</label>
-        <div class="input-wrapper has-prefix">
-          <span class="prefix">$</span>
-          <input type="number" id="weeklyRent" value="420" min="0" step="10">
-        </div>
-      </div>
-    </div>
-
+    <div class="split-panel">
     <div class="card results-card">
-      <h2>Breakdown</h2>
+      <div class="breakdown-header">
+        <h2>Breakdown</h2>
+        <span class="breakdown-property-label" id="breakdownPropertyLabel">Property 1</span>
+      </div>
 
       <!-- Income -->
-      <div class="section-header income">Income</div>
-      <div class="line-item">
-        <span class="line-label">Weekly Rent</span>
-        <span class="line-value" id="resWeeklyRent">-</span>
-      </div>
-      <div class="line-item total">
-        <span class="line-label">Annual Rent</span>
-        <span class="line-value" id="resAnnualRent">-</span>
+      <div class="proj-section">
+        <button class="proj-section-header" aria-expanded="false">
+          <span class="proj-section-title">Income</span>
+          <span class="proj-section-highlights">
+            <span class="proj-highlight">
+              <span class="proj-highlight-label">Annual Income</span>
+              <span class="proj-highlight-value" id="resAnnualRent">-</span>
+            </span>
+          </span>
+          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="proj-section-body" hidden>
+          <div class="line-item">
+            <span class="line-label">Weekly Rent</span>
+            <span class="line-value" id="resWeeklyRent">-</span>
+          </div>
+        </div>
       </div>
 
       <!-- Start Up Expenses -->
-      <div class="section-header startup">Start Up Expenses</div>
-      <div class="line-item">
-        <span class="line-label">Deposit</span>
-        <span class="line-value" id="resDeposit">-</span>
-      </div>
-      <div class="line-item">
-        <span class="line-label">Stamp Duty <span class="help-tip" data-tip="Based on state selected">?</span></span>
-        <span class="line-value" id="resStampDuty">-</span>
-      </div>
-      <div class="line-item">
-        <span class="line-label">Conveyancing <span class="help-tip" data-tip="Based on averages for state selected">?</span></span>
-        <span class="line-value" id="resConveyancing">-</span>
-      </div>
-      <div class="line-item total">
-        <span class="line-label">Total Cash Investment</span>
-        <span class="line-value" id="resTotalUpfront">-</span>
+      <div class="proj-section">
+        <button class="proj-section-header" aria-expanded="false">
+          <span class="proj-section-title">Start Up Expenses</span>
+          <span class="proj-section-highlights">
+            <span class="proj-highlight">
+              <span class="proj-highlight-label">Total Cash Up Front</span>
+              <span class="proj-highlight-value" id="resTotalUpfront">-</span>
+            </span>
+          </span>
+          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="proj-section-body" hidden>
+          <div class="line-item">
+            <span class="line-label">Deposit</span>
+            <span class="line-value" id="resDeposit">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Stamp Duty <span class="help-tip" data-tip="Based on state selected">?</span></span>
+            <span class="line-value" id="resStampDuty">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Conveyancing <span class="help-tip" data-tip="Based on averages for state selected">?</span></span>
+            <span class="line-value" id="resConveyancing">-</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Month-to-Month Picture -->
-      <div class="section-header monthly">Month-to-Month Picture</div>
-      <div class="line-item">
-        <span class="line-label">Rent In</span>
-        <span class="line-value positive" id="resMonthlyRent">-</span>
-      </div>
-      <div class="line-item">
-        <span class="line-label">Property Management</span>
-        <span class="line-value" id="resMonthlyMgmt">-</span>
-      </div>
-      <div class="line-item">
-        <span class="line-label">Loan Payment</span>
-        <span class="line-value" id="resMonthlyLoan">-</span>
-      </div>
-      <div class="line-item total">
-        <span class="line-label">Monthly Cash Flow</span>
-        <span class="line-value" id="resMonthlyCashFlow">-</span>
+      <!-- Monthly Cash Flow -->
+      <div class="proj-section">
+        <button class="proj-section-header" aria-expanded="false">
+          <span class="proj-section-title">Monthly Cash Flow</span>
+          <span class="proj-section-highlights">
+            <span class="proj-highlight">
+              <span class="proj-highlight-value" id="resMonthlyCashFlow">-</span>
+            </span>
+          </span>
+          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="proj-section-body" hidden>
+          <div class="line-item">
+            <span class="line-label">Rent In</span>
+            <span class="line-value positive" id="resMonthlyRent">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Property Management</span>
+            <span class="line-value" id="resMonthlyMgmt">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Loan Payment</span>
+            <span class="line-value" id="resMonthlyLoan">-</span>
+          </div>
+        </div>
       </div>
 
       <!-- Annual Expenses -->
-      <div class="section-header expenses">Annual Expenses</div>
-      <div class="line-item">
-        <span class="line-label">Loan Payment</span>
-        <span class="line-value" id="resLoanPayment">-</span>
-      </div>
-      <div id="loanBreakdown" style="display: flex; flex-direction: column; align-items: flex-end; margin-top: -0.25rem; margin-bottom: 0.25rem;">
-        <span class="computed-note" id="resPrincipalPortion">-</span>
-        <span class="computed-note" id="resInterestPortion">-</span>
-      </div>
-      <div class="line-item">
-        <span class="line-label">Property Management</span>
-        <span class="line-value" id="resManagement">-</span>
-      </div>
-      <div class="line-item">
-        <span class="line-label">Insurance <span class="help-tip" data-tip="Based on averages for state selected">?</span></span>
-        <span class="line-value" id="resInsurance">-</span>
-      </div>
-      <div class="line-item">
-        <span class="line-label">Council Rates</span>
-        <span class="line-value" id="resCouncil">-</span>
-      </div>
-      <div class="line-item">
-        <span class="line-label">Vacancy Allowance <span class="help-tip" data-tip="Assumed 2 weeks per year">?</span></span>
-        <span class="line-value" id="resVacancy">-</span>
-      </div>
-      <div class="line-item">
-        <span class="line-label">Maintenance Allowance <span class="help-tip" data-tip="Estimated at 0.5% of property value">?</span></span>
-        <span class="line-value" id="resMaintenance">-</span>
-      </div>
-      <div class="line-item total">
-        <span class="line-label">Total Annual Expenses</span>
-        <span class="line-value" id="resTotalExpenses">-</span>
-      </div>
-      <div class="line-item muted">
-        <span class="line-label">Total Annual Expenses incl Tax Benefit</span>
-        <span class="line-value" id="resTotalExpensesAfterTax">-</span>
+      <div class="proj-section">
+        <button class="proj-section-header" aria-expanded="false">
+          <span class="proj-section-title">Annual Expenses</span>
+          <span class="proj-section-highlights">
+            <span class="proj-highlight">
+              <span class="proj-highlight-value" id="resTotalExpenses">-</span>
+            </span>
+          </span>
+          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="proj-section-body" hidden>
+          <div class="line-item">
+            <span class="line-label">Loan Payment</span>
+            <span class="line-value" id="resLoanPayment">-</span>
+          </div>
+          <div id="loanBreakdown" style="display: flex; flex-direction: column; align-items: flex-end; margin-top: -0.25rem; margin-bottom: 0.25rem;">
+            <span class="computed-note" id="resPrincipalPortion">-</span>
+            <span class="computed-note" id="resInterestPortion">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Property Management</span>
+            <span class="line-value" id="resManagement">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Insurance <span class="help-tip" data-tip="Based on averages for state selected">?</span></span>
+            <span class="line-value" id="resInsurance">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Council Rates</span>
+            <span class="line-value" id="resCouncil">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Vacancy Allowance <span class="help-tip" data-tip="Assumed 2 weeks per year">?</span></span>
+            <span class="line-value" id="resVacancy">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Maintenance Allowance <span class="help-tip" data-tip="Estimated at 0.5% of property value">?</span></span>
+            <span class="line-value" id="resMaintenance">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Total Annual Expenses incl Tax Benefit</span>
+            <span class="line-value" id="resTotalExpensesAfterTax">-</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Tax Benefit -->
-      <div class="section-header taxbenefit">Potential Tax Benefit</div>
-      <div class="line-item muted">
-        <span class="line-label">Deductible Expenses</span>
-        <span class="line-value" id="resDeductible">-</span>
+      <!-- Potential Tax Benefit -->
+      <div class="proj-section">
+        <button class="proj-section-header" aria-expanded="false">
+          <span class="proj-section-title">Potential Tax Benefit</span>
+          <span class="proj-section-highlights">
+            <span class="proj-highlight">
+              <span class="proj-highlight-value" id="resTaxBenefit">-</span>
+            </span>
+          </span>
+          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="proj-section-body" hidden>
+          <div class="line-item muted">
+            <span class="line-label">Deductible Expenses</span>
+            <span class="line-value" id="resDeductible">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Net Rental Position <span class="help-tip" data-tip="Annual rent minus deductible expenses. If negative, the loss can offset your taxable income (negative gearing).">?</span></span>
+            <span class="line-value" id="resNetRental">-</span>
+          </div>
+          <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Deductible expenses include loan interest, property management, insurance, council rates, and maintenance. If these exceed rental income, the loss can be offset against your other taxable income (negative gearing). The benefit is estimated at 30% of the rental loss. Does not include depreciation. Note: potential tax benefit is not included in Annual Cash Flow as it depends heavily on your individual tax situation.</div>
+        </div>
       </div>
-      <div class="line-item muted">
-        <span class="line-label">Net Rental Position <span class="help-tip" data-tip="Annual rent minus deductible expenses. If negative, the loss can offset your taxable income (negative gearing).">?</span></span>
-        <span class="line-value" id="resNetRental">-</span>
-      </div>
-      <div class="line-item">
-        <span class="line-label">Est. Tax Benefit <span class="help-tip" data-tip="Assumed 30% marginal tax rate. Actual rate depends on your taxable income.">?</span></span>
-        <span class="line-value positive" id="resTaxBenefit">-</span>
-      </div>
-      <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Deductible expenses include loan interest, property management, insurance, council rates, and maintenance. If these exceed rental income, the loss can be offset against your other taxable income (negative gearing). The benefit is estimated at 30% of the rental loss. Does not include depreciation. Note: potential tax benefit is not included in Annual Cash Flow as it depends heavily on your individual tax situation.</div>
     </div>
 
-    <div class="card results-card-standalone">
-      <h2>Results</h2>
-
-      <div class="result-item">
-        <div class="result-label">Annual Cash Flow</div>
-        <div class="result-value" id="annualCashFlow">-</div>
-        <div class="result-sub" id="monthlyCashFlow"></div>
-        <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Includes annual rent income minus loan payments, property management, insurance, council rates, vacancy allowance, and maintenance.</div>
+    <div class="card">
+      <div class="breakdown-header">
+        <h2>Projections</h2>
+        <span class="breakdown-property-label" id="projectionsPropertyLabel">Property 1</span>
       </div>
 
-      <div class="result-item">
-        <div class="result-label">Gross Yield</div>
-        <div class="result-value" id="grossYield">-</div>
-        <div class="result-sub">Annual rent / purchase price</div>
-        <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">A gross rental yield of 5% or higher is often considered strong for residential property. Capital city yields commonly sit around 3–5%, while regional properties may achieve 5–8% or more. Yields below 4% may suggest the property is priced for growth rather than income.</div>
-      </div>
-
-      <div class="result-item">
-        <div class="result-label">Net Yield</div>
-        <div class="result-value" id="netYield">-</div>
-        <div class="result-sub">After all expenses</div>
-        <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Net yield measures rental return after costs and is a more realistic indicator of cash flow than gross yield.</div>
-      </div>
-
-    </div>
-
-    <div class="card full-width">
-      <h2>Projections</h2>
-
-      <div class="form-group" style="max-width: 460px;">
+      <div class="form-group" style="max-width: 100%; margin-bottom: 1rem;">
         <label for="expectedGrowth">Expected Annual Growth</label>
-        <div class="input-wrapper has-suffix" style="max-width: 260px;">
+        <div class="input-wrapper has-suffix" style="max-width: 200px;">
           <input type="number" id="expectedGrowth" value="3" min="-20" max="50" step="0.5">
           <span class="suffix">%</span>
         </div>
@@ -1393,699 +1877,510 @@
       <div class="projections-grid">
         <!-- 5 Year -->
         <div>
-          <div class="section-header projection">5 Year</div>
-          <div class="line-item">
-            <span class="line-label">Property Value</span>
-            <span class="line-value" id="proj5Value">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Capital Growth</span>
-            <span class="line-value" id="proj5Growth">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Principal Paid Down</span>
-            <span class="line-value" id="proj5Principal">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Remaining Loan</span>
-            <span class="line-value" id="proj5Loan">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Equity</span>
-            <span class="line-value" id="proj5Equity">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Usable Equity <span class="help-tip" data-tip="80% of total equity — the maximum most banks will lend against">?</span></span>
-            <span class="line-value" id="proj5UsableEquity">-</span>
+          <button class="period-header" aria-expanded="true">
+            5 Year
+            <svg class="proj-section-chevron" viewBox="0 0 24 24" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="period-body">
+
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Value</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">Property Value</span><span class="proj-highlight-value" id="proj5Value">-</span></span>
+                <span class="proj-highlight"><span class="proj-highlight-label">Capital Growth</span><span class="proj-highlight-value" id="proj5Growth">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Principal Paid Down</span>
+                <span class="line-value" id="proj5Principal">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Remaining Loan</span>
+                <span class="line-value" id="proj5Loan">-</span>
+              </div>
+              <div class="line-item">
+                <span class="line-label">Equity</span>
+                <span class="line-value" id="proj5Equity">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Usable Equity <span class="help-tip" data-tip="80% of total equity — the maximum most banks will lend against">?</span></span>
+                <span class="line-value" id="proj5UsableEquity">-</span>
+              </div>
+            </div>
           </div>
 
-          <div class="section-header cashflow">Cash Flow</div>
-          <div class="line-item">
-            <span class="line-label">Est. Weekly Rent <span class="help-tip" data-tip="Rent increases in line with property value growth">?</span></span>
-            <span class="line-value" id="proj5Rent">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Est. Annual Cash Flow</span>
-            <span class="line-value" id="proj5CashFlow">-</span>
-          </div>
-
-          <div class="section-header cashout">Cash Out Position</div>
-          <div class="line-item">
-            <span class="line-label">Sale Price</span>
-            <span class="line-value" id="proj5Sale">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Sales Costs <span class="help-tip" data-tip="Estimated at 3% of sale price (agent fees, legal, marketing)">?</span></span>
-            <span class="line-value" id="proj5SaleCosts">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Remaining Loan Payout</span>
-            <span class="line-value" id="proj5LoanPayout">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Net Proceeds Before Tax</span>
-            <span class="line-value" id="proj5NetProceeds">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="50% CGT discount applied. Assumed 30% marginal tax rate based on median Australian salary. Actual rate depends on your taxable income.">?</span></span>
-            <span class="line-value" id="proj5CGT">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">True Cash Return</span>
-            <span class="line-value" id="proj5TrueReturn">-</span>
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Cash Flow</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">Est. Annual Cash Flow</span><span class="proj-highlight-value" id="proj5CashFlow">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Est. Weekly Rent <span class="help-tip" data-tip="Rent increases in line with property value growth">?</span></span>
+                <span class="line-value" id="proj5Rent">-</span>
+              </div>
+            </div>
           </div>
 
-          <div class="section-header performance">Investment Performance</div>
-          <div class="line-item muted">
-            <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
-            <span class="line-value" id="proj5CashInvested">-</span>
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Cash Out Position</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">True Cash Return</span><span class="proj-highlight-value" id="proj5TrueReturn">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item">
+                <span class="line-label">Sale Price</span>
+                <span class="line-value" id="proj5Sale">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Sales Costs <span class="help-tip" data-tip="Estimated at 3% of sale price (agent fees, legal, marketing)">?</span></span>
+                <span class="line-value" id="proj5SaleCosts">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Remaining Loan Payout</span>
+                <span class="line-value" id="proj5LoanPayout">-</span>
+              </div>
+              <div class="line-item">
+                <span class="line-label">Net Proceeds Before Tax</span>
+                <span class="line-value" id="proj5NetProceeds">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="50% CGT discount applied. Assumed 30% marginal tax rate based on median Australian salary. Actual rate depends on your taxable income.">?</span></span>
+                <span class="line-value" id="proj5CGT">-</span>
+              </div>
+            </div>
           </div>
-          <div class="line-item muted">
-            <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
-            <span class="line-value" id="proj5CumCashFlow">-</span>
+
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Investment Performance</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">Total Profit</span><span class="proj-highlight-value" id="proj5TotalProfit">-</span></span>
+                <span class="proj-highlight"><span class="proj-highlight-label">Total Cash Return %</span><span class="proj-highlight-value" id="proj5ReturnOnCash">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
+                <span class="line-value" id="proj5CashInvested">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
+                <span class="line-value" id="proj5CumCashFlow">-</span>
+              </div>
+              <div class="line-item">
+                <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+                <span class="line-value" id="proj5AnnualisedReturn">-</span>
+              </div>
+            </div>
           </div>
-          <div class="line-item">
-            <span class="line-label">Total Profit <span class="help-tip" data-tip="True cash return minus cash invested, plus cumulative cash flow">?</span></span>
-            <span class="line-value" id="proj5TotalProfit">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Total Cash Return % <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
-            <span class="line-value" id="proj5ReturnOnCash">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
-            <span class="line-value" id="proj5AnnualisedReturn">-</span>
-          </div>
+
+          </div><!-- /period-body 5yr -->
         </div>
 
         <!-- 10 Year -->
         <div>
-          <div class="section-header projection">10 Year</div>
-          <div class="line-item">
-            <span class="line-label">Property Value</span>
-            <span class="line-value" id="proj10Value">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Capital Growth</span>
-            <span class="line-value" id="proj10Growth">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Principal Paid Down</span>
-            <span class="line-value" id="proj10Principal">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Remaining Loan</span>
-            <span class="line-value" id="proj10Loan">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Equity</span>
-            <span class="line-value" id="proj10Equity">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Usable Equity <span class="help-tip" data-tip="80% of total equity — the maximum most banks will lend against">?</span></span>
-            <span class="line-value" id="proj10UsableEquity">-</span>
+          <button class="period-header" aria-expanded="true">
+            10 Year
+            <svg class="proj-section-chevron" viewBox="0 0 24 24" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="period-body">
+
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Value</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">Property Value</span><span class="proj-highlight-value" id="proj10Value">-</span></span>
+                <span class="proj-highlight"><span class="proj-highlight-label">Capital Growth</span><span class="proj-highlight-value" id="proj10Growth">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Principal Paid Down</span>
+                <span class="line-value" id="proj10Principal">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Remaining Loan</span>
+                <span class="line-value" id="proj10Loan">-</span>
+              </div>
+              <div class="line-item">
+                <span class="line-label">Equity</span>
+                <span class="line-value" id="proj10Equity">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Usable Equity <span class="help-tip" data-tip="80% of total equity — the maximum most banks will lend against">?</span></span>
+                <span class="line-value" id="proj10UsableEquity">-</span>
+              </div>
+            </div>
           </div>
 
-          <div class="section-header cashflow">Cash Flow</div>
-          <div class="line-item">
-            <span class="line-label">Est. Weekly Rent <span class="help-tip" data-tip="Rent increases in line with property value growth">?</span></span>
-            <span class="line-value" id="proj10Rent">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Est. Annual Cash Flow</span>
-            <span class="line-value" id="proj10CashFlow">-</span>
-          </div>
-
-          <div class="section-header cashout">Cash Out Position</div>
-          <div class="line-item">
-            <span class="line-label">Sale Price</span>
-            <span class="line-value" id="proj10Sale">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Sales Costs <span class="help-tip" data-tip="Estimated at 3% of sale price (agent fees, legal, marketing)">?</span></span>
-            <span class="line-value" id="proj10SaleCosts">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Remaining Loan Payout</span>
-            <span class="line-value" id="proj10LoanPayout">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Net Proceeds Before Tax</span>
-            <span class="line-value" id="proj10NetProceeds">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="50% CGT discount applied. Assumed 30% marginal tax rate based on median Australian salary. Actual rate depends on your taxable income.">?</span></span>
-            <span class="line-value" id="proj10CGT">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">True Cash Return</span>
-            <span class="line-value" id="proj10TrueReturn">-</span>
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Cash Flow</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">Est. Annual Cash Flow</span><span class="proj-highlight-value" id="proj10CashFlow">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Est. Weekly Rent <span class="help-tip" data-tip="Rent increases in line with property value growth">?</span></span>
+                <span class="line-value" id="proj10Rent">-</span>
+              </div>
+            </div>
           </div>
 
-          <div class="section-header performance">Investment Performance</div>
-          <div class="line-item muted">
-            <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
-            <span class="line-value" id="proj10CashInvested">-</span>
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Cash Out Position</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">True Cash Return</span><span class="proj-highlight-value" id="proj10TrueReturn">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item">
+                <span class="line-label">Sale Price</span>
+                <span class="line-value" id="proj10Sale">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Sales Costs <span class="help-tip" data-tip="Estimated at 3% of sale price (agent fees, legal, marketing)">?</span></span>
+                <span class="line-value" id="proj10SaleCosts">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Remaining Loan Payout</span>
+                <span class="line-value" id="proj10LoanPayout">-</span>
+              </div>
+              <div class="line-item">
+                <span class="line-label">Net Proceeds Before Tax</span>
+                <span class="line-value" id="proj10NetProceeds">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="50% CGT discount applied. Assumed 30% marginal tax rate based on median Australian salary. Actual rate depends on your taxable income.">?</span></span>
+                <span class="line-value" id="proj10CGT">-</span>
+              </div>
+            </div>
           </div>
-          <div class="line-item muted">
-            <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
-            <span class="line-value" id="proj10CumCashFlow">-</span>
+
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Investment Performance</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">Total Profit</span><span class="proj-highlight-value" id="proj10TotalProfit">-</span></span>
+                <span class="proj-highlight"><span class="proj-highlight-label">Total Cash Return %</span><span class="proj-highlight-value" id="proj10ReturnOnCash">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
+                <span class="line-value" id="proj10CashInvested">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
+                <span class="line-value" id="proj10CumCashFlow">-</span>
+              </div>
+              <div class="line-item">
+                <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+                <span class="line-value" id="proj10AnnualisedReturn">-</span>
+              </div>
+            </div>
           </div>
-          <div class="line-item">
-            <span class="line-label">Total Profit <span class="help-tip" data-tip="True cash return minus cash invested, plus cumulative cash flow">?</span></span>
-            <span class="line-value" id="proj10TotalProfit">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Total Cash Return % <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
-            <span class="line-value" id="proj10ReturnOnCash">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
-            <span class="line-value" id="proj10AnnualisedReturn">-</span>
-          </div>
+
+          </div><!-- /period-body 10yr -->
         </div>
 
-        <!-- Lifetime -->
+        <!-- 15 Year -->
         <div>
-          <div class="section-header projection" id="projLifeHeader">Lifetime</div>
-          <div class="line-item">
-            <span class="line-label">Property Value</span>
-            <span class="line-value" id="projLifeValue">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Capital Growth</span>
-            <span class="line-value" id="projLifeGrowth">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Principal Paid Down</span>
-            <span class="line-value" id="projLifePrincipal">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Remaining Loan</span>
-            <span class="line-value" id="projLifeLoan">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Equity</span>
-            <span class="line-value" id="projLifeEquity">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Usable Equity <span class="help-tip" data-tip="80% of total equity — the maximum most banks will lend against">?</span></span>
-            <span class="line-value" id="projLifeUsableEquity">-</span>
+          <button class="period-header" aria-expanded="true">
+            15 Year
+            <svg class="proj-section-chevron" viewBox="0 0 24 24" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="period-body">
+
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Value</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">Property Value</span><span class="proj-highlight-value" id="projLifeValue">-</span></span>
+                <span class="proj-highlight"><span class="proj-highlight-label">Capital Growth</span><span class="proj-highlight-value" id="projLifeGrowth">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Principal Paid Down</span>
+                <span class="line-value" id="projLifePrincipal">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Remaining Loan</span>
+                <span class="line-value" id="projLifeLoan">-</span>
+              </div>
+              <div class="line-item">
+                <span class="line-label">Equity</span>
+                <span class="line-value" id="projLifeEquity">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Usable Equity <span class="help-tip" data-tip="80% of total equity — the maximum most banks will lend against">?</span></span>
+                <span class="line-value" id="projLifeUsableEquity">-</span>
+              </div>
+            </div>
           </div>
 
-          <div class="section-header cashflow">Cash Flow</div>
-          <div class="line-item">
-            <span class="line-label">Est. Weekly Rent <span class="help-tip" data-tip="Rent increases in line with property value growth">?</span></span>
-            <span class="line-value" id="projLifeRent">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Est. Annual Cash Flow</span>
-            <span class="line-value" id="projLifeCashFlow">-</span>
-          </div>
-
-          <div class="section-header cashout">Cash Out Position</div>
-          <div class="line-item">
-            <span class="line-label">Sale Price</span>
-            <span class="line-value" id="projLifeSale">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Sales Costs <span class="help-tip" data-tip="Estimated at 3% of sale price (agent fees, legal, marketing)">?</span></span>
-            <span class="line-value" id="projLifeSaleCosts">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Remaining Loan Payout</span>
-            <span class="line-value" id="projLifeLoanPayout">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Net Proceeds Before Tax</span>
-            <span class="line-value" id="projLifeNetProceeds">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="50% CGT discount applied. Assumed 30% marginal tax rate based on median Australian salary. Actual rate depends on your taxable income.">?</span></span>
-            <span class="line-value" id="projLifeCGT">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">True Cash Return</span>
-            <span class="line-value" id="projLifeTrueReturn">-</span>
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Cash Flow</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">Est. Annual Cash Flow</span><span class="proj-highlight-value" id="projLifeCashFlow">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Est. Weekly Rent <span class="help-tip" data-tip="Rent increases in line with property value growth">?</span></span>
+                <span class="line-value" id="projLifeRent">-</span>
+              </div>
+            </div>
           </div>
 
-          <div class="section-header performance">Investment Performance</div>
-          <div class="line-item muted">
-            <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
-            <span class="line-value" id="projLifeCashInvested">-</span>
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Cash Out Position</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">True Cash Return</span><span class="proj-highlight-value" id="projLifeTrueReturn">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item">
+                <span class="line-label">Sale Price</span>
+                <span class="line-value" id="projLifeSale">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Sales Costs <span class="help-tip" data-tip="Estimated at 3% of sale price (agent fees, legal, marketing)">?</span></span>
+                <span class="line-value" id="projLifeSaleCosts">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Remaining Loan Payout</span>
+                <span class="line-value" id="projLifeLoanPayout">-</span>
+              </div>
+              <div class="line-item">
+                <span class="line-label">Net Proceeds Before Tax</span>
+                <span class="line-value" id="projLifeNetProceeds">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="50% CGT discount applied. Assumed 30% marginal tax rate based on median Australian salary. Actual rate depends on your taxable income.">?</span></span>
+                <span class="line-value" id="projLifeCGT">-</span>
+              </div>
+            </div>
           </div>
-          <div class="line-item muted">
-            <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
-            <span class="line-value" id="projLifeCumCashFlow">-</span>
+
+          <div class="proj-section">
+            <button class="proj-section-header" aria-expanded="false">
+              <span class="proj-section-title">Investment Performance</span>
+              <span class="proj-section-highlights">
+                <span class="proj-highlight"><span class="proj-highlight-label">Total Profit</span><span class="proj-highlight-value" id="projLifeTotalProfit">-</span></span>
+                <span class="proj-highlight"><span class="proj-highlight-label">Total Cash Return %</span><span class="proj-highlight-value" id="projLifeReturnOnCash">-</span></span>
+              </span>
+              <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
+                <span class="line-value" id="projLifeCashInvested">-</span>
+              </div>
+              <div class="line-item muted">
+                <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
+                <span class="line-value" id="projLifeCumCashFlow">-</span>
+              </div>
+              <div class="line-item">
+                <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+                <span class="line-value" id="projLifeAnnualisedReturn">-</span>
+              </div>
+            </div>
           </div>
-          <div class="line-item">
-            <span class="line-label">Total Profit <span class="help-tip" data-tip="True cash return minus cash invested, plus cumulative cash flow">?</span></span>
-            <span class="line-value" id="projLifeTotalProfit">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Total Cash Return % <span class="help-tip" data-tip="Total profit as a percentage of cash invested">?</span></span>
-            <span class="line-value" id="projLifeReturnOnCash">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
-            <span class="line-value" id="projLifeAnnualisedReturn">-</span>
-          </div>
+
+          </div><!-- /period-body 15yr -->
         </div>
       </div>
-        </div>
+    </div>
+    </div>
       </section>
 
-      <section id="tab-offset" class="tab-content two-col-layout">
-        <div class="card">
-          <h2>Offset Details</h2>
-
-          <div class="form-group">
-            <label for="offsetAmount">Offset Amount</label>
-            <div class="input-wrapper has-prefix">
-              <span class="prefix">$</span>
-              <input type="number" id="offsetAmount" value="69900" min="0" step="1000">
-            </div>
-            <div class="toggle-row">
-              <input type="checkbox" id="usePropertyUpfront" checked>
-              <label for="usePropertyUpfront">Use Total Cash Investment</label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="offsetLoanBalance">Loan Balance</label>
-            <div class="input-wrapper has-prefix">
-              <span class="prefix">$</span>
-              <input type="number" id="offsetLoanBalance" value="600000" min="0" step="1000">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="offsetInterestRate">Interest Rate</label>
-            <div class="input-wrapper has-suffix">
-              <input type="number" id="offsetInterestRate" value="5.89" min="0" max="20" step="0.01">
-              <span class="suffix">%</span>
-            </div>
-            <div class="toggle-row">
-              <input type="checkbox" id="usePropertyRate" checked>
-              <label for="usePropertyRate">Use Property Rate</label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="offsetLoanType">Loan Type</label>
-            <select id="offsetLoanType">
-              <option value="IO">Interest Only</option>
-              <option value="PI" selected>Principal & Interest</option>
-            </select>
-          </div>
-
-          <div class="form-group" id="offsetLoanTermGroup">
-            <label for="offsetLoanTerm">Loan Term</label>
-            <div class="input-wrapper has-suffix">
-              <input type="number" id="offsetLoanTerm" value="30" min="1" max="40" step="1">
-              <span class="suffix">yrs</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="card results-card">
-          <h2>Interest Saved</h2>
-
-          <div class="result-item">
-            <div class="result-label">Effective Return</div>
-            <div class="result-value positive" id="offsetEffectiveReturn">-</div>
-            <div class="computed-note" style="margin-top: 0.375rem; line-height: 1.4;">Every dollar in an offset account saves you the loan interest rate in interest, tax-free. This is equivalent to earning the rate in a savings account before tax.</div>
-          </div>
-
-          <div class="line-item" id="offsetTimeSavedRow">
-            <span class="line-label">Time Saved on Loan <span class="help-tip" data-tip="How much sooner the loan is fully paid off with the offset (P&I only)">?</span></span>
-            <span class="line-value positive" id="offsetTimeSaved">-</span>
-          </div>
-
-          <div class="section-header offset">5 Year</div>
-          <div class="line-item">
-            <span class="line-label">Without Offset</span>
-            <span class="line-value" id="offsetNoOffset5">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">With Offset</span>
-            <span class="line-value" id="offsetWithOffset5">-</span>
-          </div>
-          <div class="line-item total">
-            <span class="line-label">Interest Saved</span>
-            <span class="line-value positive" id="offsetSaved5">-</span>
-          </div>
-
-          <div class="section-header offset">10 Year</div>
-          <div class="line-item">
-            <span class="line-label">Without Offset</span>
-            <span class="line-value" id="offsetNoOffset10">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">With Offset</span>
-            <span class="line-value" id="offsetWithOffset10">-</span>
-          </div>
-          <div class="line-item total">
-            <span class="line-label">Interest Saved</span>
-            <span class="line-value positive" id="offsetSaved10">-</span>
-          </div>
-
-          <div class="section-header offset" id="offsetLifeHeader">Lifetime</div>
-          <div class="line-item">
-            <span class="line-label">Without Offset</span>
-            <span class="line-value" id="offsetNoOffsetLife">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">With Offset</span>
-            <span class="line-value" id="offsetWithOffsetLife">-</span>
-          </div>
-          <div class="line-item total">
-            <span class="line-label">Interest Saved</span>
-            <span class="line-value positive" id="offsetSavedLifetime">-</span>
-          </div>
-        </div>
-      </section>
-
-      <section id="tab-stocks" class="tab-content two-col-layout">
-        <div class="card">
-          <h2>Investment Details</h2>
-
-          <div class="form-group">
-            <label for="stocksAmount">Investment Amount</label>
-            <div class="input-wrapper has-prefix">
-              <span class="prefix">$</span>
-              <input type="number" id="stocksAmount" value="0" min="0" step="1000">
-            </div>
-            <div class="toggle-row">
-              <input type="checkbox" id="usePropertyUpfrontStocks" checked>
-              <label for="usePropertyUpfrontStocks">Use Total Cash Investment</label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="stocksType">Investment Type</label>
-            <select id="stocksType">
-              <option value="ASX200">ASX 200</option>
-              <option value="SP500">S&P 500</option>
-              <option value="HighGrowth">High-Growth ETF</option>
-              <option value="Custom">Custom</option>
-            </select>
-            <div class="computed-note" id="stocksTypeNote" style="margin-top: 0.5rem; line-height: 1.4;"></div>
-          </div>
-
-          <div class="form-group">
-            <label for="stocksGrowth">Annual Growth</label>
-            <div class="input-wrapper has-suffix">
-              <input type="number" id="stocksGrowth" value="7" min="-50" max="100" step="0.5" disabled>
-              <span class="suffix">%</span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="stocksDividend">Dividend Yield</label>
-            <div class="input-wrapper has-suffix">
-              <input type="number" id="stocksDividend" value="4" min="0" max="100" step="0.5" disabled>
-              <span class="suffix">%</span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <div class="toggle-row" style="margin-top: 0;">
-              <input type="checkbox" id="stocksReinvest" checked>
-              <label for="stocksReinvest">Reinvest Dividends</label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="stocksPeriod">Investment Period</label>
-            <div class="input-wrapper has-suffix">
-              <input type="number" id="stocksPeriod" value="30" min="1" max="50" step="1">
-              <span class="suffix">yrs</span>
-            </div>
-            <div class="toggle-row">
-              <input type="checkbox" id="usePropertyTermStocks" checked>
-              <label for="usePropertyTermStocks">Use Property Loan Term</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="card results-card">
-          <h2>Investment Returns</h2>
-
-          <div class="result-item">
-            <div class="result-label">Total Return p.a.</div>
-            <div class="result-value positive" id="stocksTotalReturnPA">-</div>
-          </div>
-
-          <div class="section-header stocks">5 Year</div>
-          <div class="line-item">
-            <span class="line-label">Portfolio Value</span>
-            <span class="line-value" id="stocks5Portfolio">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Capital Growth</span>
-            <span class="line-value" id="stocks5Growth">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Dividends Earned</span>
-            <span class="line-value" id="stocks5Dividends">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Total Value</span>
-            <span class="line-value" id="stocks5TotalValue">-</span>
-          </div>
-          <div class="line-item total">
-            <span class="line-label">Total Return</span>
-            <span class="line-value" id="stocks5Return">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Conservative</span>
-            <span class="line-value" id="stocks5ConsReturn">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Worst Case</span>
-            <span class="line-value" id="stocks5WorstReturn">-</span>
-          </div>
-
-          <div class="section-header stocks">10 Year</div>
-          <div class="line-item">
-            <span class="line-label">Portfolio Value</span>
-            <span class="line-value" id="stocks10Portfolio">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Capital Growth</span>
-            <span class="line-value" id="stocks10Growth">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Dividends Earned</span>
-            <span class="line-value" id="stocks10Dividends">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Total Value</span>
-            <span class="line-value" id="stocks10TotalValue">-</span>
-          </div>
-          <div class="line-item total">
-            <span class="line-label">Total Return</span>
-            <span class="line-value" id="stocks10Return">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Conservative</span>
-            <span class="line-value" id="stocks10ConsReturn">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Worst Case</span>
-            <span class="line-value" id="stocks10WorstReturn">-</span>
-          </div>
-
-          <div class="section-header stocks" id="stocksLifeHeader">Lifetime</div>
-          <div class="line-item">
-            <span class="line-label">Portfolio Value</span>
-            <span class="line-value" id="stocksLifePortfolio">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Capital Growth</span>
-            <span class="line-value" id="stocksLifeGrowth">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Dividends Earned</span>
-            <span class="line-value" id="stocksLifeDividends">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Total Value</span>
-            <span class="line-value" id="stocksLifeTotalValue">-</span>
-          </div>
-          <div class="line-item total">
-            <span class="line-label">Total Return</span>
-            <span class="line-value" id="stocksLifeReturn">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Conservative</span>
-            <span class="line-value" id="stocksLifeConsReturn">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Worst Case</span>
-            <span class="line-value" id="stocksLifeWorstReturn">-</span>
-          </div>
-        </div>
-      </section>
-
-      <section id="tab-compare" class="tab-content">
-        <div class="card full-width">
-          <h2>Compare Investments</h2>
-          <div id="cmpMismatchWarning" class="mismatch-warning">
-            <span style="margin-right: 0.375rem;">&#9888;</span>
-            <span id="cmpMismatchText"></span>
-          </div>
-          <table class="compare-table">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Property<br><span style="font-weight:400;">Total Profit</span></th>
-                <th>Offset<br><span style="font-weight:400;">Interest Saved</span></th>
-                <th>Stocks / ETFs<br><span style="font-weight:400;">Total Return</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="compare-toggle-row">
-                <td colspan="4"><span class="compare-toggle" id="cmpDetailsToggle">+ Assumptions</span></td>
-              </tr>
-              <tr class="compare-details-row" id="cmpDetailsRow" style="display: none;">
-                <td></td>
-                <td id="cmpDetailsProperty"></td>
-                <td id="cmpDetailsOffset"></td>
-                <td id="cmpDetailsStocks"></td>
-              </tr>
-              <tr class="compare-section-row">
-                <td colspan="4">5 Year</td>
-              </tr>
-              <tr>
-                <td>Return</td>
-                <td id="cmp5Property">-</td>
-                <td id="cmp5Offset">-</td>
-                <td id="cmp5Stocks">-</td>
-              </tr>
-              <tr>
-                <td>Annualised</td>
-                <td id="cmp5PropertyAnn">-</td>
-                <td id="cmp5OffsetAnn">-</td>
-                <td id="cmp5StocksAnn">-</td>
-              </tr>
-              <tr class="compare-scenario-start compare-muted">
-                <td>Conservative<div class="computed-note" id="cmp5ConsTip"></div></td>
-                <td id="cmp5PropertyCons">-</td>
-                <td id="cmp5OffsetCons">-</td>
-                <td id="cmp5StocksCons">-</td>
-              </tr>
-              <tr class="compare-muted">
-                <td>Annualised</td>
-                <td id="cmp5PropertyConsAnn">-</td>
-                <td id="cmp5OffsetConsAnn">-</td>
-                <td id="cmp5StocksConsAnn">-</td>
-              </tr>
-              <tr class="compare-muted">
-                <td>Worst Case<div class="computed-note" id="cmp5WorstTip"></div></td>
-                <td id="cmp5PropertyWorst">-</td>
-                <td id="cmp5OffsetWorst">-</td>
-                <td id="cmp5StocksWorst">-</td>
-              </tr>
-              <tr class="compare-muted">
-                <td>Annualised</td>
-                <td id="cmp5PropertyWorstAnn">-</td>
-                <td id="cmp5OffsetWorstAnn">-</td>
-                <td id="cmp5StocksWorstAnn">-</td>
-              </tr>
-              <tr class="compare-section-row">
-                <td colspan="4">10 Year</td>
-              </tr>
-              <tr>
-                <td>Return</td>
-                <td id="cmp10Property">-</td>
-                <td id="cmp10Offset">-</td>
-                <td id="cmp10Stocks">-</td>
-              </tr>
-              <tr>
-                <td>Annualised</td>
-                <td id="cmp10PropertyAnn">-</td>
-                <td id="cmp10OffsetAnn">-</td>
-                <td id="cmp10StocksAnn">-</td>
-              </tr>
-              <tr class="compare-scenario-start compare-muted">
-                <td>Conservative<div class="computed-note" id="cmp10ConsTip"></div></td>
-                <td id="cmp10PropertyCons">-</td>
-                <td id="cmp10OffsetCons">-</td>
-                <td id="cmp10StocksCons">-</td>
-              </tr>
-              <tr class="compare-muted">
-                <td>Annualised</td>
-                <td id="cmp10PropertyConsAnn">-</td>
-                <td id="cmp10OffsetConsAnn">-</td>
-                <td id="cmp10StocksConsAnn">-</td>
-              </tr>
-              <tr class="compare-muted">
-                <td>Worst Case<div class="computed-note" id="cmp10WorstTip"></div></td>
-                <td id="cmp10PropertyWorst">-</td>
-                <td id="cmp10OffsetWorst">-</td>
-                <td id="cmp10StocksWorst">-</td>
-              </tr>
-              <tr class="compare-muted">
-                <td>Annualised</td>
-                <td id="cmp10PropertyWorstAnn">-</td>
-                <td id="cmp10OffsetWorstAnn">-</td>
-                <td id="cmp10StocksWorstAnn">-</td>
-              </tr>
-              <tr class="compare-section-row">
-                <td colspan="4" id="cmpLifeHeader">Lifetime</td>
-              </tr>
-              <tr>
-                <td>Return</td>
-                <td id="cmpLifeProperty">-</td>
-                <td id="cmpLifeOffset">-</td>
-                <td id="cmpLifeStocks">-</td>
-              </tr>
-              <tr>
-                <td>Annualised</td>
-                <td id="cmpLifePropertyAnn">-</td>
-                <td id="cmpLifeOffsetAnn">-</td>
-                <td id="cmpLifeStocksAnn">-</td>
-              </tr>
-              <tr class="compare-scenario-start compare-muted">
-                <td>Conservative<div class="computed-note" id="cmpLifeConsTip"></div></td>
-                <td id="cmpLifePropertyCons">-</td>
-                <td id="cmpLifeOffsetCons">-</td>
-                <td id="cmpLifeStocksCons">-</td>
-              </tr>
-              <tr class="compare-muted">
-                <td>Annualised</td>
-                <td id="cmpLifePropertyConsAnn">-</td>
-                <td id="cmpLifeOffsetConsAnn">-</td>
-                <td id="cmpLifeStocksConsAnn">-</td>
-              </tr>
-              <tr class="compare-muted">
-                <td>Worst Case<div class="computed-note" id="cmpLifeWorstTip"></div></td>
-                <td id="cmpLifePropertyWorst">-</td>
-                <td id="cmpLifeOffsetWorst">-</td>
-                <td id="cmpLifeStocksWorst">-</td>
-              </tr>
-              <tr class="compare-muted">
-                <td>Annualised</td>
-                <td id="cmpLifePropertyWorstAnn">-</td>
-                <td id="cmpLifeOffsetWorstAnn">-</td>
-                <td id="cmpLifeStocksWorstAnn">-</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
     </main>
   </div>
 
   <script>
     // Shared state
     window.TrueReturn = {
-      totalUpfront: parseFloat(document.getElementById('globalCashInvestment').value) || 60000,
       interestRate: 0,
       loanTerm: 30
     };
+
+    // Collapsible projection sections
+    function getSelectedEntry() {
+      return document.querySelector('.property-entry.selected');
+    }
+
+    function getField(field) {
+      const entry = getSelectedEntry();
+      const el = entry ? entry.querySelector(`[data-field="${field}"]`) : null;
+      return el ? el.value : '';
+    }
+
+    function getVal(field) {
+      if (field === 'expectedGrowth') {
+        return parseFloat(document.getElementById('expectedGrowth').value) || 0;
+      }
+      return parseFloat(getField(field)) || 0;
+    }
+
+    function setResult(key, value, className) {
+      const entry = getSelectedEntry();
+      if (!entry) return;
+      const el = entry.querySelector(`[data-result="${key}"]`);
+      if (!el) return;
+      el.textContent = value;
+      if (className !== undefined) el.className = className;
+    }
+
+    function getEntryLabel(entry) {
+      const allEntries = Array.from(document.querySelectorAll('.property-entry'));
+      const index = allEntries.indexOf(entry);
+      const nameEl = entry.querySelector('[data-field="name"]');
+      return (nameEl && nameEl.value.trim()) || ('Property ' + (index + 1));
+    }
+
+    function updateSectionLabels(entry) {
+      const name = getEntryLabel(entry);
+      const bdLabel = document.getElementById('breakdownPropertyLabel');
+      if (bdLabel) bdLabel.textContent = name;
+      const prLabel = document.getElementById('projectionsPropertyLabel');
+      if (prLabel) prLabel.textContent = name;
+    }
+
+    function selectEntry(entry) {
+      document.querySelectorAll('.property-entry').forEach(e => e.classList.remove('selected'));
+      entry.classList.add('selected');
+      // Update row number indicators
+      Array.from(document.querySelectorAll('.property-entry')).forEach((e, i) => {
+        const num = e.querySelector('.row-num');
+        if (num) num.textContent = i + 1;
+      });
+      updateSectionLabels(entry);
+      calculate();
+    }
+
+    function initPropertySelection() {
+      const rows = document.querySelector('.property-rows');
+
+      rows.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.delete-row-btn');
+        if (deleteBtn) {
+          e.stopPropagation();
+          const entry = deleteBtn.closest('.property-entry');
+          const allEntries = Array.from(document.querySelectorAll('.property-entry'));
+          if (allEntries.length <= 1) return;
+          const wasSelected = entry.classList.contains('selected');
+          entry.remove();
+          const remaining = Array.from(document.querySelectorAll('.property-entry'));
+          remaining.forEach((e, i) => {
+            const num = e.querySelector('.row-num');
+            if (num) num.textContent = i + 1;
+          });
+          if (wasSelected) selectEntry(remaining[0]);
+          return;
+        }
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+        const entry = e.target.closest('.property-entry');
+        if (entry) selectEntry(entry);
+      });
+
+      rows.addEventListener('input', function(e) {
+        const entry = e.target.closest('.property-entry');
+        if (!entry) return;
+        if (!entry.classList.contains('selected')) {
+          selectEntry(entry);
+        } else if (e.target.dataset.field === 'name') {
+          updateSectionLabels(entry);
+        } else {
+          calculate();
+        }
+      });
+
+      rows.addEventListener('change', function(e) {
+        const entry = e.target.closest('.property-entry');
+        if (!entry) return;
+        if (e.target.dataset.field === 'loanType') {
+          const ltg = entry.querySelector('.loan-term-group');
+          if (ltg) ltg.style.display = e.target.value === 'PI' ? '' : 'none';
+        }
+        if (!entry.classList.contains('selected')) selectEntry(entry);
+        else calculate();
+      });
+
+      // Auto-select first
+      const first = document.querySelector('.property-entry');
+      if (first) selectEntry(first);
+    }
+    function addPropertyRow() {
+      const template = document.querySelector('.property-entry');
+      const newEntry = template.cloneNode(true);
+
+      // Reset input values to defaults
+      const defaults = { name: '', purchasePrice: '', depositPct: 20, loanTerm: 30, interestRate: 5.89, managementFee: 6.6, weeklyRent: '' };
+      newEntry.querySelectorAll('[data-field]').forEach(el => {
+        const field = el.dataset.field;
+        if (el.tagName === 'INPUT' && defaults[field] !== undefined) {
+          el.value = defaults[field];
+        }
+      });
+
+      // Reset result displays
+      newEntry.querySelectorAll('[data-result]').forEach(el => {
+        el.textContent = '-';
+        el.className = el.className.replace(/\bpositive\b|\bnegative\b/g, '').trim();
+      });
+
+      // Reset loan term group visibility
+      const ltg = newEntry.querySelector('.loan-term-group');
+      if (ltg) ltg.style.display = '';
+
+      // Remove selected
+      newEntry.classList.remove('selected');
+
+      document.querySelector('.property-rows').appendChild(newEntry);
+      selectEntry(newEntry);
+    }
+
+    function initProjectionSections() {
+      document.querySelectorAll('.proj-section-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const expanded = header.getAttribute('aria-expanded') === 'true';
+          header.setAttribute('aria-expanded', String(!expanded));
+          header.nextElementSibling.hidden = expanded;
+        });
+      });
+      document.querySelectorAll('.period-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const expanded = header.getAttribute('aria-expanded') === 'true';
+          header.setAttribute('aria-expanded', String(!expanded));
+          header.nextElementSibling.hidden = expanded;
+        });
+      });
+    }
+    initProjectionSections();
 
     // Tab switching
     function initTabs() {
@@ -2116,63 +2411,6 @@
     }
     initTheme();
 
-    // Solve: cash = price * depositPct + stampDuty(price) + conveyancing
-    // Returns the max purchase price affordable with the given cash amount
-    function maxPurchasePrice(cash, depositPct, state) {
-      if (cash <= 0 || depositPct <= 0) return 0;
-      const conveyancing = stateDefaults[state].conveyancing;
-      let lo = 0, hi = cash / depositPct; // upper bound: all cash goes to deposit
-      for (let i = 0; i < 50; i++) {
-        const mid = (lo + hi) / 2;
-        const cost = mid * depositPct + calcStampDuty(state, mid) + conveyancing;
-        if (cost <= cash) lo = mid;
-        else hi = mid;
-      }
-      return Math.floor(lo);
-    }
-
-    // Called when sidebar input or relevant property inputs change
-    function syncFromGlobal() {
-      const cash = parseFloat(document.getElementById('globalCashInvestment').value) || 0;
-      window.TrueReturn.totalUpfront = cash;
-
-      // Property: compute max purchase price from global cash
-      if (document.getElementById('useGlobalCashProperty').checked) {
-        const depositPct = getVal('depositPct') / 100;
-        const state = document.getElementById('state').value;
-        const price = maxPurchasePrice(cash, depositPct, state);
-        document.getElementById('purchasePrice').value = price;
-      }
-
-      // Offset: sync cash amount
-      if (document.getElementById('usePropertyUpfront').checked) {
-        document.getElementById('offsetAmount').value = Math.round(cash);
-      }
-
-      // Stocks: sync cash amount
-      if (document.getElementById('usePropertyUpfrontStocks').checked) {
-        document.getElementById('stocksAmount').value = Math.round(cash);
-      }
-
-      calculate();
-      calculateOffset();
-      calculateStocks();
-    }
-
-    const inputs = document.querySelectorAll('#tab-property input[type="number"]');
-    const stateSelect = document.getElementById('state');
-    const loanTypeSelect = document.getElementById('loanType');
-    const loanTermGroup = document.getElementById('loanTermGroup');
-
-    // Show/hide loan term based on loan type
-    loanTypeSelect.addEventListener('change', function() {
-      loanTermGroup.style.display = this.value === 'PI' ? '' : 'none';
-      calculate();
-    });
-
-    function getVal(id) {
-      return parseFloat(document.getElementById(id).value) || 0;
-    }
 
     function formatCurrency(amount) {
       const abs = Math.abs(amount);
@@ -2275,10 +2513,10 @@
     function calculate() {
       const purchasePrice = getVal('purchasePrice');
       const depositPct = getVal('depositPct') / 100;
-      const state = stateSelect.value;
+      const state = getField('state');
       const defaults = stateDefaults[state];
       const stampDuty = Math.round(calcStampDuty(state, purchasePrice));
-      const loanType = loanTypeSelect.value;
+      const loanType = getField('loanType');
       const loanTerm = getVal('loanTerm');
       const interestRate = getVal('interestRate') / 100;
       const weeklyRent = getVal('weeklyRent');
@@ -2292,7 +2530,7 @@
 
       // Core figures
       const deposit = purchasePrice * depositPct;
-      document.getElementById('resDepositAmount').textContent = formatCurrency(deposit);
+      setResult('depositAmount', formatCurrency(deposit));
       const loanAmount = purchasePrice - deposit;
 
       // Loan payment calculation
@@ -2333,15 +2571,8 @@
       // Startup expenses
       const totalUpfront = deposit + stampDuty + conveyancing;
 
-      // Sync rate and term to shared state and other tabs
-      window.TrueReturn.interestRate = getVal('interestRate');
+      // Sync rate and term to shared state
       window.TrueReturn.loanTerm = loanTerm;
-      if (document.getElementById('usePropertyRate').checked) {
-        document.getElementById('offsetInterestRate').value = getVal('interestRate');
-      }
-      if (document.getElementById('usePropertyTermStocks').checked) {
-        document.getElementById('stocksPeriod').value = loanTerm;
-      }
 
       // Update DOM — Start Up Expenses
       document.getElementById('resDeposit').textContent = formatCurrency(deposit);
@@ -2363,7 +2594,7 @@
       document.getElementById('resMonthlyLoan').textContent = '-' + formatCurrency(monthlyLoan) + '/mo';
       const mCfEl = document.getElementById('resMonthlyCashFlow');
       mCfEl.textContent = formatCurrency(monthlyNet) + '/mo';
-      mCfEl.className = 'line-value ' + (monthlyNet >= 0 ? 'positive' : 'negative');
+      mCfEl.className = 'proj-highlight-value ' + (monthlyNet >= 0 ? 'positive' : 'negative');
 
       // Update DOM — Expenses
       document.getElementById('resLoanPayment').textContent = formatCurrency(annualLoanPayment) + '/yr';
@@ -2393,27 +2624,20 @@
       nrEl.className = 'line-value ' + (netRentalPosition >= 0 ? 'positive' : 'negative');
       const tbEl = document.getElementById('resTaxBenefit');
       tbEl.textContent = taxBenefit > 0 ? formatCurrency(taxBenefit) + '/yr' : '-';
-      tbEl.className = 'line-value ' + (taxBenefit > 0 ? 'positive' : '');
+      tbEl.className = 'proj-highlight-value ' + (taxBenefit > 0 ? 'positive' : '');
 
       const totalExpensesAfterTax = totalExpenses - taxBenefit;
       document.getElementById('resTotalExpensesAfterTax').textContent = formatCurrency(totalExpensesAfterTax) + '/yr';
 
       // Update DOM — Results
-      const cashFlowEl = document.getElementById('annualCashFlow');
-      cashFlowEl.textContent = formatCurrency(annualCashFlow) + '/yr';
-      cashFlowEl.className = 'result-value ' + (annualCashFlow >= 0 ? 'positive' : 'negative');
-      document.getElementById('monthlyCashFlow').textContent = formatCurrency(monthlyCashFlow) + '/month';
-
-      document.getElementById('grossYield').textContent = grossYield.toFixed(2) + '%';
-
-      const netYieldEl = document.getElementById('netYield');
-      netYieldEl.textContent = netYield.toFixed(2) + '%';
-      netYieldEl.className = 'result-value ' + (netYield >= 0 ? 'positive' : 'negative');
+      // Inline results
+      setResult('annualCashFlow', formatCurrency(annualCashFlow) + '/yr', 'prop-result-value ' + (annualCashFlow >= 0 ? 'positive' : 'negative'));
+      setResult('monthlyCashFlow', formatCurrency(monthlyCashFlow) + '/month');
+      setResult('grossYield', grossYield.toFixed(2) + '%');
+      setResult('netYield', netYield.toFixed(2) + '%', 'prop-result-value ' + (netYield >= 0 ? 'positive' : 'negative'));
 
       // Projections
-      document.getElementById('projLifeHeader').textContent = loanTerm + ' Year (Lifetime)';
-
-      [{years: 5, prefix: 'proj5'}, {years: 10, prefix: 'proj10'}, {years: loanTerm, prefix: 'projLife'}].forEach(({years, prefix}) => {
+      [{years: 5, prefix: 'proj5'}, {years: 10, prefix: 'proj10'}, {years: 15, prefix: 'projLife'}].forEach(({years, prefix}) => {
         const futureValue = purchasePrice * Math.pow(1 + expectedGrowth, years);
         const capitalGrowth = futureValue - purchasePrice;
 
@@ -2513,697 +2737,11 @@
         arEl.className = 'line-value ' + (annualisedReturn >= 0 ? 'positive' : 'negative');
       });
 
-      calculateOffset();
-      calculateStocks();
-      updateCompare();
     }
 
-    inputs.forEach(input => input.addEventListener('input', function() {
-      // When deposit% or state changes and the property toggle is on, recalc from global cash
-      if (document.getElementById('useGlobalCashProperty').checked &&
-          (this.id === 'depositPct')) {
-        syncFromGlobal();
-      } else {
-        calculate();
-      }
-    }));
-    stateSelect.addEventListener('change', function() {
-      if (document.getElementById('useGlobalCashProperty').checked) {
-        syncFromGlobal();
-      } else {
-        calculate();
-      }
-    });
-
-    // Sidebar global cash input
-    document.getElementById('globalCashInvestment').addEventListener('input', syncFromGlobal);
-
-    // Property toggle: Use Total Cash Investment
-    document.getElementById('useGlobalCashProperty').addEventListener('change', function() {
-      const priceInput = document.getElementById('purchasePrice');
-      priceInput.disabled = this.checked;
-      if (this.checked) {
-        syncFromGlobal();
-      } else {
-        calculate();
-      }
-    });
-
-    // --- Offset Calculator ---
-
-    const offsetLoanTypeSelect = document.getElementById('offsetLoanType');
-    const offsetLoanTermGroup = document.getElementById('offsetLoanTermGroup');
-    const usePropertyUpfront = document.getElementById('usePropertyUpfront');
-    const usePropertyRate = document.getElementById('usePropertyRate');
-    const offsetAmountInput = document.getElementById('offsetAmount');
-    const offsetRateInput = document.getElementById('offsetInterestRate');
-
-    // Show/hide offset loan term based on loan type
-    offsetLoanTypeSelect.addEventListener('change', function() {
-      offsetLoanTermGroup.style.display = this.value === 'PI' ? '' : 'none';
-      calculateOffset();
-    });
-
-    // Toggle: Use Property Total Upfront
-    usePropertyUpfront.addEventListener('change', function() {
-      offsetAmountInput.disabled = this.checked;
-      if (this.checked) {
-        offsetAmountInput.value = Math.round(window.TrueReturn.totalUpfront);
-      }
-      calculateOffset();
-    });
-
-    // Toggle: Use Property Rate
-    usePropertyRate.addEventListener('change', function() {
-      offsetRateInput.disabled = this.checked;
-      if (this.checked) {
-        offsetRateInput.value = window.TrueReturn.interestRate;
-      }
-      calculateOffset();
-    });
-
-    // Wire offset inputs
-    document.querySelectorAll('#tab-offset input[type="number"], #tab-offset select').forEach(el => {
-      el.addEventListener('input', calculateOffset);
-      el.addEventListener('change', calculateOffset);
-    });
-
-    function calculateOffset() {
-      const offsetAmount = parseFloat(offsetAmountInput.value) || 0;
-      const loanBalance = parseFloat(document.getElementById('offsetLoanBalance').value) || 0;
-      const rate = (parseFloat(offsetRateInput.value) || 0) / 100;
-      const loanType = offsetLoanTypeSelect.value;
-      const loanTerm = parseFloat(document.getElementById('offsetLoanTerm').value) || 30;
-      document.getElementById('offsetLifeHeader').textContent = loanTerm + ' Year (Lifetime)';
-
-      // Cap offset at loan balance
-      const effectiveOffset = Math.min(offsetAmount, loanBalance);
-
-      let noOffset5 = 0, noOffset10 = 0, withOffset5 = 0, withOffset10 = 0;
-      let totalInterestNoOffset = 0, totalInterestWithOffset = 0;
-      let monthsNoOffset = 0, monthsWithOffset = 0;
-      const isPandI = loanType === 'PI' && rate > 0;
-
-      if (!isPandI) {
-        // Interest-only: simple calculation (loan never pays off)
-        noOffset5 = loanBalance * rate * 5;
-        noOffset10 = loanBalance * rate * 10;
-        withOffset5 = (loanBalance - effectiveOffset) * rate * 5;
-        withOffset10 = (loanBalance - effectiveOffset) * rate * 10;
-        totalInterestNoOffset = loanBalance * rate * loanTerm;
-        totalInterestWithOffset = (loanBalance - effectiveOffset) * rate * loanTerm;
-        monthsNoOffset = 0;
-        monthsWithOffset = 0;
-      } else {
-        // P&I: month-by-month amortisation over full loan term
-        const monthlyRate = rate / 12;
-        const numPayments = loanTerm * 12;
-
-        if (monthlyRate > 0 && numPayments > 0) {
-          const monthlyPayment = loanBalance * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-
-          // Without offset — full term
-          let balance = loanBalance;
-          for (let m = 1; m <= numPayments && balance > 0.01; m++) {
-            const interest = balance * monthlyRate;
-            const principal = Math.min(monthlyPayment - interest, balance);
-            if (m <= 60) noOffset5 += interest;
-            if (m <= 120) noOffset10 += interest;
-            totalInterestNoOffset += interest;
-            balance -= principal;
-            monthsNoOffset = m;
-          }
-
-          // With offset — full term
-          let balanceWithOffset = loanBalance;
-          for (let m = 1; m <= numPayments && balanceWithOffset > 0.01; m++) {
-            const effectiveBal = Math.max(0, balanceWithOffset - effectiveOffset);
-            const interest = effectiveBal * monthlyRate;
-            const principal = Math.min(monthlyPayment - interest, balanceWithOffset);
-            if (m <= 60) withOffset5 += interest;
-            if (m <= 120) withOffset10 += interest;
-            totalInterestWithOffset += interest;
-            balanceWithOffset -= principal;
-            monthsWithOffset = m;
-          }
-        }
-      }
-
-      const saved5 = noOffset5 - withOffset5;
-      const saved10 = noOffset10 - withOffset10;
-      const savedLifetime = totalInterestNoOffset - totalInterestWithOffset;
-
-      // Effective return = the interest rate (each dollar in offset saves you the rate, tax-free)
-      const effectiveReturnPct = effectiveOffset > 0 ? rate * 100 : 0;
-
-      // Time saved (P&I only)
-      const timeSavedRow = document.getElementById('offsetTimeSavedRow');
-      if (isPandI && monthsNoOffset > monthsWithOffset) {
-        const savedMonths = monthsNoOffset - monthsWithOffset;
-        const yrs = Math.floor(savedMonths / 12);
-        const mos = savedMonths % 12;
-        let timeStr = '';
-        if (yrs > 0) timeStr += yrs + (yrs === 1 ? ' yr' : ' yrs');
-        if (yrs > 0 && mos > 0) timeStr += ' ';
-        if (mos > 0) timeStr += mos + (mos === 1 ? ' mo' : ' mos');
-        if (!timeStr) timeStr = '-';
-        document.getElementById('offsetTimeSaved').textContent = timeStr;
-        timeSavedRow.style.display = '';
-      } else {
-        timeSavedRow.style.display = isPandI ? '' : 'none';
-        document.getElementById('offsetTimeSaved').textContent = '-';
-      }
-
-      // Effective return (shown once)
-      document.getElementById('offsetEffectiveReturn').textContent = effectiveReturnPct.toFixed(2) + '%';
-
-      // 5 Year
-      document.getElementById('offsetNoOffset5').textContent = formatCurrency(noOffset5);
-      document.getElementById('offsetWithOffset5').textContent = formatCurrency(withOffset5);
-      document.getElementById('offsetSaved5').textContent = formatCurrency(saved5);
-
-      // 10 Year
-      document.getElementById('offsetNoOffset10').textContent = formatCurrency(noOffset10);
-      document.getElementById('offsetWithOffset10').textContent = formatCurrency(withOffset10);
-      document.getElementById('offsetSaved10').textContent = formatCurrency(saved10);
-
-      // Lifetime
-      document.getElementById('offsetNoOffsetLife').textContent = formatCurrency(totalInterestNoOffset);
-      document.getElementById('offsetWithOffsetLife').textContent = formatCurrency(totalInterestWithOffset);
-      document.getElementById('offsetSavedLifetime').textContent = formatCurrency(savedLifetime);
-
-      updateCompare();
-    }
-
-    // Set initial disabled state for synced inputs
-    offsetAmountInput.disabled = usePropertyUpfront.checked;
-    offsetRateInput.disabled = usePropertyRate.checked;
-
-    // --- Stocks / ETF Calculator ---
-
-    const stocksTypePresets = {
-      ASX200:     { growth: 7,  dividend: 4   },
-      SP500:      { growth: 10, dividend: 1.5 },
-      HighGrowth: { growth: 12, dividend: 0.5 },
-    };
-
-    const stocksTypeDescriptions = {
-      ASX200: 'Based on the S&P/ASX 200 index, representing the 200 largest companies on the Australian Securities Exchange. Historical average ~7% growth with ~4% dividend yield. Past performance does not guarantee future results.',
-      SP500: 'Based on the S&P 500 index, representing 500 large-cap US companies. Historical average ~10% growth with ~1.5% dividend yield. Returns are in USD and do not account for currency conversion or hedging costs. Past performance does not guarantee future results.',
-      HighGrowth: 'Based on high-growth equity ETFs focused on technology and emerging sectors. These funds carry higher volatility and risk of significant drawdowns. Past performance does not guarantee future results.',
-      Custom: 'Enter your own growth and dividend assumptions. Ensure your estimates are realistic — most diversified portfolios return 6–10% p.a. over the long term.',
-    };
-
-    const stocksTypeSelect = document.getElementById('stocksType');
-    const stocksGrowthInput = document.getElementById('stocksGrowth');
-    const stocksDividendInput = document.getElementById('stocksDividend');
-    const stocksAmountInput = document.getElementById('stocksAmount');
-    const stocksPeriodInput = document.getElementById('stocksPeriod');
-    const usePropertyUpfrontStocks = document.getElementById('usePropertyUpfrontStocks');
-    const usePropertyTermStocks = document.getElementById('usePropertyTermStocks');
-
-    const stocksTypeNote = document.getElementById('stocksTypeNote');
-
-    function updateStocksType() {
-      const type = stocksTypeSelect.value;
-      const isCustom = type === 'Custom';
-      stocksGrowthInput.disabled = !isCustom;
-      stocksDividendInput.disabled = !isCustom;
-      if (!isCustom) {
-        const preset = stocksTypePresets[type];
-        stocksGrowthInput.value = preset.growth;
-        stocksDividendInput.value = preset.dividend;
-      }
-      stocksTypeNote.textContent = stocksTypeDescriptions[type];
-      calculateStocks();
-    }
-
-    // Investment type change — populate presets, disable/enable manual entry
-    stocksTypeSelect.addEventListener('change', updateStocksType);
-
-    // Toggle: Use Property Total Upfront for stocks
-    usePropertyUpfrontStocks.addEventListener('change', function() {
-      stocksAmountInput.disabled = this.checked;
-      if (this.checked) {
-        stocksAmountInput.value = Math.round(window.TrueReturn.totalUpfront);
-      }
-      calculateStocks();
-    });
-
-    // Toggle: Use Property Loan Term for stocks
-    usePropertyTermStocks.addEventListener('change', function() {
-      stocksPeriodInput.disabled = this.checked;
-      if (this.checked) {
-        stocksPeriodInput.value = window.TrueReturn.loanTerm;
-      }
-      calculateStocks();
-    });
-
-    // Wire all stocks inputs
-    document.querySelectorAll('#tab-stocks input[type="number"], #tab-stocks select, #tab-stocks input[type="checkbox"]').forEach(el => {
-      el.addEventListener('input', calculateStocks);
-      el.addEventListener('change', calculateStocks);
-    });
-
-    function calculateStocks() {
-      const investment = parseFloat(stocksAmountInput.value) || 0;
-      const growthRate = (parseFloat(stocksGrowthInput.value) || 0) / 100;
-      const dividendYield = (parseFloat(stocksDividendInput.value) || 0) / 100;
-      const reinvest = document.getElementById('stocksReinvest').checked;
-      const period = parseInt(stocksPeriodInput.value) || 30;
-      document.getElementById('stocksLifeHeader').textContent = period + ' Year (Lifetime)';
-
-      // Total return p.a.
-      const totalReturnPA = (growthRate + dividendYield) * 100;
-      document.getElementById('stocksTotalReturnPA').textContent = totalReturnPA.toFixed(2) + '%';
-
-      const horizons = [
-        { years: 5,      prefix: 'stocks5' },
-        { years: 10,     prefix: 'stocks10' },
-        { years: period,  prefix: 'stocksLife' },
-      ];
-
-      horizons.forEach(({ years, prefix }) => {
-        let value = investment;
-        let cumulativeDividends = 0;
-
-        for (let y = 1; y <= years; y++) {
-          const yearDiv = value * dividendYield;
-          cumulativeDividends += yearDiv;
-          value *= (1 + growthRate);
-          if (reinvest) {
-            value += yearDiv;
-          }
-        }
-
-        const portfolioValue = value;
-        const capitalGrowth = value - investment;
-        const dividendsEarned = cumulativeDividends;
-        const totalValue = reinvest ? value : value + cumulativeDividends;
-        const totalReturn = totalValue - investment;
-
-        document.getElementById(prefix + 'Portfolio').textContent = formatCurrency(portfolioValue);
-        document.getElementById(prefix + 'Growth').textContent = formatCurrency(capitalGrowth);
-        document.getElementById(prefix + 'Dividends').textContent = formatCurrency(dividendsEarned);
-        document.getElementById(prefix + 'TotalValue').textContent = formatCurrency(totalValue);
-
-        const retEl = document.getElementById(prefix + 'Return');
-        retEl.textContent = formatCurrency(totalReturn);
-        retEl.className = 'line-value ' + (totalReturn >= 0 ? 'positive' : 'negative');
-      });
-
-      // Conservative & Worst case for stocks display
-      const stkTypeVal = stocksTypeSelect.value;
-
-      const consPreset = stocksConsPresets[stkTypeVal];
-      const worstPreset = stocksWorstPresets[stkTypeVal];
-
-      function calcScenarioReturn(gRate, dRate, yrs) {
-        let v = investment;
-        let cd = 0;
-        for (let yr = 1; yr <= yrs; yr++) {
-          v *= (1 + gRate);
-          const yd = v * dRate;
-          cd += yd;
-          if (reinvest) v += yd;
-        }
-        return (reinvest ? v : v + cd) - investment;
-      }
-
-      let consGr, consDy, worstGr, worstDy;
-      if (stkTypeVal === 'Custom') {
-        consGr = growthRate / 2;
-        consDy = dividendYield / 2;
-        worstGr = -0.05;
-        worstDy = 0;
-      } else {
-        consGr = consPreset.growth / 100;
-        consDy = consPreset.dividend / 100;
-        worstGr = worstPreset.growth / 100;
-        worstDy = worstPreset.dividend / 100;
-      }
-
-      horizons.forEach(({ years, prefix }) => {
-        const consRet = calcScenarioReturn(consGr, consDy, years);
-        const worstRet = calcScenarioReturn(worstGr, worstDy, years);
-        const consEl = document.getElementById(prefix + 'ConsReturn');
-        consEl.textContent = formatCurrency(consRet);
-        consEl.className = 'line-value ' + (consRet >= 0 ? 'positive' : 'negative');
-        const worstEl = document.getElementById(prefix + 'WorstReturn');
-        worstEl.textContent = formatCurrency(worstRet);
-        worstEl.className = 'line-value ' + (worstRet >= 0 ? 'positive' : 'negative');
-      });
-
-      updateCompare();
-    }
-
-    // Set initial disabled state for stocks synced inputs
-    stocksAmountInput.disabled = usePropertyUpfrontStocks.checked;
-    stocksPeriodInput.disabled = usePropertyTermStocks.checked;
-    stocksTypeNote.textContent = stocksTypeDescriptions[stocksTypeSelect.value];
-
-    // --- Compare Table ---
-
-    document.getElementById('cmpDetailsToggle').addEventListener('click', function() {
-      const row = document.getElementById('cmpDetailsRow');
-      const visible = row.style.display !== 'none';
-      row.style.display = visible ? 'none' : '';
-      this.textContent = visible ? '\u2212 Assumptions' : '+ Assumptions';
-    });
-
-    // --- Worst Case Helpers ---
-
-    function calcPropertyTotalProfit(years, worstGrowth) {
-      const purchasePrice = getVal('purchasePrice');
-      const depositPct = getVal('depositPct') / 100;
-      const state = document.getElementById('state').value;
-      const defaults = stateDefaults[state];
-      const stampDuty = Math.round(calcStampDuty(state, purchasePrice));
-      const lType = document.getElementById('loanType').value;
-      const lTermYrs = getVal('loanTerm');
-      const iRate = getVal('interestRate') / 100;
-      const wRent = getVal('weeklyRent');
-      const mgmtPct = getVal('managementFee') / 100;
-      const deposit = purchasePrice * depositPct;
-      const loan = purchasePrice - deposit;
-      const conv = defaults.conveyancing;
-      const ins = defaults.insurance;
-      const council = defaults.council;
-      const upfront = deposit + stampDuty + conv;
-
-      let annLoan;
-      if (lType === 'IO' || iRate === 0) {
-        annLoan = loan * iRate;
-      } else {
-        const mr = iRate / 12;
-        const np = lTermYrs * 12;
-        annLoan = loan * (mr * Math.pow(1 + mr, np)) / (Math.pow(1 + mr, np) - 1) * 12;
-      }
-
-      const fv = purchasePrice * Math.pow(1 + worstGrowth, years);
-      let remLoan;
-      if (lType === 'IO') {
-        remLoan = loan;
-      } else if (iRate === 0) {
-        remLoan = Math.max(0, loan - (loan / (lTermYrs * 12)) * (years * 12));
-      } else {
-        const mr = iRate / 12;
-        const tp = lTermYrs * 12;
-        const pm = Math.min(years * 12, tp);
-        remLoan = loan * (Math.pow(1 + mr, tp) - Math.pow(1 + mr, pm)) / (Math.pow(1 + mr, tp) - 1);
-        if (remLoan < 0) remLoan = 0;
-      }
-
-      const saleCosts = fv * 0.03;
-      const netProceeds = fv - saleCosts - remLoan;
-      const costBase = purchasePrice + stampDuty + conv + saleCosts;
-      const capGain = fv - costBase;
-      const cgt = capGain > 0 ? capGain * 0.50 * 0.30 : 0;
-      const trueCash = netProceeds - cgt;
-
-      let cumCF = 0;
-      for (let y = 1; y <= years; y++) {
-        const yRent = wRent * Math.pow(1 + worstGrowth, y) * 52;
-        const yVal = purchasePrice * Math.pow(1 + worstGrowth, y);
-        const yExp = annLoan + (yRent * mgmtPct) + ins + council + (wRent * Math.pow(1 + worstGrowth, y) * 2) + (yVal * 0.005);
-        cumCF += yRent - yExp;
-      }
-
-      return (trueCash - upfront) + cumCF;
-    }
-
-    const stocksWorstPresets = {
-      ASX200:     { growth: -3,  dividend: 2    },
-      SP500:      { growth: -7,  dividend: 0.75 },
-      HighGrowth: { growth: -10, dividend: 0.25 },
-      Custom:     { growth: -5,  dividend: 0    },
-    };
-
-    function calcStocksWorstCase(years) {
-      const investment = parseFloat(stocksAmountInput.value) || 0;
-      const type = stocksTypeSelect.value;
-      const worst = stocksWorstPresets[type];
-      const gr = worst.growth / 100;
-      const dy = worst.dividend / 100;
-      const reinvest = document.getElementById('stocksReinvest').checked;
-
-      let value = investment;
-      let cumDiv = 0;
-      for (let y = 1; y <= years; y++) {
-        const yd = value * dy;
-        cumDiv += yd;
-        value *= (1 + gr);
-        if (reinvest) value += yd;
-      }
-      const totalValue = reinvest ? value : value + cumDiv;
-      return totalValue - investment;
-    }
-
-    const stocksConsPresets = {
-      ASX200:     { growth: 3, dividend: 3   },
-      SP500:      { growth: 4, dividend: 1   },
-      HighGrowth: { growth: 5, dividend: 0.3 },
-    };
-
-    function calcStocksConsCase(years) {
-      const investment = parseFloat(stocksAmountInput.value) || 0;
-      const type = stocksTypeSelect.value;
-      let gr, dy;
-      if (type === 'Custom') {
-        gr = ((parseFloat(stocksGrowthInput.value) || 0) / 2) / 100;
-        dy = ((parseFloat(stocksDividendInput.value) || 0) / 2) / 100;
-      } else {
-        const cons = stocksConsPresets[type];
-        gr = cons.growth / 100;
-        dy = cons.dividend / 100;
-      }
-      const reinvest = document.getElementById('stocksReinvest').checked;
-
-      let value = investment;
-      let cumDiv = 0;
-      for (let y = 1; y <= years; y++) {
-        const yd = value * dy;
-        cumDiv += yd;
-        value *= (1 + gr);
-        if (reinvest) value += yd;
-      }
-      const totalValue = reinvest ? value : value + cumDiv;
-      return totalValue - investment;
-    }
-
-    function updateCompare() {
-      const loanTermVal = window.TrueReturn.loanTerm || 30;
-      document.getElementById('cmpLifeHeader').textContent = loanTermVal + ' Year (Lifetime)';
-
-      // Mismatch warning — compare all tabs against global cash investment
-      const globalCash = Math.round(window.TrueReturn.totalUpfront);
-      const propUpfrontCalc = Math.round(getVal('purchasePrice') * getVal('depositPct') / 100 + calcStampDuty(document.getElementById('state').value, getVal('purchasePrice')) + stateDefaults[document.getElementById('state').value].conveyancing);
-      const offAmount = Math.round(parseFloat(document.getElementById('offsetAmount').value) || 0);
-      const stkAmount = Math.round(parseFloat(document.getElementById('stocksAmount').value) || 0);
-      const mismatches = [];
-      if (propUpfrontCalc !== globalCash) mismatches.push('Property (' + formatCurrency(propUpfrontCalc) + ')');
-      if (offAmount !== globalCash) mismatches.push('Offset (' + formatCurrency(offAmount) + ')');
-      if (stkAmount !== globalCash) mismatches.push('Stocks / ETFs (' + formatCurrency(stkAmount) + ')');
-      const warningEl = document.getElementById('cmpMismatchWarning');
-      if (mismatches.length > 0) {
-        document.getElementById('cmpMismatchText').textContent =
-          mismatches.join(' and ') + ' using a different amount to Total Cash Investment (' + formatCurrency(globalCash) + '). This comparison is not like-for-like.';
-        warningEl.style.display = 'block';
-      } else {
-        warningEl.style.display = '';
-      }
-
-      // Details: Property
-      const propPrice = formatCurrency(getVal('purchasePrice'));
-      const propDeposit = getVal('depositPct');
-      const propLoanType = document.getElementById('loanType').value === 'PI' ? 'P&I' : 'Interest Only';
-      const propRate = getVal('interestRate');
-      const propGrowth = getVal('expectedGrowth');
-      const propRent = formatCurrency(getVal('weeklyRent'));
-      document.getElementById('cmpDetailsProperty').innerHTML =
-        `<span><strong>${propPrice}</strong> purchase</span>` +
-        `<span><strong>${propDeposit}%</strong> deposit · <strong>${propLoanType}</strong></span>` +
-        `<span><strong>${propRate}%</strong> interest · <strong>${loanTermVal} yr</strong> term</span>` +
-        `<span><strong>${propGrowth}%</strong> annual growth</span>` +
-        `<span><strong>${propRent}</strong>/wk rent</span>`;
-
-      // Details: Offset
-      const offAmountFmt = formatCurrency(parseFloat(document.getElementById('offsetAmount').value) || 0);
-      const offBalance = formatCurrency(parseFloat(document.getElementById('offsetLoanBalance').value) || 0);
-      const offRate = parseFloat(document.getElementById('offsetInterestRate').value) || 0;
-      const offLoanType = document.getElementById('offsetLoanType').value === 'PI' ? 'P&I' : 'Interest Only';
-      const offTerm = parseFloat(document.getElementById('offsetLoanTerm').value) || 30;
-      document.getElementById('cmpDetailsOffset').innerHTML =
-        `<span><strong>${offAmountFmt}</strong> in offset</span>` +
-        `<span><strong>${offBalance}</strong> loan balance</span>` +
-        `<span><strong>${offRate}%</strong> interest · <strong>${offLoanType}</strong></span>` +
-        `<span><strong>${offTerm} yr</strong> loan term</span>`;
-
-      // Details: Stocks
-      const stkAmountFmt = formatCurrency(parseFloat(document.getElementById('stocksAmount').value) || 0);
-      const stkType = document.getElementById('stocksType').options[document.getElementById('stocksType').selectedIndex].text;
-      const stkGrowth = parseFloat(document.getElementById('stocksGrowth').value) || 0;
-      const stkDiv = parseFloat(document.getElementById('stocksDividend').value) || 0;
-      const stkReinvest = document.getElementById('stocksReinvest').checked ? 'Yes' : 'No';
-      const stkPeriod = parseInt(document.getElementById('stocksPeriod').value) || 30;
-      document.getElementById('cmpDetailsStocks').innerHTML =
-        `<span><strong>${stkAmountFmt}</strong> invested</span>` +
-        `<span><strong>${stkType}</strong></span>` +
-        `<span><strong>${stkGrowth}%</strong> growth · <strong>${stkDiv}%</strong> dividend</span>` +
-        `<span>Reinvest: <strong>${stkReinvest}</strong> · <strong>${stkPeriod} yr</strong></span>`;
-
-      // Property: Total Profit + Annualised Return
-      document.getElementById('cmp5Property').textContent = document.getElementById('proj5TotalProfit').textContent;
-      document.getElementById('cmp10Property').textContent = document.getElementById('proj10TotalProfit').textContent;
-      document.getElementById('cmpLifeProperty').textContent = document.getElementById('projLifeTotalProfit').textContent;
-      document.getElementById('cmp5PropertyAnn').textContent = document.getElementById('proj5AnnualisedReturn').textContent;
-      document.getElementById('cmp10PropertyAnn').textContent = document.getElementById('proj10AnnualisedReturn').textContent;
-      document.getElementById('cmpLifePropertyAnn').textContent = document.getElementById('projLifeAnnualisedReturn').textContent;
-
-      // Offset: Interest Saved + annualised equivalent
-      const offsetAmount = parseFloat(document.getElementById('offsetAmount').value) || 0;
-      const saved5 = document.getElementById('offsetSaved5').textContent;
-      const saved10 = document.getElementById('offsetSaved10').textContent;
-      const savedLife = document.getElementById('offsetSavedLifetime').textContent;
-      document.getElementById('cmp5Offset').textContent = saved5;
-      document.getElementById('cmp10Offset').textContent = saved10;
-      document.getElementById('cmpLifeOffset').textContent = savedLife;
-
-      // Offset annualised: effective return = the interest rate (tax-free)
-      const offsetAnn = document.getElementById('offsetEffectiveReturn').textContent;
-      document.getElementById('cmp5OffsetAnn').textContent = offsetAnn;
-      document.getElementById('cmp10OffsetAnn').textContent = offsetAnn;
-      document.getElementById('cmpLifeOffsetAnn').textContent = offsetAnn;
-
-      // Stocks: Total Return + annualised
-      const stocksInvestment = parseFloat(document.getElementById('stocksAmount').value) || 0;
-      function readCurrency(id) {
-        const txt = document.getElementById(id).textContent;
-        const negative = txt.startsWith('-$');
-        const num = parseFloat(txt.replace(/[^0-9.]/g, ''));
-        return isNaN(num) ? 0 : (negative ? -num : num);
-      }
-
-      document.getElementById('cmp5Stocks').textContent = document.getElementById('stocks5Return').textContent;
-      document.getElementById('cmp10Stocks').textContent = document.getElementById('stocks10Return').textContent;
-      document.getElementById('cmpLifeStocks').textContent = document.getElementById('stocksLifeReturn').textContent;
-
-      function stocksAnn(returnId, years) {
-        if (stocksInvestment <= 0 || years <= 0) return '-';
-        const totalReturn = readCurrency(returnId);
-        const totalValue = stocksInvestment + totalReturn;
-        const ann = (Math.pow(totalValue / stocksInvestment, 1 / years) - 1) * 100;
-        return ann.toFixed(2) + '%';
-      }
-      document.getElementById('cmp5StocksAnn').textContent = stocksAnn('stocks5Return', 5);
-      document.getElementById('cmp10StocksAnn').textContent = stocksAnn('stocks10Return', 10);
-      document.getElementById('cmpLifeStocksAnn').textContent = stocksAnn('stocksLifeReturn', loanTermVal);
-
-      // --- Scenario helpers ---
-      function setScenarioCell(id, value) {
-        const el = document.getElementById(id);
-        const cls = value < 0 ? 'negative' : value > 0 ? 'positive' : '';
-        el.innerHTML = `<span class="${cls}">${formatCurrency(value)}</span>`;
-      }
-
-      function setScenarioCellNA(id) {
-        const el = document.getElementById(id);
-        el.innerHTML = `<span class="text-muted">N/A</span>`;
-      }
-
-      const offsetScenarioTip = 'Offset returns are fixed at the loan rate regardless of market conditions.';
-      const selectedType = stocksTypeSelect.value;
-      const selectedTypeName = stocksTypeSelect.options[stocksTypeSelect.selectedIndex].text;
-      const propUpfront = window.TrueReturn.totalUpfront;
-
-      function scenarioPropertyAnn(profit, years) {
-        if (propUpfront <= 0 || years <= 0) return '-';
-        return (Math.pow(1 + profit / propUpfront, 1 / years) - 1) * 100;
-      }
-
-      function scenarioStocksAnn(returnVal, years) {
-        const inv = parseFloat(stocksAmountInput.value) || 0;
-        if (inv <= 0 || years <= 0) return '-';
-        return (Math.pow((inv + returnVal) / inv, 1 / years) - 1) * 100;
-      }
-
-      function setAnnCell(id, annVal) {
-        const el = document.getElementById(id);
-        if (annVal === '-') { el.textContent = '-'; el.className = ''; return; }
-        el.textContent = annVal.toFixed(2) + '%';
-        el.className = annVal < 0 ? 'negative' : annVal > 0 ? 'positive' : '';
-      }
-
-      // --- Conservative Case ---
-      const propConsTip = 'Assumes 2% p.a. property growth (below long-term average). All other inputs unchanged.';
-      const stkCons = stocksConsPresets[selectedType];
-      const stkConsTip = selectedType === 'Custom'
-        ? `Assumes half your entered growth (${((parseFloat(stocksGrowthInput.value) || 0) / 2).toFixed(1)}%) and half dividend (${((parseFloat(stocksDividendInput.value) || 0) / 2).toFixed(1)}%) as a conservative estimate.`
-        : `Assumes ${stkCons.growth}% growth, ${stkCons.dividend}% dividend — below-average returns for ${selectedTypeName}.`;
-
-      [{ p: 'cmp5', y: 5 }, { p: 'cmp10', y: 10 }, { p: 'cmpLife', y: loanTermVal }].forEach(({ p, y }) => {
-        const propConsProfit = calcPropertyTotalProfit(y, 0.02);
-        const stkConsReturn = calcStocksConsCase(y);
-        setScenarioCell(p + 'PropertyCons', propConsProfit);
-        setScenarioCellNA(p + 'OffsetCons');
-        setScenarioCell(p + 'StocksCons', stkConsReturn);
-        setAnnCell(p + 'PropertyConsAnn', scenarioPropertyAnn(propConsProfit, y));
-        document.getElementById(p + 'OffsetConsAnn').textContent = offsetAnn;
-        setAnnCell(p + 'StocksConsAnn', scenarioStocksAnn(stkConsReturn, y));
-      });
-
-      const consDescription = 'Property: 2% p.a. growth. Stocks: ' + (selectedType === 'Custom' ? 'half entered values.' : stkCons.growth + '% growth, ' + stkCons.dividend + '% dividend.');
-      ['cmp5', 'cmp10', 'cmpLife'].forEach(p => {
-        document.getElementById(p + 'ConsTip').textContent = consDescription;
-      });
-
-      // --- Worst Case ---
-      const propWorstTip = 'Assumes property declines 2% p.a. All other inputs unchanged.';
-      const stkWorst = stocksWorstPresets[selectedType];
-      const stkWorstTip = selectedType === 'Custom'
-        ? 'Assumes -5% growth, 0% dividend as a worst-case stress test.'
-        : `Assumes ${stkWorst.growth}% growth, ${stkWorst.dividend}% dividend based on worst historical rolling returns for ${selectedTypeName}.`;
-
-      [{ p: 'cmp5', y: 5 }, { p: 'cmp10', y: 10 }, { p: 'cmpLife', y: loanTermVal }].forEach(({ p, y }) => {
-        const propWorstProfit = calcPropertyTotalProfit(y, -0.02);
-        const stkWorstReturn = calcStocksWorstCase(y);
-        setScenarioCell(p + 'PropertyWorst', propWorstProfit);
-        setScenarioCellNA(p + 'OffsetWorst');
-        setScenarioCell(p + 'StocksWorst', stkWorstReturn);
-        setAnnCell(p + 'PropertyWorstAnn', scenarioPropertyAnn(propWorstProfit, y));
-        document.getElementById(p + 'OffsetWorstAnn').textContent = offsetAnn;
-        setAnnCell(p + 'StocksWorstAnn', scenarioStocksAnn(stkWorstReturn, y));
-      });
-
-      const worstDescription = 'Property: -2% p.a. decline. Stocks: ' + (selectedType === 'Custom' ? '-5% growth, 0% dividend.' : stkWorst.growth + '% growth, ' + stkWorst.dividend + '% dividend.');
-      ['cmp5', 'cmp10', 'cmpLife'].forEach(p => {
-        document.getElementById(p + 'WorstTip').textContent = worstDescription;
-      });
-
-      // Color the return cells
-      ['cmp5Property', 'cmp10Property', 'cmpLifeProperty',
-       'cmp5Offset', 'cmp10Offset', 'cmpLifeOffset',
-       'cmp5Stocks', 'cmp10Stocks', 'cmpLifeStocks'].forEach(id => {
-        const el = document.getElementById(id);
-        const txt = el.textContent;
-        el.classList.remove('positive', 'negative');
-        if (txt.startsWith('-$')) {
-          el.classList.add('negative');
-        } else if (txt !== '-') {
-          el.classList.add('positive');
-        }
-      });
-    }
-
-    // Set initial disabled states for toggled inputs
-    document.getElementById('purchasePrice').disabled = document.getElementById('useGlobalCashProperty').checked;
-    offsetAmountInput.disabled = usePropertyUpfront.checked;
-    offsetRateInput.disabled = usePropertyRate.checked;
-    stocksAmountInput.disabled = usePropertyUpfrontStocks.checked;
-    stocksPeriodInput.disabled = usePropertyTermStocks.checked;
-
-    // Run initial calculations — syncFromGlobal sets purchase price from global cash, then calculate() runs
-    syncFromGlobal();
+    // All inits run here, after stateDefaults and calculate() are defined
+    document.getElementById('addPropertyBtn').addEventListener('click', addPropertyRow);
+    initPropertySelection();
   </script>
 </body>
 </html>
