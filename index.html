@@ -1298,7 +1298,7 @@
   .property-table-labels,
   .property-row {
     display: grid;
-    grid-template-columns: 1.5rem 1fr 1.4fr 0.75fr 0.75fr 0.6fr 0.6fr 0.7fr 0.6fr 0.85fr 1fr 0.65fr 0.65fr;
+    grid-template-columns: 1.5rem 1fr 1.4fr 0.75fr 0.75fr 0.6fr 0.6fr 0.7fr 0.6fr 0.85fr 0.7fr 1fr 0.65fr 0.65fr;
     gap: 0 0.5rem;
     align-items: center;
   }
@@ -1619,6 +1619,7 @@
             <div class="prop-col-label">Rate</div>
             <div class="prop-col-label">Mgmt</div>
             <div class="prop-col-label">Rent/wk</div>
+            <div class="prop-col-label">Growth/yr</div>
             <div class="prop-col-label">Cash Flow/yr</div>
             <div class="prop-col-label">Gross Yld</div>
             <div class="prop-col-label">Net Yld</div>
@@ -1689,6 +1690,12 @@
                   <div class="input-wrapper has-prefix">
                     <span class="prefix">$</span>
                     <input type="number" data-field="weeklyRent" value="420" min="0" step="10">
+                  </div>
+                </div>
+                <div class="prop-col">
+                  <div class="input-wrapper has-suffix">
+                    <input type="number" data-field="expectedGrowth" value="5" min="-20" max="50" step="0.5">
+                    <span class="suffix">%</span>
                   </div>
                 </div>
                 <div class="prop-col prop-col-result">
@@ -1863,15 +1870,6 @@
       <div class="breakdown-header">
         <h2>Projections</h2>
         <span class="breakdown-property-label" id="projectionsPropertyLabel">Property 1</span>
-      </div>
-
-      <div class="form-group" style="max-width: 100%; margin-bottom: 1rem;">
-        <label for="expectedGrowth">Expected Annual Growth</label>
-        <div class="input-wrapper has-suffix" style="max-width: 200px;">
-          <input type="number" id="expectedGrowth" value="3" min="-20" max="50" step="0.5">
-          <span class="suffix">%</span>
-        </div>
-        <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Australian residential property prices have grown at approximately 6–7% per year over the past 20 years, but returns vary significantly by location and market cycle. Past performance does not guarantee future results.</div>
       </div>
 
       <div class="projections-grid">
@@ -2240,9 +2238,6 @@
     }
 
     function getVal(field) {
-      if (field === 'expectedGrowth') {
-        return parseFloat(document.getElementById('expectedGrowth').value) || 0;
-      }
       return parseFloat(getField(field)) || 0;
     }
 
@@ -2269,6 +2264,18 @@
       const prLabel = document.getElementById('projectionsPropertyLabel');
       if (prLabel) prLabel.textContent = name;
     }
+
+    // State-based average estimates (annual)
+    const stateDefaults = {
+      NSW: { conveyancing: 1800, insurance: 1800, council: 2000 },
+      VIC: { conveyancing: 1100, insurance: 1500, council: 1900 },
+      QLD: { conveyancing: 900,  insurance: 2200, council: 1800 },
+      SA:  { conveyancing: 1000, insurance: 1300, council: 1600 },
+      WA:  { conveyancing: 1300, insurance: 1500, council: 1800 },
+      TAS: { conveyancing: 1000, insurance: 1200, council: 1400 },
+      ACT: { conveyancing: 1100, insurance: 1300, council: 2100 },
+      NT:  { conveyancing: 1000, insurance: 2500, council: 1700 },
+    };
 
     function selectEntry(entry) {
       document.querySelectorAll('.property-entry').forEach(e => e.classList.remove('selected'));
@@ -2339,7 +2346,7 @@
       const newEntry = template.cloneNode(true);
 
       // Reset input values to defaults
-      const defaults = { name: '', purchasePrice: '', depositPct: 20, loanTerm: 30, interestRate: 5.89, managementFee: 6.6, weeklyRent: '' };
+      const defaults = { name: '', purchasePrice: '', depositPct: 20, loanTerm: 30, interestRate: 5.89, managementFee: 6.6, weeklyRent: '', expectedGrowth: 5 };
       newEntry.querySelectorAll('[data-field]').forEach(el => {
         const field = el.dataset.field;
         if (el.tagName === 'INPUT' && defaults[field] !== undefined) {
@@ -2419,18 +2426,6 @@
         : '$' + abs.toFixed(0);
       return amount < 0 ? '-' + formatted : formatted;
     }
-
-    // State-based average estimates (annual)
-    const stateDefaults = {
-      NSW: { conveyancing: 1800, insurance: 1800, council: 2000 },
-      VIC: { conveyancing: 1100, insurance: 1500, council: 1900 },
-      QLD: { conveyancing: 900,  insurance: 2200, council: 1800 },
-      SA:  { conveyancing: 1000, insurance: 1300, council: 1600 },
-      WA:  { conveyancing: 1300, insurance: 1500, council: 1800 },
-      TAS: { conveyancing: 1000, insurance: 1200, council: 1400 },
-      ACT: { conveyancing: 1100, insurance: 1300, council: 2100 },
-      NT:  { conveyancing: 1000, insurance: 2500, council: 1700 },
-    };
 
     // Stamp duty calculators by state (general/investor rates, not FHB)
     function calcStampDuty(state, price) {
