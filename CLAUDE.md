@@ -7,12 +7,23 @@ Single-file HTML/CSS/JS property investment calculator. All code lives in `index
 
 Every requested change **must** pass through all applicable agents in order before being presented to the user for approval. Do not skip steps or combine them.
 
+**Feature cards** (labelled "feature" in Trello) run the extended pipeline below. All other cards skip the ui-designer steps.
+
 ```
 Request received
       ↓
  trello-liaison     — creates card in To Do (if new) or confirms existing card
       ↓
- code-writer        — implements the change
+ [FEATURE CARDS ONLY]
+ ui-designer        — reviews requirements, produces Design Proposal
+ trello-liaison     — posts Design Proposal comment
+ User approval      — approves design or provides feedback
+      ↓ (if approved)
+ ui-designer        — produces Implementation Spec for code-writer
+ trello-liaison     — posts Implementation Spec comment, moves card to In Development
+      ↓
+ [ALL CARDS]
+ code-writer        — implements the change (guided by Implementation Spec for features)
  trello-liaison     — moves card to In Development, posts summary comment
       ↓
  unit-test-writer   — writes/updates tests for any new pure functions
@@ -35,6 +46,7 @@ Request received
 
 ### Rules
 - **Never commit or push** without explicit user instruction.
+- **ui-designer Design Proposal** must be explicitly approved by the user before the Implementation Spec is written or any code is touched.
 - **code-reviewer BLOCKER** findings must be resolved before proceeding to smoke-tester.
 - **smoke-tester FAIL** must be resolved before proceeding to ui-reviewer.
 - **ui-reviewer BLOCKER** findings must be resolved before moving to PO Review.
@@ -63,6 +75,7 @@ After all agents pass, present:
 | Agent | File | Role |
 |---|---|---|
 | trello-liaison | `.claude/agents/trello-liaison.md` | Creates/moves cards, posts comments |
+| ui-designer | `.claude/agents/ui-designer.md` | Design proposal + implementation spec (feature cards only) |
 | code-writer | `.claude/agents/code-writer.md` | Implements changes |
 | unit-test-writer | `.claude/agents/unit-test-writer.md` | Writes unit tests |
 | code-reviewer | `.claude/agents/code-reviewer.md` | Audits code quality |

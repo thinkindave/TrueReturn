@@ -474,6 +474,433 @@ test('NT: top band (> 5000000)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Graph helper functions — purity analysis
+// ---------------------------------------------------------------------------
+//
+// buildPropertyDatasets(metric)
+//   NOT testable here. It opens with document.querySelectorAll('.property-entry')
+//   and reads values from DOM nodes. It also closes over the module-level
+//   stateDefaults object. Any attempt to run it outside a browser would throw
+//   "document is not defined".
+//
+// renderGraphLegend(containerId, datasets)
+//   NOT testable here. It calls document.getElementById() and mutates
+//   innerHTML. DOM-dependent.
+//
+// initGraphs() / renderGraphs()
+//   NOT testable here. Both reach into the DOM (getElementById, querySelectorAll)
+//   and construct Chart.js instances. DOM- and library-dependent.
+//
+// buildPortfolioDataset(propertyDatasets, metric)
+//   PURE — accepts two plain JS arguments, performs arithmetic aggregation, and
+//   returns a plain object. Testable without any DOM. Copied verbatim below.
+//
+// buildChartOptions(metric, isDark, isChart2)
+//   STRUCTURALLY PURE — all three arguments are primitives. Returns a plain
+//   configuration object. The only non-primitive dependency is formatCurrency,
+//   which is already inlined above. Testable without any DOM. Copied verbatim below.
+
+// ---------------------------------------------------------------------------
+// Pure functions copied verbatim from index.html (graph section)
+// ---------------------------------------------------------------------------
+
+const GRAPH_PORTFOLIO_COLOR = '#9CA3AF';
+const GRAPH_YEARS = 15;
+
+function buildPortfolioDataset(propertyDatasets, metric) {
+  const labels = propertyDatasets.labels;
+  const allData = propertyDatasets.datasets.map(d => d.data);
+  const portfolioData = [];
+
+  for (let y = 0; y <= GRAPH_YEARS; y++) {
+    const vals = allData.map(d => d[y]).filter(v => v !== null && v !== undefined);
+    if (vals.length === 0) {
+      portfolioData.push(null);
+    } else if (metric === 'annualisedReturn') {
+      portfolioData.push(vals.reduce((a, b) => a + b, 0) / vals.length);
+    } else {
+      portfolioData.push(vals.reduce((a, b) => a + b, 0));
+    }
+  }
+
+  return {
+    label: 'Portfolio',
+    data: portfolioData,
+    borderColor: GRAPH_PORTFOLIO_COLOR,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderDash: [6, 4],
+    pointRadius: 2,
+    pointHoverRadius: 4,
+    tension: 0.3,
+    spanGaps: false
+  };
+}
+
+function buildChartOptions(metric, isDark, isChart2) {
+  const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+  const tickColor = isDark ? '#9CA3AF' : '#6B7280';
+  const tooltipBg = isDark ? '#1F2937' : '#FFFFFF';
+  const tooltipBorder = isDark ? '#374151' : '#E5E7EB';
+  const tooltipText = isDark ? '#F9FAFB' : '#1F2937';
+  const isCurrency = metric === 'value' || metric === 'equity' || metric === 'cumulativeCashFlow';
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: tooltipBg,
+        borderColor: tooltipBorder,
+        borderWidth: 1,
+        titleColor: tooltipText,
+        bodyColor: tickColor,
+        padding: 10,
+        callbacks: {
+          label: function(ctx) {
+            const val = ctx.parsed.y;
+            if (val === null || val === undefined) return null;
+            const formatted = isCurrency ? formatCurrency(val) : val.toFixed(2) + '%';
+            return ' ' + ctx.dataset.label + ': ' + formatted;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: gridColor },
+        ticks: { color: tickColor, font: { size: 11 } }
+      },
+      y: {
+        grid: { color: gridColor },
+        ticks: {
+          color: tickColor,
+          font: { size: 11 },
+          callback: function(val) {
+            return isCurrency ? formatCurrency(val) : val.toFixed(1) + '%';
+          }
+        }
+      }
+    }
+  };
+
+  if (isChart2) {
+    options.plugins.annotation = {
+      annotations: {
+        zeroLine: {
+          type: 'line',
+          yMin: 0,
+          yMax: 0,
+          borderColor: 'rgba(239,68,68,0.5)',
+          borderWidth: 1,
+          borderDash: [4, 4]
+        }
+      }
+    };
+  }
+
+  return options;
+}
+
+// ---------------------------------------------------------------------------
+// Helper: build a minimal propertyDatasets stub for buildPortfolioDataset tests.
+// Each dataset must have a .data array of length GRAPH_YEARS + 1 (16 entries).
+// ---------------------------------------------------------------------------
+
+function makeDatasets(dataArrays) {
+  return {
+    labels: Array.from({ length: GRAPH_YEARS + 1 }, (_, i) => 'Yr ' + i),
+    datasets: dataArrays.map((data, i) => ({
+      label: 'Property ' + (i + 1),
+      data
+    }))
+  };
+}
+
+function makeUniformData(value) {
+  return Array.from({ length: GRAPH_YEARS + 1 }, () => value);
+}
+
+// ---------------------------------------------------------------------------
+// buildPortfolioDataset — metadata / shape
+// ---------------------------------------------------------------------------
+
+console.log('\nbuildPortfolioDataset — shape and metadata');
+
+test('returns an object with label "Portfolio"', () => {
+  const result = buildPortfolioDataset(makeDatasets([makeUniformData(100)]), 'value');
+  assert.strictEqual(result.label, 'Portfolio');
+});
+
+test('returns data array of length GRAPH_YEARS + 1', () => {
+  const result = buildPortfolioDataset(makeDatasets([makeUniformData(50)]), 'value');
+  assert.strictEqual(result.data.length, GRAPH_YEARS + 1);
+});
+
+test('uses GRAPH_PORTFOLIO_COLOR as borderColor', () => {
+  const result = buildPortfolioDataset(makeDatasets([makeUniformData(0)]), 'value');
+  assert.strictEqual(result.borderColor, GRAPH_PORTFOLIO_COLOR);
+});
+
+test('backgroundColor is transparent', () => {
+  const result = buildPortfolioDataset(makeDatasets([makeUniformData(0)]), 'value');
+  assert.strictEqual(result.backgroundColor, 'transparent');
+});
+
+test('borderDash is [6, 4]', () => {
+  const result = buildPortfolioDataset(makeDatasets([makeUniformData(0)]), 'value');
+  assert.deepStrictEqual(result.borderDash, [6, 4]);
+});
+
+// ---------------------------------------------------------------------------
+// buildPortfolioDataset — value / equity / cumulativeCashFlow (summing)
+// ---------------------------------------------------------------------------
+
+console.log('\nbuildPortfolioDataset — summing metrics');
+
+test('sums two properties for metric "value" at year 0', () => {
+  const d1 = makeUniformData(100000);
+  const d2 = makeUniformData(200000);
+  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'value');
+  assert.strictEqual(result.data[0], 300000);
+});
+
+test('sums three properties for metric "equity" at every year', () => {
+  const d1 = makeUniformData(50);
+  const d2 = makeUniformData(50);
+  const d3 = makeUniformData(50);
+  const result = buildPortfolioDataset(makeDatasets([d1, d2, d3]), 'equity');
+  result.data.forEach(v => assert.strictEqual(v, 150));
+});
+
+test('sums for metric "cumulativeCashFlow"', () => {
+  const d1 = makeUniformData(-1000);
+  const d2 = makeUniformData(2000);
+  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'cumulativeCashFlow');
+  assert.strictEqual(result.data[0], 1000);
+});
+
+test('single property — portfolio equals that property\'s value', () => {
+  const d1 = makeUniformData(750000);
+  const result = buildPortfolioDataset(makeDatasets([d1]), 'value');
+  result.data.forEach(v => assert.strictEqual(v, 750000));
+});
+
+// ---------------------------------------------------------------------------
+// buildPortfolioDataset — annualisedReturn (averaging)
+// ---------------------------------------------------------------------------
+
+console.log('\nbuildPortfolioDataset — annualisedReturn averaging');
+
+test('averages two properties for metric "annualisedReturn"', () => {
+  const d1 = makeUniformData(8);
+  const d2 = makeUniformData(12);
+  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'annualisedReturn');
+  assert.strictEqual(result.data[0], 10);
+});
+
+test('averages three properties for metric "annualisedReturn"', () => {
+  const d1 = makeUniformData(6);
+  const d2 = makeUniformData(9);
+  const d3 = makeUniformData(12);
+  const result = buildPortfolioDataset(makeDatasets([d1, d2, d3]), 'annualisedReturn');
+  assert.strictEqual(result.data[5], 9);
+});
+
+test('single property annualisedReturn equals that property\'s value', () => {
+  const d1 = makeUniformData(7.5);
+  const result = buildPortfolioDataset(makeDatasets([d1]), 'annualisedReturn');
+  result.data.forEach(v => assert.strictEqual(v, 7.5));
+});
+
+// ---------------------------------------------------------------------------
+// buildPortfolioDataset — null / undefined filtering
+// ---------------------------------------------------------------------------
+
+console.log('\nbuildPortfolioDataset — null and undefined filtering');
+
+test('null values are excluded from sum', () => {
+  // d1 has null at year 0, d2 has 500 everywhere
+  const d1 = makeUniformData(500);
+  d1[0] = null;
+  const d2 = makeUniformData(500);
+  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'value');
+  // year 0: only d2 contributes → 500
+  assert.strictEqual(result.data[0], 500);
+  // year 1: both contribute → 1000
+  assert.strictEqual(result.data[1], 1000);
+});
+
+test('all-null year produces null in portfolio', () => {
+  const d1 = makeUniformData(null);
+  const d2 = makeUniformData(null);
+  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'value');
+  result.data.forEach(v => assert.strictEqual(v, null));
+});
+
+test('undefined values are treated the same as null (excluded)', () => {
+  const d1 = makeUniformData(300);
+  d1[3] = undefined;
+  const d2 = makeUniformData(300);
+  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'value');
+  // year 3: only d2 → 300
+  assert.strictEqual(result.data[3], 300);
+});
+
+test('empty datasets array produces all-null portfolio', () => {
+  const result = buildPortfolioDataset(makeDatasets([]), 'value');
+  assert.strictEqual(result.data.length, GRAPH_YEARS + 1);
+  result.data.forEach(v => assert.strictEqual(v, null));
+});
+
+// ---------------------------------------------------------------------------
+// buildChartOptions — structural properties
+// ---------------------------------------------------------------------------
+
+console.log('\nbuildChartOptions — structure');
+
+test('returns responsive:true and maintainAspectRatio:false', () => {
+  const opts = buildChartOptions('value', false, false);
+  assert.strictEqual(opts.responsive, true);
+  assert.strictEqual(opts.maintainAspectRatio, false);
+});
+
+test('interaction mode is "index" with intersect:false', () => {
+  const opts = buildChartOptions('value', false, false);
+  assert.strictEqual(opts.interaction.mode, 'index');
+  assert.strictEqual(opts.interaction.intersect, false);
+});
+
+test('legend display is false', () => {
+  const opts = buildChartOptions('value', false, false);
+  assert.strictEqual(opts.plugins.legend.display, false);
+});
+
+test('x and y scale objects are present', () => {
+  const opts = buildChartOptions('value', false, false);
+  assert.ok(opts.scales.x, 'scales.x should exist');
+  assert.ok(opts.scales.y, 'scales.y should exist');
+});
+
+// ---------------------------------------------------------------------------
+// buildChartOptions — isDark colour switching
+// ---------------------------------------------------------------------------
+
+console.log('\nbuildChartOptions — isDark colour switching');
+
+test('dark mode sets tooltip background to #1F2937', () => {
+  const opts = buildChartOptions('value', true, false);
+  assert.strictEqual(opts.plugins.tooltip.backgroundColor, '#1F2937');
+});
+
+test('light mode sets tooltip background to #FFFFFF', () => {
+  const opts = buildChartOptions('value', false, false);
+  assert.strictEqual(opts.plugins.tooltip.backgroundColor, '#FFFFFF');
+});
+
+test('dark mode sets tooltip border to #374151', () => {
+  const opts = buildChartOptions('value', true, false);
+  assert.strictEqual(opts.plugins.tooltip.borderColor, '#374151');
+});
+
+test('light mode sets tooltip border to #E5E7EB', () => {
+  const opts = buildChartOptions('value', false, false);
+  assert.strictEqual(opts.plugins.tooltip.borderColor, '#E5E7EB');
+});
+
+test('dark mode tick colour is #9CA3AF', () => {
+  const opts = buildChartOptions('value', true, false);
+  assert.strictEqual(opts.plugins.tooltip.bodyColor, '#9CA3AF');
+});
+
+test('light mode tick colour is #6B7280', () => {
+  const opts = buildChartOptions('value', false, false);
+  assert.strictEqual(opts.plugins.tooltip.bodyColor, '#6B7280');
+});
+
+// ---------------------------------------------------------------------------
+// buildChartOptions — isChart2 annotation
+// ---------------------------------------------------------------------------
+
+console.log('\nbuildChartOptions — isChart2 annotation');
+
+test('isChart2:true adds annotation.annotations.zeroLine', () => {
+  const opts = buildChartOptions('annualisedReturn', false, true);
+  assert.ok(opts.plugins.annotation, 'annotation plugin should be present');
+  assert.ok(opts.plugins.annotation.annotations.zeroLine, 'zeroLine annotation should be present');
+});
+
+test('isChart2:false does NOT add annotation plugin', () => {
+  const opts = buildChartOptions('value', false, false);
+  assert.strictEqual(opts.plugins.annotation, undefined);
+});
+
+test('zeroLine annotation has yMin:0 and yMax:0', () => {
+  const opts = buildChartOptions('equity', true, true);
+  const zl = opts.plugins.annotation.annotations.zeroLine;
+  assert.strictEqual(zl.yMin, 0);
+  assert.strictEqual(zl.yMax, 0);
+});
+
+test('zeroLine borderDash is [4, 4]', () => {
+  const opts = buildChartOptions('equity', false, true);
+  assert.deepStrictEqual(opts.plugins.annotation.annotations.zeroLine.borderDash, [4, 4]);
+});
+
+// ---------------------------------------------------------------------------
+// buildChartOptions — isCurrency detection in callbacks
+// ---------------------------------------------------------------------------
+
+console.log('\nbuildChartOptions — tooltip label callback');
+
+test('currency metric: tooltip label callback formats with $', () => {
+  const opts = buildChartOptions('value', false, false);
+  const cb = opts.plugins.tooltip.callbacks.label;
+  const result = cb({ parsed: { y: 500000 }, dataset: { label: 'Prop A' } });
+  assert.ok(result.includes('$'), 'should contain $ sign for currency metric');
+  assert.ok(result.includes('Prop A'), 'should include dataset label');
+});
+
+test('currency metric "equity": tooltip label callback formats with $', () => {
+  const opts = buildChartOptions('equity', false, false);
+  const cb = opts.plugins.tooltip.callbacks.label;
+  const result = cb({ parsed: { y: 150000 }, dataset: { label: 'P1' } });
+  assert.ok(result.includes('$'));
+});
+
+test('non-currency metric "annualisedReturn": tooltip label uses % not $', () => {
+  const opts = buildChartOptions('annualisedReturn', false, false);
+  const cb = opts.plugins.tooltip.callbacks.label;
+  const result = cb({ parsed: { y: 7.53 }, dataset: { label: 'P1' } });
+  assert.ok(result.includes('%'), 'should contain % for non-currency metric');
+  assert.ok(!result.includes('$'), 'should not contain $ for non-currency metric');
+});
+
+test('tooltip label callback returns null when val is null', () => {
+  const opts = buildChartOptions('value', false, false);
+  const cb = opts.plugins.tooltip.callbacks.label;
+  const result = cb({ parsed: { y: null }, dataset: { label: 'P1' } });
+  assert.strictEqual(result, null);
+});
+
+test('y-axis tick callback uses % for annualisedReturn', () => {
+  const opts = buildChartOptions('annualisedReturn', false, false);
+  const tickCb = opts.scales.y.ticks.callback;
+  const result = tickCb(8.5);
+  assert.ok(result.includes('%'));
+  assert.ok(!result.includes('$'));
+});
+
+test('y-axis tick callback uses $ for value metric', () => {
+  const opts = buildChartOptions('value', false, false);
+  const tickCb = opts.scales.y.ticks.callback;
+  const result = tickCb(250000);
+  assert.ok(result.includes('$'));
+});
+
+// ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
 
