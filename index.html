@@ -67,6 +67,11 @@
       --positive: #10B981;
       --negative: #EF4444;
       --negative-bg: rgba(239, 68, 68, 0.06);
+      --negative-bg-hover: rgba(239, 68, 68, 0.10);
+      --negative-border: rgba(239, 68, 68, 0.6);
+      --warning-border: rgba(245, 158, 11, 0.6);
+      --warning-bg: rgba(245, 158, 11, 0.08);
+      --warning-bg-hover: rgba(245, 158, 11, 0.13);
       --secondary-bg: rgba(59, 130, 246, 0.06);
 
       /* Effects */
@@ -119,6 +124,11 @@
       --section-border-error: #FECACA;
       --section-border-warning: #FDE68A;
       --negative-bg: rgba(239, 68, 68, 0.05);
+      --negative-bg-hover: rgba(239, 68, 68, 0.09);
+      --negative-border: rgba(239, 68, 68, 0.5);
+      --warning-border: rgba(245, 158, 11, 0.5);
+      --warning-bg: rgba(245, 158, 11, 0.07);
+      --warning-bg-hover: rgba(245, 158, 11, 0.11);
       --secondary-bg: rgba(59, 130, 246, 0.05);
       --accent-border: rgba(16, 185, 129, 0.30);
     }
@@ -1527,6 +1537,60 @@
     padding: 0.3rem 0;
   }
 
+  /* ── Breakdown section modifier classes ── */
+  .proj-section--startup,
+  .proj-section--income {
+    border-left: 3px solid var(--accent);
+  }
+  .proj-section--startup .proj-section-header,
+  .proj-section--income .proj-section-header {
+    background: var(--accent-bg);
+  }
+  .proj-section--startup .proj-section-header:hover,
+  .proj-section--income .proj-section-header:hover {
+    background: var(--accent-bg-hover);
+  }
+  .proj-section--expenses {
+    border-left: 3px solid var(--negative-border);
+  }
+  .proj-section--expenses .proj-section-header {
+    background: var(--negative-bg);
+  }
+  .proj-section--expenses .proj-section-header:hover {
+    background: var(--negative-bg-hover);
+  }
+  .proj-section--cashflow {
+    border-left: 3px solid var(--accent);
+  }
+  .proj-section--cashflow.negative {
+    border-left-color: var(--negative-border);
+  }
+  .proj-section--cashflow .proj-section-header {
+    background: var(--accent-bg);
+  }
+  .proj-section--cashflow.negative .proj-section-header {
+    background: var(--negative-bg);
+  }
+  .proj-section--cashflow .proj-section-header:hover {
+    background: var(--accent-bg-hover);
+  }
+  .proj-section--cashflow.negative .proj-section-header:hover {
+    background: var(--negative-bg-hover);
+  }
+  .proj-section--tax {
+    border-left: 3px solid var(--warning-border);
+    margin-top: 0.5rem;
+  }
+  .proj-section--tax .proj-section-header {
+    background: var(--warning-bg);
+  }
+  .proj-section--tax .proj-section-header:hover {
+    background: var(--warning-bg-hover);
+  }
+  .proj-highlight-value--hero {
+    font-size: 1.05rem;
+  }
+
   .property-table-header {
     display: flex;
     align-items: center;
@@ -1782,30 +1846,10 @@
         <span class="breakdown-property-label" id="breakdownPropertyLabel">Property 1</span>
       </div>
 
-      <!-- Income -->
-      <div class="proj-section">
+      <!-- Cash Up Front -->
+      <div class="proj-section proj-section--startup">
         <button class="proj-section-header" aria-expanded="false">
-          <span class="proj-section-title">Income</span>
-          <span class="proj-section-highlights">
-            <span class="proj-highlight">
-              <span class="proj-highlight-label">Annual Income</span>
-              <span class="proj-highlight-value" id="resAnnualRent">-</span>
-            </span>
-          </span>
-          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="proj-section-body" hidden>
-          <div class="line-item">
-            <span class="line-label">Weekly Rent</span>
-            <span class="line-value" id="resWeeklyRent">-</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Start Up Expenses -->
-      <div class="proj-section">
-        <button class="proj-section-header" aria-expanded="false">
-          <span class="proj-section-title">Start Up Expenses</span>
+          <span class="proj-section-title">Cash Up Front</span>
           <span class="proj-section-highlights">
             <span class="proj-highlight">
               <span class="proj-highlight-label">Total Cash Up Front</span>
@@ -1830,39 +1874,33 @@
         </div>
       </div>
 
-      <!-- Monthly Cash Flow -->
-      <div class="proj-section">
+      <!-- Income -->
+      <div class="proj-section proj-section--income">
         <button class="proj-section-header" aria-expanded="false">
-          <span class="proj-section-title">Monthly Cash Flow</span>
+          <span class="proj-section-title">Income</span>
           <span class="proj-section-highlights">
             <span class="proj-highlight">
-              <span class="proj-highlight-value" id="resMonthlyCashFlow">-</span>
+              <span class="proj-highlight-label">Annual Income</span>
+              <span class="proj-highlight-value" id="resAnnualRent">-</span>
             </span>
           </span>
           <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="proj-section-body" hidden>
           <div class="line-item">
-            <span class="line-label">Rent In</span>
-            <span class="line-value positive" id="resMonthlyRent">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Property Management</span>
-            <span class="line-value" id="resMonthlyMgmt">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Loan Payment</span>
-            <span class="line-value" id="resMonthlyLoan">-</span>
+            <span class="line-label">Weekly Rent</span>
+            <span class="line-value" id="resWeeklyRent">-</span>
           </div>
         </div>
       </div>
 
       <!-- Annual Expenses -->
-      <div class="proj-section">
+      <div class="proj-section proj-section--expenses">
         <button class="proj-section-header" aria-expanded="false">
           <span class="proj-section-title">Annual Expenses</span>
           <span class="proj-section-highlights">
             <span class="proj-highlight">
+              <span class="proj-highlight-label">Total Annual</span>
               <span class="proj-highlight-value" id="resTotalExpenses">-</span>
             </span>
           </span>
@@ -1897,19 +1935,68 @@
             <span class="line-label">Maintenance Allowance <span class="help-tip" data-tip="Estimated at 0.5% of property value">?</span></span>
             <span class="line-value" id="resMaintenance">-</span>
           </div>
-          <div class="line-item muted">
-            <span class="line-label">Total Annual Expenses incl Tax Benefit</span>
-            <span class="line-value" id="resTotalExpensesAfterTax">-</span>
+        </div>
+      </div>
+
+      <!-- Annual Cash Flow -->
+      <div class="proj-section proj-section--cashflow">
+        <button class="proj-section-header" aria-expanded="false">
+          <span class="proj-section-title">Annual Cash Flow</span>
+          <span class="proj-section-highlights">
+            <span class="proj-highlight">
+              <span class="proj-highlight-label">Monthly</span>
+              <span class="proj-highlight-value proj-highlight-value--hero" id="resMonthlyCashFlow">-</span>
+            </span>
+            <span class="proj-highlight">
+              <span class="proj-highlight-label">Annual</span>
+              <span class="proj-highlight-value proj-highlight-value--hero" id="resAnnualCashFlow">-</span>
+            </span>
+          </span>
+          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="proj-section-body" hidden>
+          <div class="line-item">
+            <span class="line-label">Annual Rent</span>
+            <span class="line-value positive" id="resCfAnnualRent">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Loan Payments</span>
+            <span class="line-value" id="resCfLoanPayment">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Property Management</span>
+            <span class="line-value" id="resCfManagement">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Insurance</span>
+            <span class="line-value" id="resCfInsurance">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Council Rates</span>
+            <span class="line-value" id="resCfCouncil">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Vacancy Allowance</span>
+            <span class="line-value" id="resCfVacancy">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Maintenance Allowance</span>
+            <span class="line-value" id="resCfMaintenance">-</span>
+          </div>
+          <div class="line-item total">
+            <span class="line-label">Net Annual Cash Flow</span>
+            <span class="line-value" id="resCfNetAnnual">-</span>
           </div>
         </div>
       </div>
 
       <!-- Potential Tax Benefit -->
-      <div class="proj-section">
+      <div class="proj-section proj-section--tax">
         <button class="proj-section-header" aria-expanded="false">
           <span class="proj-section-title">Potential Tax Benefit</span>
           <span class="proj-section-highlights">
             <span class="proj-highlight">
+              <span class="proj-highlight-label">Est. Benefit</span>
               <span class="proj-highlight-value" id="resTaxBenefit">-</span>
             </span>
           </span>
@@ -1923,6 +2010,10 @@
           <div class="line-item muted">
             <span class="line-label">Net Rental Position <span class="help-tip" data-tip="Annual rent minus deductible expenses. If negative, the loss can offset your taxable income (negative gearing).">?</span></span>
             <span class="line-value" id="resNetRental">-</span>
+          </div>
+          <div class="line-item muted">
+            <span class="line-label">Expenses After Tax Benefit</span>
+            <span class="line-value" id="resTotalExpensesAfterTax">-</span>
           </div>
           <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Deductible expenses include loan interest, property management, insurance, council rates, and maintenance. If these exceed rental income, the loss can be offset against your other taxable income (negative gearing). The benefit is estimated at 30% of the rental loss. Does not include depreciation. Note: potential tax benefit is not included in Annual Cash Flow as it depends heavily on your individual tax situation.</div>
         </div>
@@ -2676,17 +2767,36 @@
       document.getElementById('resWeeklyRent').textContent = formatCurrency(weeklyRent) + '/wk';
       document.getElementById('resAnnualRent').textContent = formatCurrency(annualRent) + '/yr';
 
-      // Update DOM — Month-to-Month Picture
-      const monthlyRent = annualRent / 12;
-      const monthlyMgmt = annualManagementFee / 12;
-      const monthlyLoan = annualLoanPayment / 12;
-      const monthlyNet = monthlyRent - monthlyMgmt - monthlyLoan;
-      document.getElementById('resMonthlyRent').textContent = formatCurrency(monthlyRent) + '/mo';
-      document.getElementById('resMonthlyMgmt').textContent = '-' + formatCurrency(monthlyMgmt) + '/mo';
-      document.getElementById('resMonthlyLoan').textContent = '-' + formatCurrency(monthlyLoan) + '/mo';
+      // Update DOM — Cash Flow header highlights
       const mCfEl = document.getElementById('resMonthlyCashFlow');
-      mCfEl.textContent = formatCurrency(monthlyNet) + '/mo';
-      mCfEl.className = 'proj-highlight-value ' + (monthlyNet >= 0 ? 'positive' : 'negative');
+      if (mCfEl) {
+        mCfEl.textContent = formatCurrency(monthlyCashFlow) + '/mo';
+        mCfEl.className = 'proj-highlight-value proj-highlight-value--hero ' + (monthlyCashFlow >= 0 ? 'positive' : 'negative');
+      }
+      const aCfEl = document.getElementById('resAnnualCashFlow');
+      if (aCfEl) {
+        aCfEl.textContent = formatCurrency(annualCashFlow) + '/yr';
+        aCfEl.className = 'proj-highlight-value proj-highlight-value--hero ' + (annualCashFlow >= 0 ? 'positive' : 'negative');
+      }
+
+      // Update DOM — Cash Flow body (annual breakdown)
+      const cfRentEl = document.getElementById('resCfAnnualRent');
+      if (cfRentEl) {
+        cfRentEl.textContent = formatCurrency(annualRent) + '/yr';
+        document.getElementById('resCfLoanPayment').textContent = '-' + formatCurrency(annualLoanPayment) + '/yr';
+        document.getElementById('resCfManagement').textContent = '-' + formatCurrency(annualManagementFee) + '/yr';
+        document.getElementById('resCfInsurance').textContent = '-' + formatCurrency(insurance) + '/yr';
+        document.getElementById('resCfCouncil').textContent = '-' + formatCurrency(councilFees) + '/yr';
+        document.getElementById('resCfVacancy').textContent = '-' + formatCurrency(vacancyAllowance) + '/yr';
+        document.getElementById('resCfMaintenance').textContent = '-' + formatCurrency(maintenanceAllowance) + '/yr';
+        const cfNetEl = document.getElementById('resCfNetAnnual');
+        if (cfNetEl) {
+          cfNetEl.textContent = formatCurrency(annualCashFlow) + '/yr';
+          cfNetEl.className = 'line-value ' + (annualCashFlow >= 0 ? 'positive' : 'negative');
+        }
+      }
+      const cashflowSection = document.querySelector('.proj-section--cashflow');
+      if (cashflowSection) cashflowSection.classList.toggle('negative', annualCashFlow < 0);
 
       // Update DOM — Expenses
       document.getElementById('resLoanPayment').textContent = formatCurrency(annualLoanPayment) + '/yr';
