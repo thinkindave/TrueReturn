@@ -713,6 +713,51 @@
       display: none;
     }
 
+    /* ── Period headline strip ── */
+    .period-headlines {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+    }
+
+    .period-headline-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      padding: 0.625rem 0.75rem;
+      border-right: 1px solid var(--border-subtle);
+    }
+
+    .period-headline-cell:last-child {
+      border-right: none;
+    }
+
+    .period-headline-label {
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .period-headline-value {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .period-headline-value.positive { color: var(--positive); }
+    .period-headline-value.negative { color: var(--negative); }
+
     .section-header.cashflow {
       color: var(--color-primary-500);
       border-color: var(--section-border-primary);
@@ -1319,7 +1364,7 @@
   .property-table-labels,
   .property-row {
     display: grid;
-    grid-template-columns: 1.5rem 1fr 1.4fr 0.75fr 0.75fr 0.6fr 0.6fr 0.7fr 0.6fr 0.85fr 0.7fr 1fr 0.65fr 0.65fr;
+    grid-template-columns: 2rem 1fr 1.4fr 0.75fr 0.75fr 0.6fr 0.6fr 0.7fr 0.6fr 0.85fr 0.7fr 1fr 0.65fr 0.65fr;
     gap: 0 0.5rem;
     align-items: center;
   }
@@ -1393,27 +1438,19 @@
     font-size: 0.7rem;
   }
 
-  .row-num {
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-align: center;
-    line-height: 32px;
-  }
-
-  .property-entry.selected .row-num {
-    color: var(--accent);
-  }
-
   .prop-col-num {
     position: relative;
     display: flex;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
+    gap: 2px;
   }
 
   .delete-row-btn {
-    display: none;
+    display: flex;
+    visibility: hidden;
+    pointer-events: none;
     background: none;
     border: none;
     cursor: pointer;
@@ -1430,12 +1467,47 @@
     color: var(--negative);
   }
 
-  .property-entry:hover .row-num {
-    display: none;
+  .focus-row-btn {
+    display: flex;
+    visibility: hidden;
+    pointer-events: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 2px;
+    border-radius: 4px;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    transition: color var(--transition-fast);
   }
 
-  .property-entry:hover .delete-row-btn {
-    display: flex;
+  .focus-row-btn:hover {
+    color: var(--accent);
+  }
+
+  .delete-row-btn:disabled,
+  .delete-row-btn.is-disabled {
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .property-entry:hover .delete-row-btn,
+  .property-entry:hover .focus-row-btn {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .property-entry.selected .focus-row-btn,
+  .property-entry.selected .delete-row-btn {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .property-entry.selected .focus-row-btn {
+    color: var(--accent);
   }
 
   .prop-col-result {
@@ -1736,7 +1808,7 @@
             </button>
           </div>
           <div class="property-table-labels">
-            <div class="prop-col-label">#</div>
+            <div class="prop-col-label"></div>
             <div class="prop-col-label">Name</div>
             <div class="prop-col-label">Purchase Price</div>
             <div class="prop-col-label">Deposit</div>
@@ -1755,7 +1827,9 @@
             <div class="property-entry">
               <div class="property-row">
                 <div class="prop-col prop-col-num">
-                  <span class="row-num">1</span>
+                  <button class="focus-row-btn" title="Select property">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
                   <button class="delete-row-btn" title="Remove property">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
                   </button>
@@ -2029,10 +2103,24 @@
       <div class="projections-grid">
         <!-- 5 Year -->
         <div>
-          <button class="period-header" aria-expanded="true">
+          <button class="period-header" aria-expanded="false">
             5 Year
             <svg class="proj-section-chevron" viewBox="0 0 24 24" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg>
           </button>
+          <div class="period-headlines">
+            <div class="period-headline-cell">
+              <span class="period-headline-label">Cash Out Position</span>
+              <span class="period-headline-value" id="proj5HeadlineCashOut">-</span>
+            </div>
+            <div class="period-headline-cell">
+              <span class="period-headline-label">Total Profit</span>
+              <span class="period-headline-value" id="proj5HeadlineTotalProfit">-</span>
+            </div>
+            <div class="period-headline-cell">
+              <span class="period-headline-label">Return on Cash</span>
+              <span class="period-headline-value" id="proj5HeadlineReturnOnCash">-</span>
+            </div>
+          </div>
           <div class="period-body">
 
           <div class="proj-section">
@@ -2142,10 +2230,24 @@
 
         <!-- 10 Year -->
         <div>
-          <button class="period-header" aria-expanded="true">
+          <button class="period-header" aria-expanded="false">
             10 Year
             <svg class="proj-section-chevron" viewBox="0 0 24 24" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg>
           </button>
+          <div class="period-headlines">
+            <div class="period-headline-cell">
+              <span class="period-headline-label">Cash Out Position</span>
+              <span class="period-headline-value" id="proj10HeadlineCashOut">-</span>
+            </div>
+            <div class="period-headline-cell">
+              <span class="period-headline-label">Total Profit</span>
+              <span class="period-headline-value" id="proj10HeadlineTotalProfit">-</span>
+            </div>
+            <div class="period-headline-cell">
+              <span class="period-headline-label">Return on Cash</span>
+              <span class="period-headline-value" id="proj10HeadlineReturnOnCash">-</span>
+            </div>
+          </div>
           <div class="period-body">
 
           <div class="proj-section">
@@ -2255,10 +2357,24 @@
 
         <!-- 15 Year -->
         <div>
-          <button class="period-header" aria-expanded="true">
+          <button class="period-header" aria-expanded="false">
             15 Year
             <svg class="proj-section-chevron" viewBox="0 0 24 24" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg>
           </button>
+          <div class="period-headlines">
+            <div class="period-headline-cell">
+              <span class="period-headline-label">Cash Out Position</span>
+              <span class="period-headline-value" id="projLifeHeadlineCashOut">-</span>
+            </div>
+            <div class="period-headline-cell">
+              <span class="period-headline-label">Total Profit</span>
+              <span class="period-headline-value" id="projLifeHeadlineTotalProfit">-</span>
+            </div>
+            <div class="period-headline-cell">
+              <span class="period-headline-label">Return on Cash</span>
+              <span class="period-headline-value" id="projLifeHeadlineReturnOnCash">-</span>
+            </div>
+          </div>
           <div class="period-body">
 
           <div class="proj-section">
@@ -2466,13 +2582,24 @@
     function selectEntry(entry) {
       document.querySelectorAll('.property-entry').forEach(e => e.classList.remove('selected'));
       entry.classList.add('selected');
-      // Update row number indicators
-      Array.from(document.querySelectorAll('.property-entry')).forEach((e, i) => {
-        const num = e.querySelector('.row-num');
-        if (num) num.textContent = i + 1;
-      });
       updateSectionLabels(entry);
       calculate();
+    }
+
+    function updateDeleteButtonState() {
+      const allEntries = Array.from(document.querySelectorAll('.property-entry'));
+      const single = allEntries.length <= 1;
+      allEntries.forEach(entry => {
+        const btn = entry.querySelector('.delete-row-btn');
+        if (!btn) return;
+        if (single) {
+          btn.classList.add('is-disabled');
+          btn.setAttribute('disabled', '');
+        } else {
+          btn.classList.remove('is-disabled');
+          btn.removeAttribute('disabled');
+        }
+      });
     }
 
     function initPropertySelection() {
@@ -2488,16 +2615,16 @@
           const wasSelected = entry.classList.contains('selected');
           entry.remove();
           const remaining = Array.from(document.querySelectorAll('.property-entry'));
-          remaining.forEach((e, i) => {
-            const num = e.querySelector('.row-num');
-            if (num) num.textContent = i + 1;
-          });
           if (wasSelected) selectEntry(remaining[0]);
+          updateDeleteButtonState();
+          calculate();
           return;
         }
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-        const entry = e.target.closest('.property-entry');
-        if (entry) selectEntry(entry);
+        const focusBtn = e.target.closest('.focus-row-btn');
+        if (focusBtn) {
+          const entry = focusBtn.closest('.property-entry');
+          if (entry && !entry.classList.contains('selected')) selectEntry(entry);
+        }
       });
 
       rows.addEventListener('input', function(e) {
@@ -2526,6 +2653,7 @@
       // Auto-select first
       const first = document.querySelector('.property-entry');
       if (first) selectEntry(first);
+      updateDeleteButtonState();
     }
     function addPropertyRow() {
       const template = document.querySelector('.property-entry');
@@ -2554,6 +2682,7 @@
       newEntry.classList.remove('selected');
 
       document.querySelector('.property-rows').appendChild(newEntry);
+      updateDeleteButtonState();
       selectEntry(newEntry);
     }
 
@@ -2566,10 +2695,13 @@
         });
       });
       document.querySelectorAll('.period-header').forEach(header => {
+        const body = header.parentElement.querySelector('.period-body');
+        header.setAttribute('aria-expanded', 'false');
+        body.hidden = true;
         header.addEventListener('click', () => {
           const expanded = header.getAttribute('aria-expanded') === 'true';
           header.setAttribute('aria-expanded', String(!expanded));
-          header.nextElementSibling.hidden = expanded;
+          body.hidden = expanded;
         });
       });
     }
@@ -2937,6 +3069,25 @@
         const arEl = document.getElementById(`${prefix}AnnualisedReturn`);
         arEl.textContent = annualisedReturn.toFixed(2) + '%';
         arEl.className = 'line-value ' + (annualisedReturn >= 0 ? 'positive' : 'negative');
+
+        // Headline strip
+        const hCashOutEl = document.getElementById(`${prefix}HeadlineCashOut`);
+        if (hCashOutEl) {
+          hCashOutEl.textContent = formatCurrency(trueCashReturn);
+          hCashOutEl.className = 'period-headline-value ' + (trueCashReturn >= 0 ? 'positive' : 'negative');
+        }
+
+        const hTotalProfitEl = document.getElementById(`${prefix}HeadlineTotalProfit`);
+        if (hTotalProfitEl) {
+          hTotalProfitEl.textContent = formatCurrency(totalProfit);
+          hTotalProfitEl.className = 'period-headline-value ' + (totalProfit >= 0 ? 'positive' : 'negative');
+        }
+
+        const hReturnOnCashEl = document.getElementById(`${prefix}HeadlineReturnOnCash`);
+        if (hReturnOnCashEl) {
+          hReturnOnCashEl.textContent = returnOnCash.toFixed(2) + '%';
+          hReturnOnCashEl.className = 'period-headline-value ' + (returnOnCash >= 0 ? 'positive' : 'negative');
+        }
       });
 
       renderGraphs();
