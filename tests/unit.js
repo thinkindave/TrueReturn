@@ -491,12 +491,8 @@ test('NT: top band (> 5000000)', () => {
 //   NOT testable here. Both reach into the DOM (getElementById, querySelectorAll)
 //   and construct Chart.js instances. DOM- and library-dependent.
 //
-// buildPortfolioDataset(propertyDatasets, metric)
-//   PURE — accepts two plain JS arguments, performs arithmetic aggregation, and
-//   returns a plain object. Testable without any DOM. Copied verbatim below.
-//
-// buildChartOptions(metric, isDark, isChart2)
-//   STRUCTURALLY PURE — all three arguments are primitives. Returns a plain
+// buildChartOptions(metric, isDark)
+//   STRUCTURALLY PURE — both arguments are primitives. Returns a plain
 //   configuration object. The only non-primitive dependency is formatCurrency,
 //   which is already inlined above. Testable without any DOM. Copied verbatim below.
 
@@ -504,46 +500,15 @@ test('NT: top band (> 5000000)', () => {
 // Pure functions copied verbatim from index.html (graph section)
 // ---------------------------------------------------------------------------
 
-const GRAPH_PORTFOLIO_COLOR = '#9CA3AF';
 const GRAPH_YEARS = 15;
 
-function buildPortfolioDataset(propertyDatasets, metric) {
-  const labels = propertyDatasets.labels;
-  const allData = propertyDatasets.datasets.map(d => d.data);
-  const portfolioData = [];
-
-  for (let y = 0; y <= GRAPH_YEARS; y++) {
-    const vals = allData.map(d => d[y]).filter(v => v !== null && v !== undefined);
-    if (vals.length === 0) {
-      portfolioData.push(null);
-    } else if (metric === 'annualisedReturn') {
-      portfolioData.push(vals.reduce((a, b) => a + b, 0) / vals.length);
-    } else {
-      portfolioData.push(vals.reduce((a, b) => a + b, 0));
-    }
-  }
-
-  return {
-    label: 'Portfolio',
-    data: portfolioData,
-    borderColor: GRAPH_PORTFOLIO_COLOR,
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderDash: [6, 4],
-    pointRadius: 2,
-    pointHoverRadius: 4,
-    tension: 0.3,
-    spanGaps: false
-  };
-}
-
-function buildChartOptions(metric, isDark, isChart2) {
+function buildChartOptions(metric, isDark) {
   const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
   const tickColor = isDark ? '#9CA3AF' : '#6B7280';
   const tooltipBg = isDark ? '#1F2937' : '#FFFFFF';
   const tooltipBorder = isDark ? '#374151' : '#E5E7EB';
   const tooltipText = isDark ? '#F9FAFB' : '#1F2937';
-  const isCurrency = metric === 'value' || metric === 'equity' || metric === 'cumulativeCashFlow';
+  const isCurrency = metric === 'value' || metric === 'equity' || metric === 'cumulativeCashFlow' || metric === 'totalProfit';
 
   const options = {
     responsive: true,
@@ -586,174 +551,8 @@ function buildChartOptions(metric, isDark, isChart2) {
     }
   };
 
-  if (isChart2) {
-    options.plugins.annotation = {
-      annotations: {
-        zeroLine: {
-          type: 'line',
-          yMin: 0,
-          yMax: 0,
-          borderColor: 'rgba(239,68,68,0.5)',
-          borderWidth: 1,
-          borderDash: [4, 4]
-        }
-      }
-    };
-  }
-
   return options;
 }
-
-// ---------------------------------------------------------------------------
-// Helper: build a minimal propertyDatasets stub for buildPortfolioDataset tests.
-// Each dataset must have a .data array of length GRAPH_YEARS + 1 (16 entries).
-// ---------------------------------------------------------------------------
-
-function makeDatasets(dataArrays) {
-  return {
-    labels: Array.from({ length: GRAPH_YEARS + 1 }, (_, i) => 'Yr ' + i),
-    datasets: dataArrays.map((data, i) => ({
-      label: 'Property ' + (i + 1),
-      data
-    }))
-  };
-}
-
-function makeUniformData(value) {
-  return Array.from({ length: GRAPH_YEARS + 1 }, () => value);
-}
-
-// ---------------------------------------------------------------------------
-// buildPortfolioDataset — metadata / shape
-// ---------------------------------------------------------------------------
-
-console.log('\nbuildPortfolioDataset — shape and metadata');
-
-test('returns an object with label "Portfolio"', () => {
-  const result = buildPortfolioDataset(makeDatasets([makeUniformData(100)]), 'value');
-  assert.strictEqual(result.label, 'Portfolio');
-});
-
-test('returns data array of length GRAPH_YEARS + 1', () => {
-  const result = buildPortfolioDataset(makeDatasets([makeUniformData(50)]), 'value');
-  assert.strictEqual(result.data.length, GRAPH_YEARS + 1);
-});
-
-test('uses GRAPH_PORTFOLIO_COLOR as borderColor', () => {
-  const result = buildPortfolioDataset(makeDatasets([makeUniformData(0)]), 'value');
-  assert.strictEqual(result.borderColor, GRAPH_PORTFOLIO_COLOR);
-});
-
-test('backgroundColor is transparent', () => {
-  const result = buildPortfolioDataset(makeDatasets([makeUniformData(0)]), 'value');
-  assert.strictEqual(result.backgroundColor, 'transparent');
-});
-
-test('borderDash is [6, 4]', () => {
-  const result = buildPortfolioDataset(makeDatasets([makeUniformData(0)]), 'value');
-  assert.deepStrictEqual(result.borderDash, [6, 4]);
-});
-
-// ---------------------------------------------------------------------------
-// buildPortfolioDataset — value / equity / cumulativeCashFlow (summing)
-// ---------------------------------------------------------------------------
-
-console.log('\nbuildPortfolioDataset — summing metrics');
-
-test('sums two properties for metric "value" at year 0', () => {
-  const d1 = makeUniformData(100000);
-  const d2 = makeUniformData(200000);
-  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'value');
-  assert.strictEqual(result.data[0], 300000);
-});
-
-test('sums three properties for metric "equity" at every year', () => {
-  const d1 = makeUniformData(50);
-  const d2 = makeUniformData(50);
-  const d3 = makeUniformData(50);
-  const result = buildPortfolioDataset(makeDatasets([d1, d2, d3]), 'equity');
-  result.data.forEach(v => assert.strictEqual(v, 150));
-});
-
-test('sums for metric "cumulativeCashFlow"', () => {
-  const d1 = makeUniformData(-1000);
-  const d2 = makeUniformData(2000);
-  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'cumulativeCashFlow');
-  assert.strictEqual(result.data[0], 1000);
-});
-
-test('single property — portfolio equals that property\'s value', () => {
-  const d1 = makeUniformData(750000);
-  const result = buildPortfolioDataset(makeDatasets([d1]), 'value');
-  result.data.forEach(v => assert.strictEqual(v, 750000));
-});
-
-// ---------------------------------------------------------------------------
-// buildPortfolioDataset — annualisedReturn (averaging)
-// ---------------------------------------------------------------------------
-
-console.log('\nbuildPortfolioDataset — annualisedReturn averaging');
-
-test('averages two properties for metric "annualisedReturn"', () => {
-  const d1 = makeUniformData(8);
-  const d2 = makeUniformData(12);
-  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'annualisedReturn');
-  assert.strictEqual(result.data[0], 10);
-});
-
-test('averages three properties for metric "annualisedReturn"', () => {
-  const d1 = makeUniformData(6);
-  const d2 = makeUniformData(9);
-  const d3 = makeUniformData(12);
-  const result = buildPortfolioDataset(makeDatasets([d1, d2, d3]), 'annualisedReturn');
-  assert.strictEqual(result.data[5], 9);
-});
-
-test('single property annualisedReturn equals that property\'s value', () => {
-  const d1 = makeUniformData(7.5);
-  const result = buildPortfolioDataset(makeDatasets([d1]), 'annualisedReturn');
-  result.data.forEach(v => assert.strictEqual(v, 7.5));
-});
-
-// ---------------------------------------------------------------------------
-// buildPortfolioDataset — null / undefined filtering
-// ---------------------------------------------------------------------------
-
-console.log('\nbuildPortfolioDataset — null and undefined filtering');
-
-test('null values are excluded from sum', () => {
-  // d1 has null at year 0, d2 has 500 everywhere
-  const d1 = makeUniformData(500);
-  d1[0] = null;
-  const d2 = makeUniformData(500);
-  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'value');
-  // year 0: only d2 contributes → 500
-  assert.strictEqual(result.data[0], 500);
-  // year 1: both contribute → 1000
-  assert.strictEqual(result.data[1], 1000);
-});
-
-test('all-null year produces null in portfolio', () => {
-  const d1 = makeUniformData(null);
-  const d2 = makeUniformData(null);
-  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'value');
-  result.data.forEach(v => assert.strictEqual(v, null));
-});
-
-test('undefined values are treated the same as null (excluded)', () => {
-  const d1 = makeUniformData(300);
-  d1[3] = undefined;
-  const d2 = makeUniformData(300);
-  const result = buildPortfolioDataset(makeDatasets([d1, d2]), 'value');
-  // year 3: only d2 → 300
-  assert.strictEqual(result.data[3], 300);
-});
-
-test('empty datasets array produces all-null portfolio', () => {
-  const result = buildPortfolioDataset(makeDatasets([]), 'value');
-  assert.strictEqual(result.data.length, GRAPH_YEARS + 1);
-  result.data.forEach(v => assert.strictEqual(v, null));
-});
 
 // ---------------------------------------------------------------------------
 // buildChartOptions — structural properties
@@ -762,24 +561,24 @@ test('empty datasets array produces all-null portfolio', () => {
 console.log('\nbuildChartOptions — structure');
 
 test('returns responsive:true and maintainAspectRatio:false', () => {
-  const opts = buildChartOptions('value', false, false);
+  const opts = buildChartOptions('value', false);
   assert.strictEqual(opts.responsive, true);
   assert.strictEqual(opts.maintainAspectRatio, false);
 });
 
 test('interaction mode is "index" with intersect:false', () => {
-  const opts = buildChartOptions('value', false, false);
+  const opts = buildChartOptions('value', false);
   assert.strictEqual(opts.interaction.mode, 'index');
   assert.strictEqual(opts.interaction.intersect, false);
 });
 
 test('legend display is false', () => {
-  const opts = buildChartOptions('value', false, false);
+  const opts = buildChartOptions('value', false);
   assert.strictEqual(opts.plugins.legend.display, false);
 });
 
 test('x and y scale objects are present', () => {
-  const opts = buildChartOptions('value', false, false);
+  const opts = buildChartOptions('value', false);
   assert.ok(opts.scales.x, 'scales.x should exist');
   assert.ok(opts.scales.y, 'scales.y should exist');
 });
@@ -791,62 +590,33 @@ test('x and y scale objects are present', () => {
 console.log('\nbuildChartOptions — isDark colour switching');
 
 test('dark mode sets tooltip background to #1F2937', () => {
-  const opts = buildChartOptions('value', true, false);
+  const opts = buildChartOptions('value', true);
   assert.strictEqual(opts.plugins.tooltip.backgroundColor, '#1F2937');
 });
 
 test('light mode sets tooltip background to #FFFFFF', () => {
-  const opts = buildChartOptions('value', false, false);
+  const opts = buildChartOptions('value', false);
   assert.strictEqual(opts.plugins.tooltip.backgroundColor, '#FFFFFF');
 });
 
 test('dark mode sets tooltip border to #374151', () => {
-  const opts = buildChartOptions('value', true, false);
+  const opts = buildChartOptions('value', true);
   assert.strictEqual(opts.plugins.tooltip.borderColor, '#374151');
 });
 
 test('light mode sets tooltip border to #E5E7EB', () => {
-  const opts = buildChartOptions('value', false, false);
+  const opts = buildChartOptions('value', false);
   assert.strictEqual(opts.plugins.tooltip.borderColor, '#E5E7EB');
 });
 
 test('dark mode tick colour is #9CA3AF', () => {
-  const opts = buildChartOptions('value', true, false);
+  const opts = buildChartOptions('value', true);
   assert.strictEqual(opts.plugins.tooltip.bodyColor, '#9CA3AF');
 });
 
 test('light mode tick colour is #6B7280', () => {
-  const opts = buildChartOptions('value', false, false);
+  const opts = buildChartOptions('value', false);
   assert.strictEqual(opts.plugins.tooltip.bodyColor, '#6B7280');
-});
-
-// ---------------------------------------------------------------------------
-// buildChartOptions — isChart2 annotation
-// ---------------------------------------------------------------------------
-
-console.log('\nbuildChartOptions — isChart2 annotation');
-
-test('isChart2:true adds annotation.annotations.zeroLine', () => {
-  const opts = buildChartOptions('annualisedReturn', false, true);
-  assert.ok(opts.plugins.annotation, 'annotation plugin should be present');
-  assert.ok(opts.plugins.annotation.annotations.zeroLine, 'zeroLine annotation should be present');
-});
-
-test('isChart2:false does NOT add annotation plugin', () => {
-  const opts = buildChartOptions('value', false, false);
-  assert.strictEqual(opts.plugins.annotation, undefined);
-});
-
-test('zeroLine annotation has yMin:0 and yMax:0', () => {
-  const opts = buildChartOptions('equity', true, true);
-  const zl = opts.plugins.annotation.annotations.zeroLine;
-  assert.strictEqual(zl.yMin, 0);
-  assert.strictEqual(zl.yMax, 0);
-});
-
-test('zeroLine borderDash is [4, 4]', () => {
-  const opts = buildChartOptions('equity', false, true);
-  assert.deepStrictEqual(opts.plugins.annotation.annotations.zeroLine.borderDash, [4, 4]);
 });
 
 // ---------------------------------------------------------------------------
@@ -856,7 +626,7 @@ test('zeroLine borderDash is [4, 4]', () => {
 console.log('\nbuildChartOptions — tooltip label callback');
 
 test('currency metric: tooltip label callback formats with $', () => {
-  const opts = buildChartOptions('value', false, false);
+  const opts = buildChartOptions('value', false);
   const cb = opts.plugins.tooltip.callbacks.label;
   const result = cb({ parsed: { y: 500000 }, dataset: { label: 'Prop A' } });
   assert.ok(result.includes('$'), 'should contain $ sign for currency metric');
@@ -864,14 +634,22 @@ test('currency metric: tooltip label callback formats with $', () => {
 });
 
 test('currency metric "equity": tooltip label callback formats with $', () => {
-  const opts = buildChartOptions('equity', false, false);
+  const opts = buildChartOptions('equity', false);
   const cb = opts.plugins.tooltip.callbacks.label;
   const result = cb({ parsed: { y: 150000 }, dataset: { label: 'P1' } });
   assert.ok(result.includes('$'));
 });
 
+test('currency metric "totalProfit": tooltip label callback formats with $', () => {
+  const opts = buildChartOptions('totalProfit', false);
+  const cb = opts.plugins.tooltip.callbacks.label;
+  const result = cb({ parsed: { y: 320000 }, dataset: { label: 'P1' } });
+  assert.ok(result.includes('$'), 'totalProfit should be treated as a currency metric');
+  assert.ok(!result.includes('%'), 'totalProfit should not use % format');
+});
+
 test('non-currency metric "annualisedReturn": tooltip label uses % not $', () => {
-  const opts = buildChartOptions('annualisedReturn', false, false);
+  const opts = buildChartOptions('annualisedReturn', false);
   const cb = opts.plugins.tooltip.callbacks.label;
   const result = cb({ parsed: { y: 7.53 }, dataset: { label: 'P1' } });
   assert.ok(result.includes('%'), 'should contain % for non-currency metric');
@@ -879,14 +657,14 @@ test('non-currency metric "annualisedReturn": tooltip label uses % not $', () =>
 });
 
 test('tooltip label callback returns null when val is null', () => {
-  const opts = buildChartOptions('value', false, false);
+  const opts = buildChartOptions('value', false);
   const cb = opts.plugins.tooltip.callbacks.label;
   const result = cb({ parsed: { y: null }, dataset: { label: 'P1' } });
   assert.strictEqual(result, null);
 });
 
 test('y-axis tick callback uses % for annualisedReturn', () => {
-  const opts = buildChartOptions('annualisedReturn', false, false);
+  const opts = buildChartOptions('annualisedReturn', false);
   const tickCb = opts.scales.y.ticks.callback;
   const result = tickCb(8.5);
   assert.ok(result.includes('%'));
@@ -894,7 +672,7 @@ test('y-axis tick callback uses % for annualisedReturn', () => {
 });
 
 test('y-axis tick callback uses $ for value metric', () => {
-  const opts = buildChartOptions('value', false, false);
+  const opts = buildChartOptions('value', false);
   const tickCb = opts.scales.y.ticks.callback;
   const result = tickCb(250000);
   assert.ok(result.includes('$'));
@@ -959,6 +737,319 @@ test('large profit over long term (30-year loan lifetime)', () => {
   // $500k profit on $150k upfront over 30 years
   const expected = (Math.pow(1 + 500000 / 150000, 1 / 30) - 1) * 100;
   approxEqual(calcAnnualisedReturn(500000, 150000, 30), expected, 0.001);
+});
+
+// ---------------------------------------------------------------------------
+// calcScenarioProfit — pure version for unit testing
+//
+// The production calcScenarioProfit(entry, years, growthRate) reads all
+// inputs from DOM elements inside `entry`. The arithmetic is identical;
+// only the data-access layer differs. The pure version below accepts a
+// plain object `data` with the same field names as the DOM data-field
+// attributes, plus a `stateDefaults` map that mirrors the one in index.html.
+//
+// Both functions copied / adapted verbatim from index.html lines 3148–3209.
+// If the source formula changes, update this copy and the tests.
+// ---------------------------------------------------------------------------
+
+const stateDefaults = {
+  NSW: { conveyancing: 1800, insurance: 1800, council: 2000 },
+  VIC: { conveyancing: 1100, insurance: 1500, council: 1900 },
+  QLD: { conveyancing: 900,  insurance: 2200, council: 1800 },
+  SA:  { conveyancing: 1000, insurance: 1300, council: 1600 },
+  WA:  { conveyancing: 1300, insurance: 1500, council: 1800 },
+  TAS: { conveyancing: 1000, insurance: 1200, council: 1400 },
+  ACT: { conveyancing: 1100, insurance: 1300, council: 2100 },
+  NT:  { conveyancing: 1000, insurance: 2500, council: 1700 },
+};
+
+function calcScenarioProfitPure(data, years, growthRate) {
+  function ef(field) { return data[field] !== undefined ? String(data[field]) : ''; }
+  function ev(field) { return parseFloat(ef(field)) || 0; }
+
+  const purchasePrice   = ev('purchasePrice');
+  const depositPct      = ev('depositPct') / 100;
+  const loanAmount      = purchasePrice * (1 - depositPct);
+  const loanTerm        = ev('loanTerm') || 30;
+  const interestRate    = ev('interestRate') / 100;
+  const loanType        = ef('loanType');
+  const weeklyRent      = ev('weeklyRent');
+  const managementFeePct = ev('managementFee') / 100;
+  const state           = ef('state');
+  const sd              = stateDefaults[state] || stateDefaults['NSW'];
+  const stampDuty       = Math.round(calcStampDuty(state, purchasePrice));
+  const totalUpfront    = purchasePrice * depositPct + stampDuty + sd.conveyancing;
+
+  let annualLoanPayment;
+  if (loanType === 'IO') {
+    annualLoanPayment = loanAmount * interestRate;
+  } else if (interestRate === 0) {
+    annualLoanPayment = loanAmount / loanTerm;
+  } else {
+    const monthlyRate  = interestRate / 12;
+    const numPayments  = loanTerm * 12;
+    annualLoanPayment  = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
+                         (Math.pow(1 + monthlyRate, numPayments) - 1) * 12;
+  }
+
+  let remainingLoan;
+  if (loanType === 'IO') {
+    remainingLoan = loanAmount;
+  } else if (interestRate === 0) {
+    remainingLoan = Math.max(0, loanAmount - (loanAmount / (loanTerm * 12)) * (years * 12));
+  } else {
+    const monthlyRate   = interestRate / 12;
+    const totalPayments = loanTerm * 12;
+    const paymentsMade  = Math.min(years * 12, totalPayments);
+    remainingLoan = loanAmount *
+      (Math.pow(1 + monthlyRate, totalPayments) - Math.pow(1 + monthlyRate, paymentsMade)) /
+      (Math.pow(1 + monthlyRate, totalPayments) - 1);
+    if (remainingLoan < 0) remainingLoan = 0;
+  }
+
+  const futureValue    = purchasePrice * Math.pow(1 + growthRate, years);
+  const salesCosts     = futureValue * 0.03;
+  const netProceeds    = futureValue - salesCosts - remainingLoan;
+  const costBase       = purchasePrice + stampDuty + sd.conveyancing + salesCosts;
+  const capitalGain    = futureValue - costBase;
+  const cgt            = capitalGain > 0 ? capitalGain * 0.5 * 0.3 : 0;
+  const trueCashReturn = netProceeds - cgt;
+
+  let cumulativeCashFlow = 0;
+  for (let y = 1; y <= years; y++) {
+    const yRent     = weeklyRent * Math.pow(1 + growthRate, y) * 52;
+    const yValue    = purchasePrice * Math.pow(1 + growthRate, y);
+    const yMgmt     = yRent * managementFeePct;
+    const yVacancy  = weeklyRent * Math.pow(1 + growthRate, y) * 2;
+    const yMaint    = yValue * 0.005;
+    const yExpenses = annualLoanPayment + yMgmt + sd.insurance + sd.council + yVacancy + yMaint;
+    cumulativeCashFlow += yRent - yExpenses;
+  }
+
+  return (trueCashReturn - totalUpfront) + cumulativeCashFlow;
+}
+
+// ---------------------------------------------------------------------------
+// Reference entry: NSW PI loan, $500k property, 20% deposit, 5% interest,
+// 30-year term, $500/wk rent, 8% management fee.
+// ---------------------------------------------------------------------------
+
+const refEntry = {
+  purchasePrice: 500000,
+  depositPct:    20,
+  loanTerm:      30,
+  interestRate:  5,
+  loanType:      'PI',
+  weeklyRent:    500,
+  managementFee: 8,
+  state:         'NSW',
+};
+
+// ---------------------------------------------------------------------------
+// calcScenarioProfit — growth rate variants
+// ---------------------------------------------------------------------------
+
+console.log('\ncalcScenarioProfit — growth rate variants');
+
+test('zero growth rate: profit is a finite number', () => {
+  const result = calcScenarioProfitPure(refEntry, 10, 0);
+  assert.ok(typeof result === 'number' && isFinite(result),
+    `Expected finite number, got ${result}`);
+});
+
+test('positive growth (0.04) produces higher profit than flat (0) at year 10', () => {
+  const flat     = calcScenarioProfitPure(refEntry, 10, 0);
+  const positive = calcScenarioProfitPure(refEntry, 10, 0.04);
+  assert.ok(positive > flat,
+    `Expected positive > flat but got positive=${positive}, flat=${flat}`);
+});
+
+test('negative growth (-0.02) produces lower profit than flat (0) at year 10', () => {
+  const flat     = calcScenarioProfitPure(refEntry, 10, 0);
+  const negative = calcScenarioProfitPure(refEntry, 10, -0.02);
+  assert.ok(negative < flat,
+    `Expected negative < flat but got negative=${negative}, flat=${flat}`);
+});
+
+// ---------------------------------------------------------------------------
+// calcScenarioProfit — IO vs PI loan types
+// ---------------------------------------------------------------------------
+
+console.log('\ncalcScenarioProfit — IO vs PI loan types');
+
+test('IO and PI loans produce different profits at year 10 (same growth)', () => {
+  const piEntry = Object.assign({}, refEntry, { loanType: 'PI' });
+  const ioEntry = Object.assign({}, refEntry, { loanType: 'IO' });
+  const pi = calcScenarioProfitPure(piEntry, 10, 0.03);
+  const io = calcScenarioProfitPure(ioEntry, 10, 0.03);
+  assert.ok(pi !== io,
+    `Expected IO and PI to differ, both returned ${pi}`);
+});
+
+test('IO loan: remaining loan equals full loanAmount at any year', () => {
+  // With IO the entire principal remains outstanding, so equity is lower
+  // and PI pays down principal — PI equity > IO equity at same future value.
+  // Net of CGT and cash flow, PI should have higher equity component.
+  const piProfit = calcScenarioProfitPure(
+    Object.assign({}, refEntry, { loanType: 'PI', weeklyRent: 0, managementFee: 0 }),
+    15, 0);
+  const ioProfit = calcScenarioProfitPure(
+    Object.assign({}, refEntry, { loanType: 'IO', weeklyRent: 0, managementFee: 0 }),
+    15, 0);
+  // PI reduces remaining loan over time so proceeds after repayment are higher
+  assert.ok(piProfit > ioProfit,
+    `Expected PI profit (${piProfit}) > IO profit (${ioProfit}) with zero growth`);
+});
+
+// ---------------------------------------------------------------------------
+// calcScenarioProfit — increasing profit over years (positive growth)
+// ---------------------------------------------------------------------------
+
+console.log('\ncalcScenarioProfit — increasing profits over years (positive growth)');
+
+test('year 5 profit < year 10 profit at 4% growth', () => {
+  const y5  = calcScenarioProfitPure(refEntry, 5,  0.04);
+  const y10 = calcScenarioProfitPure(refEntry, 10, 0.04);
+  assert.ok(y5 < y10,
+    `Expected yr5 (${y5}) < yr10 (${y10})`);
+});
+
+test('year 10 profit < year 15 profit at 4% growth', () => {
+  const y10 = calcScenarioProfitPure(refEntry, 10, 0.04);
+  const y15 = calcScenarioProfitPure(refEntry, 15, 0.04);
+  assert.ok(y10 < y15,
+    `Expected yr10 (${y10}) < yr15 (${y15})`);
+});
+
+test('profits at years 5, 10, 15 are strictly increasing at 4% growth', () => {
+  const y5  = calcScenarioProfitPure(refEntry, 5,  0.04);
+  const y10 = calcScenarioProfitPure(refEntry, 10, 0.04);
+  const y15 = calcScenarioProfitPure(refEntry, 15, 0.04);
+  assert.ok(y5 < y10 && y10 < y15,
+    `Expected y5 < y10 < y15, got ${y5}, ${y10}, ${y15}`);
+});
+
+// ---------------------------------------------------------------------------
+// calcScenarioProfit — edge cases: zero purchase price and zero deposit
+// ---------------------------------------------------------------------------
+
+console.log('\ncalcScenarioProfit — edge cases');
+
+test('zero purchase price returns a finite number (no division errors)', () => {
+  const zeroPrice = Object.assign({}, refEntry, { purchasePrice: 0 });
+  const result = calcScenarioProfitPure(zeroPrice, 10, 0.03);
+  assert.ok(isFinite(result),
+    `Expected finite number for zero purchase price, got ${result}`);
+});
+
+test('zero purchase price with zero rent: profit equals accumulated fixed expenses (negative)', () => {
+  // With purchasePrice=0: loanAmount=0, stampDuty=0, totalUpfront=conveyancing only.
+  // annualLoanPayment=0. Each year: yRent=0, yMgmt=0, yVacancy=0, yMaint=0,
+  // but sd.insurance and sd.council are still charged (NSW: 1800+2000=3800/yr).
+  // cumulativeCashFlow = -(3800 * years).
+  // futureValue=0, equity=0, cgt=0, netProceeds=0.
+  // totalUpfront = 0 + 0 + 1800 (NSW conveyancing).
+  // expected = (0 - 1800) + (-(3800 * 10)) = -1800 + (-38000) = -39800.
+  const zeroPrice = Object.assign({}, refEntry, { purchasePrice: 0, weeklyRent: 0 });
+  const sd = stateDefaults['NSW'];
+  const expectedCashFlow = -(sd.insurance + sd.council) * 10;
+  const expectedUpfrontPenalty = -sd.conveyancing;
+  const expected = expectedUpfrontPenalty + expectedCashFlow;
+  approxEqual(calcScenarioProfitPure(zeroPrice, 10, 0.03), expected, 0.01);
+});
+
+test('zero deposit (100% LVR): totalUpfront is only stamp duty + conveyancing', () => {
+  // With depositPct=0, loanAmount = purchasePrice, totalUpfront = 0 + stampDuty + conveyancing.
+  // The function should still return a finite number.
+  const zeroDeposit = Object.assign({}, refEntry, { depositPct: 0, weeklyRent: 0, managementFee: 0 });
+  const result = calcScenarioProfitPure(zeroDeposit, 10, 0.03);
+  assert.ok(isFinite(result),
+    `Expected finite number for zero deposit, got ${result}`);
+});
+
+test('zero deposit produces lower profit than 20% deposit at same growth (more loan to repay)', () => {
+  // Higher LVR means more remaining loan and higher loan payments,
+  // so proceeds net of debt are lower — profit should be lower.
+  const zeroDeposit = Object.assign({}, refEntry, { depositPct: 0 });
+  const withDeposit = refEntry;
+  const r0  = calcScenarioProfitPure(zeroDeposit, 10, 0.03);
+  const r20 = calcScenarioProfitPure(withDeposit,  10, 0.03);
+  assert.ok(r0 < r20,
+    `Expected 0% deposit profit (${r0}) < 20% deposit profit (${r20})`);
+});
+
+// ---------------------------------------------------------------------------
+// calcScenarioProfit — arithmetic spot-check at year 1, zero growth
+// ---------------------------------------------------------------------------
+
+console.log('\ncalcScenarioProfit — arithmetic spot-check');
+
+test('year 1, zero growth: result matches hand-calculated value', () => {
+  // Use a simple entry to make the arithmetic tractable:
+  // purchasePrice=200000, deposit=50% (100k cash in), loanAmount=100000,
+  // interestRate=0 (makes annualLoanPayment = 100000/30 per year),
+  // loanType=PI, weeklyRent=0, managementFee=0, state=NSW.
+  //
+  // loanTerm=30, interestRate=0 path:
+  //   annualLoanPayment = 100000 / 30
+  //   remainingLoan (y=1) = max(0, 100000 - (100000/360)*12) = 100000 - 100000/30
+  //
+  // futureValue = 200000 (growthRate=0)
+  // salesCosts = 200000 * 0.03 = 6000
+  // netProceeds = 200000 - 6000 - (100000 - 100000/30) = 94000 + 100000/30
+  // costBase = 200000 + 5435 + 1800 + 6000 = 213235
+  // capitalGain = 200000 - 213235 = -13235 → cgt = 0
+  // trueCashReturn = netProceeds - 0 = 94000 + 100000/30
+  //
+  // stampDuty NSW $200k: 1340 + (200000-83000)*0.035 = 1340 + 4095 = 5435
+  // totalUpfront = 200000*0.50 + 5435 + 1800 = 107235
+  //
+  // cashFlow year 1 (rent=0, mgmt=0):
+  //   yExpenses = annualLoanPayment + 0 + 1800 + 2000 + 0 + (200000*0.005)
+  //             = 100000/30 + 3800 + 1000 = 100000/30 + 4800
+  //   cashFlow year 1 = -(100000/30 + 4800)
+  //
+  // totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow
+  //             = (94000 + 100000/30 - 107235) + (-(100000/30 + 4800))
+  //             = (-13235 + 100000/30) + (-100000/30 - 4800)
+  //             = -13235 - 4800
+  //             = -18035
+
+  const entry = {
+    purchasePrice: 200000,
+    depositPct:    50,
+    loanTerm:      30,
+    interestRate:  0,
+    loanType:      'PI',
+    weeklyRent:    0,
+    managementFee: 0,
+    state:         'NSW',
+  };
+
+  // Replicate the formula exactly in JS to avoid floating-point mismatches
+  const purchasePrice   = 200000;
+  const depositPct      = 0.50;
+  const loanAmount      = purchasePrice * (1 - depositPct);               // 100000
+  const loanTerm        = 30;
+  const interestRate    = 0;
+  const stampDuty       = Math.round(calcStampDuty('NSW', purchasePrice)); // 5435
+  const conveyancing    = 1800;
+  const totalUpfront    = purchasePrice * depositPct + stampDuty + conveyancing; // 107235
+  const annualLP        = loanAmount / loanTerm;                           // interest=0 path
+  const remainingLoan   = Math.max(0, loanAmount - (loanAmount / (loanTerm * 12)) * 12);
+  const futureValue     = purchasePrice;                                    // growthRate=0
+  const salesCosts      = futureValue * 0.03;                              // 6000
+  const netProceeds     = futureValue - salesCosts - remainingLoan;
+  const costBase        = purchasePrice + stampDuty + conveyancing + salesCosts;
+  const capitalGain     = futureValue - costBase;                          // negative → cgt=0
+  const cgt             = capitalGain > 0 ? capitalGain * 0.5 * 0.3 : 0;
+  const trueCashReturn  = netProceeds - cgt;
+  const yMaint          = futureValue * 0.005;
+  const yExpenses       = annualLP + 1800 + 2000 + yMaint;                 // rent=mgmt=vacancy=0
+  const cashFlow1       = 0 - yExpenses;
+  const expected        = (trueCashReturn - totalUpfront) + cashFlow1;
+
+  approxEqual(calcScenarioProfitPure(entry, 1, 0), expected, 0.01);
 });
 
 // ---------------------------------------------------------------------------

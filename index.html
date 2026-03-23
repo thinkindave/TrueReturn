@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js" defer></script>
   <title>TrueReturn - Property Investment Calculator</title>
   <style>
     :root {
@@ -102,7 +101,6 @@
       --graph-color-5: #06B6D4;
       --graph-color-6: #F97316;
       --graph-color-7: #EC4899;
-      --graph-portfolio: #9CA3AF;
     }
 
     [data-theme="light"] {
@@ -1197,16 +1195,7 @@
     }
 
     .chart-header h2 { margin: 0; }
-
-    .chart-scenario-select {
-      font-size: 0.8125rem;
-      padding: 0.25rem 0.5rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border-default);
-      background: var(--bg-elevated);
-      color: var(--text-primary);
-      cursor: pointer;
-    }
+    .graphs-chart-card .chart-header { margin-bottom: 0.5rem; }
 
     .chart-empty {
       display: flex;
@@ -1784,28 +1773,6 @@
     border-top: 1px solid var(--border-subtle);
   }
 
-  .graphs-controls-inner {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem 2rem;
-    align-items: center;
-  }
-  .graphs-control-group {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-  }
-  .graphs-control-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 0;
-    white-space: nowrap;
-  }
-  .graphs-controls .toggle-row { margin-top: 0; }
-  .graphs-controls .toggle-row label { margin-bottom: 0; }
   .graphs-chart-card { padding: 1.75rem; }
   .graphs-chart-container {
     position: relative;
@@ -1829,8 +1796,18 @@
     border-radius: 2px;
     background: var(--swatch-color, var(--text-muted));
   }
-  .graphs-legend-item--portfolio .graphs-legend-swatch {
-    background: repeating-linear-gradient(90deg, var(--graph-portfolio) 0px, var(--graph-portfolio) 5px, transparent 5px, transparent 9px);
+  .graphs-inline-section {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .graphs-control-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
   }
   </style>
 </head>
@@ -1855,10 +1832,6 @@
         <span class="sidebar-tab-text">Property</span>
       </button>
 
-      <button class="sidebar-tab" data-tab="tab-graphs">
-        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
-        <span class="sidebar-tab-text">Graphs</span>
-      </button>
     </nav>
 
     <main class="content-area">
@@ -2524,38 +2497,14 @@
       </div>
     </div>
     </div>
-      </section>
 
-      <section id="tab-graphs" class="tab-content graphs-tab-content">
-        <div class="graphs-controls card full-width">
-          <div class="graphs-controls-inner">
-            <div class="graphs-control-group">
-              <label for="graphMetricSelect" class="graphs-control-label">Chart 2 Metric</label>
-              <select id="graphMetricSelect" class="chart-scenario-select">
-                <option value="annualisedReturn">Annualised Return %</option>
-                <option value="equity">Equity ($)</option>
-                <option value="cumulativeCashFlow">Cumulative Cash Flow ($)</option>
-              </select>
-            </div>
-            <div class="graphs-control-group graphs-portfolio-toggle">
-              <label class="graphs-control-label" for="portfolioToggle">Portfolio line</label>
-              <div class="toggle-row">
-                <input type="checkbox" id="portfolioToggle">
-                <label for="portfolioToggle">Show aggregate</label>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card full-width graphs-chart-card">
-          <div class="chart-header"><h2>Property Value Over Time</h2></div>
-          <div id="graphsLegend1" class="chart-legend graphs-legend"></div>
-          <div class="graphs-chart-container"><canvas id="graphsChart1"></canvas></div>
-        </div>
-        <div class="card full-width graphs-chart-card">
-          <div class="chart-header"><h2 id="graphsChart2Title">Annualised Return % Over Time</h2></div>
-          <div id="graphsLegend2" class="chart-legend graphs-legend"></div>
-          <div class="graphs-chart-container"><canvas id="graphsChart2"></canvas></div>
-        </div>
+    <div class="graphs-inline-section">
+      <div class="card graphs-chart-card">
+        <div class="chart-header"><h2>Total Profit Over Time</h2></div>
+        <div id="graphsLegend1" class="graphs-legend"></div>
+        <div class="graphs-chart-container"><canvas id="graphsChart1"></canvas></div>
+      </div>
+    </div>
       </section>
 
     </main>
@@ -2754,7 +2703,6 @@
           sections.forEach(s => s.classList.remove('active'));
           tab.classList.add('active');
           document.getElementById(tab.dataset.tab).classList.add('active');
-          if (tab.dataset.tab === 'tab-graphs') { initGraphs(); }
         });
       });
     }
@@ -3150,11 +3098,77 @@
     }
 
     const GRAPH_COLORS = ['#10B981','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#F97316','#EC4899'];
-    const GRAPH_PORTFOLIO_COLOR = '#9CA3AF';
     const GRAPH_YEARS = 15;
 
     let _chart1 = null;
-    let _chart2 = null;
+
+    function calcScenarioProfit(entry, years, growthRate) {
+      function ef(field) {
+        const el = entry.querySelector(`[data-field="${field}"]`);
+        return el ? el.value : '';
+      }
+      function ev(field) { return parseFloat(ef(field)) || 0; }
+
+      const purchasePrice = ev('purchasePrice');
+      const depositPct = ev('depositPct') / 100;
+      const loanAmount = purchasePrice * (1 - depositPct);
+      const loanTerm = ev('loanTerm') || 30;
+      const interestRate = ev('interestRate') / 100;
+      const loanType = ef('loanType');
+      const weeklyRent = ev('weeklyRent');
+      const managementFeePct = ev('managementFee') / 100;
+      const state = ef('state');
+      const sd = stateDefaults[state] || stateDefaults['NSW'];
+      const stampDuty = Math.round(calcStampDuty(state, purchasePrice));
+      const conveyancing = sd.conveyancing;
+      const deposit = purchasePrice * depositPct;
+      const totalUpfront = deposit + stampDuty + conveyancing;
+
+      let annualLoanPayment;
+      if (loanType === 'IO') {
+        annualLoanPayment = loanAmount * interestRate;
+      } else if (interestRate === 0) {
+        annualLoanPayment = loanAmount / loanTerm;
+      } else {
+        const monthlyRate = interestRate / 12;
+        const numPayments = loanTerm * 12;
+        annualLoanPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1) * 12;
+      }
+
+      let remainingLoan;
+      if (loanType === 'IO') {
+        remainingLoan = loanAmount;
+      } else if (interestRate === 0) {
+        remainingLoan = Math.max(0, loanAmount - (loanAmount / (loanTerm * 12)) * (years * 12));
+      } else {
+        const monthlyRate = interestRate / 12;
+        const totalPayments = loanTerm * 12;
+        const paymentsMade = Math.min(years * 12, totalPayments);
+        remainingLoan = loanAmount * (Math.pow(1 + monthlyRate, totalPayments) - Math.pow(1 + monthlyRate, paymentsMade)) / (Math.pow(1 + monthlyRate, totalPayments) - 1);
+        if (remainingLoan < 0) remainingLoan = 0;
+      }
+
+      const futureValue = purchasePrice * Math.pow(1 + growthRate, years);
+      const salesCosts = futureValue * 0.03;
+      const netProceeds = futureValue - salesCosts - remainingLoan;
+      const costBase = purchasePrice + stampDuty + conveyancing + salesCosts;
+      const capitalGain = futureValue - costBase;
+      const cgt = capitalGain > 0 ? capitalGain * 0.5 * 0.3 : 0;
+      const trueCashReturn = netProceeds - cgt;
+
+      let cumulativeCashFlow = 0;
+      for (let y = 1; y <= years; y++) {
+        const yRent = weeklyRent * Math.pow(1 + growthRate, y) * 52;
+        const yValue = purchasePrice * Math.pow(1 + growthRate, y);
+        const yMgmt = yRent * managementFeePct;
+        const yVacancy = weeklyRent * Math.pow(1 + growthRate, y) * 2;
+        const yMaint = yValue * 0.005;
+        const yExpenses = annualLoanPayment + yMgmt + sd.insurance + sd.council + yVacancy + yMaint;
+        cumulativeCashFlow += yRent - yExpenses;
+      }
+
+      return (trueCashReturn - totalUpfront) + cumulativeCashFlow;
+    }
 
     function buildPropertyDatasets(metric) {
       const entries = document.querySelectorAll('.property-entry');
@@ -3188,8 +3202,10 @@
         const totalUpfront = deposit + stampDuty + conveyancing;
 
         let annualLoanPayment;
-        if (loanType === 'IO' || interestRate === 0) {
+        if (loanType === 'IO') {
           annualLoanPayment = loanAmount * interestRate;
+        } else if (interestRate === 0) {
+          annualLoanPayment = loanAmount / loanTerm;
         } else {
           const monthlyRate = interestRate / 12;
           const numPayments = loanTerm * 12;
@@ -3235,6 +3251,7 @@
           }
 
           let annualisedReturn = 0;
+          let totalProfit = 0;
           if (y > 0 && totalUpfront > 0) {
             const salePrice = futureValue;
             const salesCosts = salePrice * 0.03;
@@ -3244,7 +3261,7 @@
             const discountedGain = capitalGain > 0 ? capitalGain * 0.50 : 0;
             const cgt = discountedGain * 0.30;
             const trueCashReturn = netProceeds - cgt;
-            const totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow;
+            totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow;
             annualisedReturn = (Math.pow(1 + totalProfit / totalUpfront, 1 / y) - 1) * 100;
           }
 
@@ -3252,6 +3269,7 @@
           else if (metric === 'equity') data.push(equity);
           else if (metric === 'cumulativeCashFlow') data.push(cumulativeCashFlow);
           else if (metric === 'annualisedReturn') data.push(y === 0 ? null : annualisedReturn);
+          else if (metric === 'totalProfit') data.push(y === 0 ? null : totalProfit);
           else data.push(futureValue);
         }
 
@@ -3275,43 +3293,13 @@
       return { datasets, labels };
     }
 
-    function buildPortfolioDataset(propertyDatasets, metric) {
-      const labels = propertyDatasets.labels;
-      const allData = propertyDatasets.datasets.map(d => d.data);
-      const portfolioData = [];
-
-      for (let y = 0; y <= GRAPH_YEARS; y++) {
-        const vals = allData.map(d => d[y]).filter(v => v !== null && v !== undefined);
-        if (vals.length === 0) {
-          portfolioData.push(null);
-        } else if (metric === 'annualisedReturn') {
-          portfolioData.push(vals.reduce((a, b) => a + b, 0) / vals.length);
-        } else {
-          portfolioData.push(vals.reduce((a, b) => a + b, 0));
-        }
-      }
-
-      return {
-        label: 'Portfolio',
-        data: portfolioData,
-        borderColor: GRAPH_PORTFOLIO_COLOR,
-        backgroundColor: 'transparent',
-        borderWidth: 2,
-        borderDash: [6, 4],
-        pointRadius: 2,
-        pointHoverRadius: 4,
-        tension: 0.3,
-        spanGaps: false
-      };
-    }
-
-    function buildChartOptions(metric, isDark, isChart2) {
+    function buildChartOptions(metric, isDark) {
       const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
       const tickColor = isDark ? '#9CA3AF' : '#6B7280';
       const tooltipBg = isDark ? '#1F2937' : '#FFFFFF';
       const tooltipBorder = isDark ? '#374151' : '#E5E7EB';
       const tooltipText = isDark ? '#F9FAFB' : '#1F2937';
-      const isCurrency = metric === 'value' || metric === 'equity' || metric === 'cumulativeCashFlow';
+      const isCurrency = metric === 'value' || metric === 'equity' || metric === 'cumulativeCashFlow' || metric === 'totalProfit';
 
       const options = {
         responsive: true,
@@ -3354,21 +3342,6 @@
         }
       };
 
-      if (isChart2) {
-        options.plugins.annotation = {
-          annotations: {
-            zeroLine: {
-              type: 'line',
-              yMin: 0,
-              yMax: 0,
-              borderColor: 'rgba(239,68,68,0.5)',
-              borderWidth: 1,
-              borderDash: [4, 4]
-            }
-          }
-        };
-      }
-
       return options;
     }
 
@@ -3377,10 +3350,9 @@
       if (!container) return;
       container.innerHTML = '';
       datasets.forEach(function(ds) {
-        const isPortfolio = ds.label === 'Portfolio';
         const item = document.createElement('span');
-        item.className = isPortfolio ? 'graphs-legend-item graphs-legend-item--portfolio' : 'graphs-legend-item';
-        if (!isPortfolio) item.style.setProperty('--swatch-color', ds.borderColor);
+        item.className = 'graphs-legend-item';
+        item.style.setProperty('--swatch-color', ds.borderColor);
         const swatch = document.createElement('span');
         swatch.className = 'graphs-legend-swatch';
         item.appendChild(swatch);
@@ -3390,59 +3362,34 @@
     }
 
     function initGraphs() {
-      const metric2 = document.getElementById('graphMetricSelect').value;
-      const showPortfolio = document.getElementById('portfolioToggle').checked;
       const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
 
-      const built1 = buildPropertyDatasets('value');
-      const built2 = buildPropertyDatasets(metric2);
-
-      const datasets1 = showPortfolio && built1.datasets.length > 1
-        ? [...built1.datasets, buildPortfolioDataset(built1, 'value')]
-        : built1.datasets;
-
-      const datasets2 = showPortfolio && built2.datasets.length > 1
-        ? [...built2.datasets, buildPortfolioDataset(built2, metric2)]
-        : built2.datasets;
+      const built1 = buildPropertyDatasets('totalProfit');
+      const datasets1 = [...built1.datasets];
 
       if (_chart1) { _chart1.destroy(); _chart1 = null; }
-      if (_chart2) { _chart2.destroy(); _chart2 = null; }
+
+      const options1 = buildChartOptions('totalProfit', isDark);
 
       const ctx1 = document.getElementById('graphsChart1').getContext('2d');
       _chart1 = new Chart(ctx1, {
         type: 'line',
         data: { labels: built1.labels, datasets: datasets1 },
-        options: buildChartOptions('value', isDark, false)
-      });
-
-      const ctx2 = document.getElementById('graphsChart2').getContext('2d');
-      _chart2 = new Chart(ctx2, {
-        type: 'line',
-        data: { labels: built2.labels, datasets: datasets2 },
-        options: buildChartOptions(metric2, isDark, true)
+        options: options1
       });
 
       renderGraphLegend('graphsLegend1', datasets1);
-      renderGraphLegend('graphsLegend2', datasets2);
-
-      const titleMap = {
-        annualisedReturn: 'Annualised Return % Over Time',
-        equity: 'Equity ($) Over Time',
-        cumulativeCashFlow: 'Cumulative Cash Flow ($) Over Time'
-      };
-      document.getElementById('graphsChart2Title').textContent = titleMap[metric2] || 'Over Time';
     }
 
     function renderGraphs() {
-      if (!_chart1 || !_chart2) return;
+      if (!_chart1) return;
       initGraphs();
     }
 
     // All inits run here, after stateDefaults and calculate() are defined
     document.getElementById('addPropertyBtn').addEventListener('click', addPropertyRow);
     initPropertySelection();
-    document.getElementById('graphMetricSelect').addEventListener('change', () => { if (_chart1) initGraphs(); });
-    document.getElementById('portfolioToggle').addEventListener('change', () => { if (_chart1) initGraphs(); });
+    window.addEventListener('load', function() { initGraphs(); });
   </script>
 </body>
 </html>
