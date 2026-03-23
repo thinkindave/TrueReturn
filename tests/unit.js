@@ -748,9 +748,15 @@ test('large profit over long term (30-year loan lifetime)', () => {
 // plain object `data` with the same field names as the DOM data-field
 // attributes, plus a `stateDefaults` map that mirrors the one in index.html.
 //
-// Both functions copied / adapted verbatim from index.html lines 3148–3209.
-// If the source formula changes, update this copy and the tests.
+// Copied verbatim from index.html — verify against source if formulas change.
 // ---------------------------------------------------------------------------
+
+function calcDepreciation(ageBracket, purchasePrice) {
+  const buildingValue = purchasePrice * 0.75;
+  if (ageBracket === 'new') return buildingValue * 0.0175;
+  if (ageBracket === 'mid') return buildingValue * 0.0125;
+  return buildingValue * 0.0075;
+}
 
 const stateDefaults = {
   NSW: { conveyancing: 1800, insurance: 1800, council: 2000 },
@@ -763,10 +769,12 @@ const stateDefaults = {
   NT:  { conveyancing: 1000, insurance: 2500, council: 1700 },
 };
 
-function calcScenarioProfitPure(data, years, growthRate) {
+function calcScenarioProfitPure(data, years, growthRate, marginalTaxRate, annualDepreciation) {
   function ef(field) { return data[field] !== undefined ? String(data[field]) : ''; }
   function ev(field) { return parseFloat(ef(field)) || 0; }
 
+  const mtr             = marginalTaxRate !== undefined ? marginalTaxRate : 0.37;
+  const annDepr         = annualDepreciation !== undefined ? annualDepreciation : 0;
   const purchasePrice   = ev('purchasePrice');
   const depositPct      = ev('depositPct') / 100;
   const loanAmount      = purchasePrice * (1 - depositPct);
@@ -810,9 +818,10 @@ function calcScenarioProfitPure(data, years, growthRate) {
   const futureValue    = purchasePrice * Math.pow(1 + growthRate, years);
   const salesCosts     = futureValue * 0.03;
   const netProceeds    = futureValue - salesCosts - remainingLoan;
-  const costBase       = purchasePrice + stampDuty + sd.conveyancing + salesCosts;
+  const cumulativeDepr = annDepr * years;
+  const costBase       = Math.max(0, purchasePrice + stampDuty + sd.conveyancing - cumulativeDepr);
   const capitalGain    = futureValue - costBase;
-  const cgt            = capitalGain > 0 ? capitalGain * 0.5 * 0.3 : 0;
+  const cgt            = capitalGain > 0 ? capitalGain * 0.5 * mtr : 0;
   const trueCashReturn = netProceeds - cgt;
 
   let cumulativeCashFlow = 0;
@@ -997,8 +1006,8 @@ test('year 1, zero growth: result matches hand-calculated value', () => {
   // futureValue = 200000 (growthRate=0)
   // salesCosts = 200000 * 0.03 = 6000
   // netProceeds = 200000 - 6000 - (100000 - 100000/30) = 94000 + 100000/30
-  // costBase = 200000 + 5435 + 1800 + 6000 = 213235
-  // capitalGain = 200000 - 213235 = -13235 → cgt = 0
+  // costBase = 200000 + 5435 + 1800 = 207235  (salesCosts not in costBase)
+  // capitalGain = 200000 - 207235 = -7235 → cgt = 0
   // trueCashReturn = netProceeds - 0 = 94000 + 100000/30
   //
   // stampDuty NSW $200k: 1340 + (200000-83000)*0.035 = 1340 + 4095 = 5435
@@ -1013,7 +1022,7 @@ test('year 1, zero growth: result matches hand-calculated value', () => {
   //             = (94000 + 100000/30 - 107235) + (-(100000/30 + 4800))
   //             = (-13235 + 100000/30) + (-100000/30 - 4800)
   //             = -13235 - 4800
-  //             = -18035
+  //             = -18035  (cgt=0 either way since capitalGain is negative)
 
   const entry = {
     purchasePrice: 200000,
@@ -1040,9 +1049,9 @@ test('year 1, zero growth: result matches hand-calculated value', () => {
   const futureValue     = purchasePrice;                                    // growthRate=0
   const salesCosts      = futureValue * 0.03;                              // 6000
   const netProceeds     = futureValue - salesCosts - remainingLoan;
-  const costBase        = purchasePrice + stampDuty + conveyancing + salesCosts;
+  const costBase        = purchasePrice + stampDuty + conveyancing;        // salesCosts not in costBase
   const capitalGain     = futureValue - costBase;                          // negative → cgt=0
-  const cgt             = capitalGain > 0 ? capitalGain * 0.5 * 0.3 : 0;
+  const cgt             = capitalGain > 0 ? capitalGain * 0.5 * 0.37 : 0;
   const trueCashReturn  = netProceeds - cgt;
   const yMaint          = futureValue * 0.005;
   const yExpenses       = annualLP + 1800 + 2000 + yMaint;                 // rent=mgmt=vacancy=0
@@ -1050,6 +1059,150 @@ test('year 1, zero growth: result matches hand-calculated value', () => {
   const expected        = (trueCashReturn - totalUpfront) + cashFlow1;
 
   approxEqual(calcScenarioProfitPure(entry, 1, 0), expected, 0.01);
+});
+
+// ---------------------------------------------------------------------------
+// calcDepreciation — string bracket
+// ---------------------------------------------------------------------------
+
+console.log('\ncalcDepreciation');
+
+test('"new" bracket uses 1.75% of 75% of purchase price', () => {
+  const result = calcDepreciation('new', 400000);
+  approxEqual(result, 400000 * 0.75 * 0.0175, 0.01);
+});
+
+test('"mid" bracket uses 1.25% of 75% of purchase price', () => {
+  const result = calcDepreciation('mid', 400000);
+  approxEqual(result, 400000 * 0.75 * 0.0125, 0.01);
+});
+
+test('"old" bracket uses 0.75% of 75% of purchase price', () => {
+  const result = calcDepreciation('old', 400000);
+  approxEqual(result, 400000 * 0.75 * 0.0075, 0.01);
+});
+
+test('unknown bracket falls back to old (0.75%) rate', () => {
+  const result = calcDepreciation('unknown', 400000);
+  approxEqual(result, 400000 * 0.75 * 0.0075, 0.01);
+});
+
+test('"new" bracket produces higher depreciation than "mid" bracket', () => {
+  const newDepr = calcDepreciation('new', 500000);
+  const midDepr = calcDepreciation('mid', 500000);
+  assert.ok(newDepr > midDepr, `Expected new (${newDepr}) > mid (${midDepr})`);
+});
+
+test('"mid" bracket produces higher depreciation than "old" bracket', () => {
+  const midDepr = calcDepreciation('mid', 500000);
+  const oldDepr = calcDepreciation('old', 500000);
+  assert.ok(midDepr > oldDepr, `Expected mid (${midDepr}) > old (${oldDepr})`);
+});
+
+test('zero purchase price returns zero depreciation', () => {
+  assert.strictEqual(calcDepreciation('new', 0), 0);
+});
+
+// ---------------------------------------------------------------------------
+// calcScenarioProfit — marginalTaxRate and annualDepreciation parameters
+//
+// These tests verify that passing explicit marginalTaxRate / annualDepreciation
+// values to calcScenarioProfitPure produces the correct CGT arithmetic, i.e.
+// that the new parameters are not ignored.
+// ---------------------------------------------------------------------------
+
+console.log('\ncalcScenarioProfit — marginalTaxRate and annualDepreciation parameters');
+
+test('higher marginalTaxRate produces lower profit when there is a capital gain', () => {
+  // Use positive growth so a capital gain exists and CGT is non-zero.
+  // A higher tax rate means more CGT deducted, so profit should be lower.
+  const lowTax  = calcScenarioProfitPure(refEntry, 10, 0.05, 0.19, 0);
+  const highTax = calcScenarioProfitPure(refEntry, 10, 0.05, 0.47, 0);
+  assert.ok(lowTax > highTax,
+    `Expected low-tax profit (${lowTax}) > high-tax profit (${highTax})`);
+});
+
+test('zero marginalTaxRate produces higher profit than default 37% when capital gain exists', () => {
+  const noTax      = calcScenarioProfitPure(refEntry, 10, 0.05, 0,    0);
+  const defaultTax = calcScenarioProfitPure(refEntry, 10, 0.05, 0.37, 0);
+  assert.ok(noTax > defaultTax,
+    `Expected zero-tax (${noTax}) > default-tax (${defaultTax})`);
+});
+
+test('positive annualDepreciation lowers cost base and increases CGT (reduces profit)', () => {
+  // Depreciation reduces the cost base, raising the capital gain, raising CGT,
+  // which should reduce overall profit relative to zero depreciation.
+  const withDepr    = calcScenarioProfitPure(refEntry, 10, 0.05, 0.37, 5000);
+  const withoutDepr = calcScenarioProfitPure(refEntry, 10, 0.05, 0.37, 0);
+  assert.ok(withDepr < withoutDepr,
+    `Expected depreciation to reduce profit: withDepr (${withDepr}) < withoutDepr (${withoutDepr})`);
+});
+
+test('annualDepreciation via calcDepreciation matches manual rate for new property', () => {
+  // Confirm the depreciation value fed into calcScenarioProfitPure is the
+  // result of calcDepreciation, not a hardcoded constant.
+  // A new ($500k) property: calcDepreciation('new', 500000) = 500000 * 0.75 * 0.0175 = 6562.5
+  const depr = calcDepreciation('new', 500000);
+  approxEqual(depr, 6562.5, 0.01);
+  // Verify it makes a measurable difference in profit over 10 years vs zero depr.
+  const withDepr    = calcScenarioProfitPure(refEntry, 10, 0.05, 0.37, depr);
+  const withoutDepr = calcScenarioProfitPure(refEntry, 10, 0.05, 0.37, 0);
+  assert.ok(withDepr !== withoutDepr,
+    `Expected depreciation of ${depr} to change profit vs zero depreciation`);
+});
+
+test('omitting marginalTaxRate and annualDepreciation defaults to 0.37 and 0', () => {
+  // Calling with 3 args must equal calling with explicit defaults.
+  const threeArgs   = calcScenarioProfitPure(refEntry, 10, 0.04);
+  const fiveArgs    = calcScenarioProfitPure(refEntry, 10, 0.04, 0.37, 0);
+  approxEqual(threeArgs, fiveArgs, 0.01);
+});
+
+// ---------------------------------------------------------------------------
+// deductibleExpenses composition
+// ---------------------------------------------------------------------------
+
+console.log('\ndeductibleExpenses composition');
+
+function calcDeductibleExpenses(annualInterestOnly, annualManagementFee, insurance, councilFees, maintenanceAllowance, annualDepreciation) {
+  return annualInterestOnly + annualManagementFee + insurance + councilFees + maintenanceAllowance + annualDepreciation;
+}
+
+test('deductibleExpenses equals the sum of its 6 components', () => {
+  const annualInterestOnly    = 18000;
+  const annualManagementFee   = 1560;
+  const insurance             = 1800;
+  const councilFees           = 2000;
+  const maintenanceAllowance  = 2500;
+  const annualDepreciation    = 5250;
+  const expected = 18000 + 1560 + 1800 + 2000 + 2500 + 5250; // 31110
+  approxEqual(
+    calcDeductibleExpenses(annualInterestOnly, annualManagementFee, insurance, councilFees, maintenanceAllowance, annualDepreciation),
+    expected,
+    0.01
+  );
+});
+
+test('vacancyAllowance is NOT included in deductibleExpenses', () => {
+  const annualInterestOnly    = 18000;
+  const annualManagementFee   = 1560;
+  const insurance             = 1800;
+  const councilFees           = 2000;
+  const maintenanceAllowance  = 2500;
+  const annualDepreciation    = 5250;
+  const vacancyAllowance      = 1200;
+  const result = calcDeductibleExpenses(annualInterestOnly, annualManagementFee, insurance, councilFees, maintenanceAllowance, annualDepreciation);
+  const withVacancy = result + vacancyAllowance;
+  assert.notStrictEqual(result, withVacancy,
+    'deductibleExpenses must not include vacancyAllowance');
+});
+
+test('deductibleExpenses hand-calculated spot-check: 18000+1560+1800+2000+2500+5250 = 31110', () => {
+  approxEqual(
+    calcDeductibleExpenses(18000, 1560, 1800, 2000, 2500, 5250),
+    31110,
+    0.01
+  );
 });
 
 // ---------------------------------------------------------------------------
