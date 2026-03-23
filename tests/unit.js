@@ -776,7 +776,7 @@ function calcScenarioProfitPure(data, years, growthRate) {
   const weeklyRent      = ev('weeklyRent');
   const managementFeePct = ev('managementFee') / 100;
   const state           = ef('state');
-  const sd              = stateDefaults[state] || stateDefaults['NSW'];
+  const sd              = stateDefaults[state] || stateDefaults['QLD'];
   const stampDuty       = Math.round(calcStampDuty(state, purchasePrice));
   const totalUpfront    = purchasePrice * depositPct + stampDuty + sd.conveyancing;
 
