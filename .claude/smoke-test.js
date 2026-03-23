@@ -43,7 +43,7 @@ const requiredIds = [
   'addPropertyBtn', 'themeToggle',
   'breakdownPropertyLabel', 'projectionsPropertyLabel',
   'resAnnualRent', 'resTotalUpfront', 'resMonthlyCashFlow',
-  'resLoanPayment', 'resTotalExpenses', 'resTaxBenefit',
+  'resTaxBenefit',
   'proj5Value', 'proj5Growth', 'proj5TrueReturn', 'proj5ReturnOnCash',
   'proj10Value', 'proj10Growth', 'proj10TrueReturn', 'proj10ReturnOnCash',
   'projLifeValue', 'projLifeGrowth', 'projLifeTrueReturn', 'projLifeReturnOnCash'
