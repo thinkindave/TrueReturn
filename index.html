@@ -621,6 +621,48 @@
       padding: 0.15rem 0.6rem;
     }
 
+    .breakdown-kpi-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .breakdown-kpi-tile {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.625rem 0.75rem;
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-border);
+      border-radius: var(--radius-sm);
+    }
+
+    .breakdown-kpi-label {
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+
+    .breakdown-kpi-value {
+      font-size: 1rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .breakdown-kpi-value.positive { color: var(--positive); }
+    .breakdown-kpi-value.negative { color: var(--negative); }
+    .breakdown-kpi-tile:has(.breakdown-kpi-value.negative) {
+      background: var(--negative-bg);
+      border-color: var(--negative-border);
+    }
+
     .section-header {
       font-size: 0.6875rem;
       font-weight: 700;
@@ -1364,7 +1406,7 @@
   .property-table-labels,
   .property-row {
     display: grid;
-    grid-template-columns: 2rem 1fr 1.4fr 0.75fr 0.75fr 0.6fr 0.6fr 0.7fr 0.6fr 0.85fr 0.7fr 1fr 0.65fr 0.65fr;
+    grid-template-columns: 2rem 1.1fr 1.6fr 0.85fr 0.85fr 0.7fr 0.7fr 0.85fr 0.7fr 1fr 0.85fr;
     gap: 0 0.5rem;
     align-items: center;
   }
@@ -1372,7 +1414,7 @@
   .property-table-labels {
     margin-bottom: 0.25rem;
     padding-bottom: 0.25rem;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-default);
   }
 
   .prop-col-label {
@@ -1384,6 +1426,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .prop-col-label--result {
+    color: var(--accent);
   }
 
   .property-rows {
@@ -1513,13 +1559,17 @@
   .prop-col-result {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
+    overflow: hidden;
   }
 
   .prop-result-value {
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .prop-result-value.positive { color: var(--positive); }
@@ -1717,7 +1767,7 @@
   }
 
   .property-entry + .property-entry {
-    border-top: 1px solid var(--border-default);
+    border-top: 1px solid var(--border-subtle);
   }
 
   .graphs-controls-inner {
@@ -1819,9 +1869,6 @@
             <div class="prop-col-label">Mgmt</div>
             <div class="prop-col-label">Rent/wk</div>
             <div class="prop-col-label">Growth/yr</div>
-            <div class="prop-col-label">Cash Flow/yr</div>
-            <div class="prop-col-label">Gross Yld</div>
-            <div class="prop-col-label">Net Yld</div>
           </div>
           <div class="property-rows">
             <div class="property-entry">
@@ -1899,15 +1946,6 @@
                     <span class="suffix">%</span>
                   </div>
                 </div>
-                <div class="prop-col prop-col-result">
-                  <span class="prop-result-value" data-result="annualCashFlow">-</span>
-                </div>
-                <div class="prop-col prop-col-result">
-                  <span class="prop-result-value" data-result="grossYield">-</span>
-                </div>
-                <div class="prop-col prop-col-result">
-                  <span class="prop-result-value" data-result="netYield">-</span>
-                </div>
               </div>
             </div>
           </div>
@@ -1918,6 +1956,22 @@
       <div class="breakdown-header">
         <h2>Breakdown</h2>
         <span class="breakdown-property-label" id="breakdownPropertyLabel">Property 1</span>
+      </div>
+
+      <!-- KPI Bar -->
+      <div class="breakdown-kpi-bar">
+        <div class="breakdown-kpi-tile">
+          <span class="breakdown-kpi-label">Annual Cash Flow</span>
+          <span class="breakdown-kpi-value" id="kpiAnnualCashFlow">–</span>
+        </div>
+        <div class="breakdown-kpi-tile">
+          <span class="breakdown-kpi-label">Gross Yield</span>
+          <span class="breakdown-kpi-value" id="kpiGrossYield">–</span>
+        </div>
+        <div class="breakdown-kpi-tile">
+          <span class="breakdown-kpi-label">Net Yield</span>
+          <span class="breakdown-kpi-value" id="kpiNetYield">–</span>
+        </div>
       </div>
 
       <!-- Cash Up Front -->
@@ -2965,10 +3019,22 @@
 
       // Update DOM — Results
       // Inline results
-      setResult('annualCashFlow', formatCurrency(annualCashFlow) + '/yr', 'prop-result-value ' + (annualCashFlow >= 0 ? 'positive' : 'negative'));
-      setResult('monthlyCashFlow', formatCurrency(monthlyCashFlow) + '/month');
-      setResult('grossYield', grossYield.toFixed(2) + '%');
-      setResult('netYield', netYield.toFixed(2) + '%', 'prop-result-value ' + (netYield >= 0 ? 'positive' : 'negative'));
+      // KPI bar (Breakdown tab)
+      const kpiCf = document.getElementById('kpiAnnualCashFlow');
+      if (kpiCf) {
+        kpiCf.textContent = formatCurrency(annualCashFlow) + '/yr';
+        kpiCf.className = 'breakdown-kpi-value ' + (annualCashFlow >= 0 ? 'positive' : 'negative');
+      }
+      const kpiGross = document.getElementById('kpiGrossYield');
+      if (kpiGross) {
+        kpiGross.textContent = grossYield.toFixed(2) + '%';
+        kpiGross.className = 'breakdown-kpi-value';
+      }
+      const kpiNet = document.getElementById('kpiNetYield');
+      if (kpiNet) {
+        kpiNet.textContent = netYield.toFixed(2) + '%';
+        kpiNet.className = 'breakdown-kpi-value ' + (netYield >= 0 ? 'positive' : 'negative');
+      }
 
       // Projections
       [{years: 5, prefix: 'proj5'}, {years: 10, prefix: 'proj10'}, {years: 15, prefix: 'projLife'}].forEach(({years, prefix}) => {
