@@ -901,6 +901,67 @@ test('y-axis tick callback uses $ for value metric', () => {
 });
 
 // ---------------------------------------------------------------------------
+// calcAnnualisedReturn — CAGR formula
+//
+// NOTE: There is no standalone pure function for this in index.html.
+// The formula is inlined at two separate DOM-dependent calculation sites
+// (projections loop ~line 3152, buildPropertyDatasets ~line 3303).
+// The helper below is a direct transcription of that inlined formula:
+//
+//   const annualisedReturn = totalUpfront > 0
+//     ? (Math.pow(1 + totalProfit / totalUpfront, 1 / years) - 1) * 100
+//     : 0;
+//
+// If the formula in index.html changes these tests will not automatically
+// detect the divergence — treat a passing result here as arithmetic
+// confirmation only. Keep this note updated if the source changes.
+// ---------------------------------------------------------------------------
+
+function calcAnnualisedReturn(totalProfit, totalUpfront, years) {
+  return totalUpfront > 0 ? (Math.pow(1 + totalProfit / totalUpfront, 1 / years) - 1) * 100 : 0;
+}
+
+console.log('\ncalcAnnualisedReturn (CAGR)');
+
+test('zero upfront returns 0 (guard against division by zero)', () => {
+  assert.strictEqual(calcAnnualisedReturn(50000, 0, 10), 0);
+});
+
+test('zero profit over any period returns 0%', () => {
+  approxEqual(calcAnnualisedReturn(0, 100000, 5), 0);
+});
+
+test('doubles money over 10 years is ~7.18% CAGR', () => {
+  // 100000 profit on 100000 upfront over 10 years: (2^(1/10) - 1)*100
+  const expected = (Math.pow(2, 0.1) - 1) * 100; // ~7.177
+  approxEqual(calcAnnualisedReturn(100000, 100000, 10), expected, 0.001);
+});
+
+test('5-year scenario: $50k profit on $100k upfront', () => {
+  // (1.5^(1/5) - 1)*100 = ~8.447%
+  const expected = (Math.pow(1.5, 0.2) - 1) * 100;
+  approxEqual(calcAnnualisedReturn(50000, 100000, 5), expected, 0.001);
+});
+
+test('negative profit produces negative CAGR', () => {
+  // -20k profit on 100k over 5 years: (0.8^0.2 - 1)*100 ≈ -4.35%
+  const result = calcAnnualisedReturn(-20000, 100000, 5);
+  assert.ok(result < 0, `Expected negative CAGR, got ${result}`);
+  approxEqual(result, (Math.pow(0.8, 0.2) - 1) * 100, 0.001);
+});
+
+test('1-year holding: annualised equals simple return percentage', () => {
+  // (1 + 20000/100000)^(1/1) - 1 = 0.2 = 20%
+  approxEqual(calcAnnualisedReturn(20000, 100000, 1), 20, 0.001);
+});
+
+test('large profit over long term (30-year loan lifetime)', () => {
+  // $500k profit on $150k upfront over 30 years
+  const expected = (Math.pow(1 + 500000 / 150000, 1 / 30) - 1) * 100;
+  approxEqual(calcAnnualisedReturn(500000, 150000, 30), expected, 0.001);
+});
+
+// ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
 

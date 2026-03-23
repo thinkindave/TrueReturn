@@ -93,6 +93,58 @@ if (inlineHandlers && inlineHandlers.length > 0) {
   ok('No inline event handlers');
 }
 
+// 7. HeadlineReturnOnCash must write annualisedReturn (CAGR), not returnOnCash (total %).
+//    The fix in cb693c3 corrected this; this check prevents regression.
+//    We look for the three HeadlineReturnOnCash assignment blocks and confirm each
+//    assigns `annualisedReturn`, not `returnOnCash`.
+(function checkHeadlineReturnMetric() {
+  // Collect every line that assigns .textContent to a HeadlineReturnOnCash element.
+  // Pattern: hReturnOnCashEl.textContent = <expression>
+  const assignRe = /hReturnOnCashEl\.textContent\s*=\s*([^;]+);/g;
+  let match;
+  let assignCount = 0;
+  let wrongCount = 0;
+
+  while ((match = assignRe.exec(html)) !== null) {
+    assignCount++;
+    const expr = match[1].trim();
+    // The expression must reference annualisedReturn, not returnOnCash (the total-return variable).
+    if (!expr.includes('annualisedReturn')) {
+      fail(`HeadlineReturnOnCash writes "${expr}" — expected annualisedReturn (CAGR), not returnOnCash (total %)`);
+      wrongCount++;
+    }
+  }
+
+  if (assignCount === 0) {
+    fail('HeadlineReturnOnCash assignment not found — has the projections block been removed or renamed?');
+  } else if (wrongCount === 0) {
+    ok(`HeadlineReturnOnCash writes annualisedReturn (CAGR) at all ${assignCount} site(s)`);
+  }
+})();
+
+// 8. ReturnOnCash accordion highlight also uses annualisedReturn
+(function checkAccordionReturnMetric() {
+  const assignRe = /rocEl\.textContent\s*=\s*([^;]+);/g;
+  let match;
+  let assignCount = 0;
+  let wrongCount = 0;
+
+  while ((match = assignRe.exec(html)) !== null) {
+    assignCount++;
+    const expr = match[1].trim();
+    if (!expr.includes('annualisedReturn')) {
+      fail(`ReturnOnCash accordion highlight writes "${expr}" — expected annualisedReturn (CAGR), not returnOnCash (total %)`);
+      wrongCount++;
+    }
+  }
+
+  if (assignCount === 0) {
+    fail('rocEl.textContent assignment not found — has the Investment Performance block been removed or renamed?');
+  } else if (wrongCount === 0) {
+    ok(`ReturnOnCash accordion highlight writes annualisedReturn (CAGR) at all ${assignCount} site(s)`);
+  }
+})();
+
 // Result
 console.log('');
 console.log('Result:', failed === 0 ? 'PASS' : 'FAIL', `(${passed} passed, ${failed} failed)`);

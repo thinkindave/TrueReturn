@@ -733,7 +733,7 @@
     }
 
     .period-header:hover {
-      background: rgba(59,130,246,0.08);
+      background: var(--accent-bg);
     }
 
     .period-header .proj-section-chevron {
@@ -1057,7 +1057,8 @@
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-subtle);
       box-shadow: 0 4px 12px var(--shadow-color);
-      white-space: nowrap;
+      white-space: normal;
+      max-width: 260px;
       z-index: 10;
       line-height: 1.4;
     }
@@ -1406,7 +1407,7 @@
   .property-table-labels,
   .property-row {
     display: grid;
-    grid-template-columns: 2rem 1.1fr 1.6fr 0.85fr 0.85fr 0.7fr 0.7fr 0.85fr 0.7fr 1fr 0.85fr;
+    grid-template-columns: 2rem 1.1fr 1.6fr 0.85fr 0.85fr 0.7fr 0.7fr 0.85fr 0.7fr 1fr 0.85fr 1.5rem;
     gap: 0 0.5rem;
     align-items: center;
   }
@@ -1490,7 +1491,12 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+  }
+
+  .prop-col-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .delete-row-btn {
@@ -1712,6 +1718,8 @@
   .proj-highlight-value--hero {
     font-size: 1.05rem;
   }
+    .proj-highlight-value.positive { color: var(--positive); }
+    .proj-highlight-value.negative { color: var(--negative); }
 
   .property-table-header {
     display: flex;
@@ -1869,16 +1877,14 @@
             <div class="prop-col-label">Mgmt</div>
             <div class="prop-col-label">Rent/wk</div>
             <div class="prop-col-label">Growth/yr</div>
+            <div class="prop-col-label"></div>
           </div>
           <div class="property-rows">
             <div class="property-entry">
               <div class="property-row">
                 <div class="prop-col prop-col-num">
                   <button class="focus-row-btn" title="Select property">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"/><circle cx="12" cy="12" r="3"/></svg>
-                  </button>
-                  <button class="delete-row-btn" title="Remove property">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                   </button>
                 </div>
                 <div class="prop-col">
@@ -1945,6 +1951,11 @@
                     <input type="number" data-field="expectedGrowth" value="5" min="-20" max="50" step="0.5">
                     <span class="suffix">%</span>
                   </div>
+                </div>
+                <div class="prop-col prop-col-delete">
+                  <button class="delete-row-btn" title="Remove property">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -2171,7 +2182,7 @@
               <span class="period-headline-value" id="proj5HeadlineTotalProfit">-</span>
             </div>
             <div class="period-headline-cell">
-              <span class="period-headline-label">Return on Cash</span>
+              <span class="period-headline-label">Annual Cash Return</span>
               <span class="period-headline-value" id="proj5HeadlineReturnOnCash">-</span>
             </div>
           </div>
@@ -2259,11 +2270,15 @@
               <span class="proj-section-title">Investment Performance</span>
               <span class="proj-section-highlights">
                 <span class="proj-highlight"><span class="proj-highlight-label">Total Profit</span><span class="proj-highlight-value" id="proj5TotalProfit">-</span></span>
-                <span class="proj-highlight"><span class="proj-highlight-label">Total Cash Return %</span><span class="proj-highlight-value" id="proj5ReturnOnCash">-</span></span>
+                <span class="proj-highlight"><span class="proj-highlight-label">Annual Cash Return</span><span class="proj-highlight-value" id="proj5ReturnOnCash">-</span></span>
               </span>
               <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Cash Out Position</span>
+                <span class="line-value" id="proj5BodyCashOut">-</span>
+              </div>
               <div class="line-item muted">
                 <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
                 <span class="line-value" id="proj5CashInvested">-</span>
@@ -2272,8 +2287,12 @@
                 <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
                 <span class="line-value" id="proj5CumCashFlow">-</span>
               </div>
+              <div class="line-item muted">
+                <span class="line-label">Total Profit</span>
+                <span class="line-value" id="proj5BodyTotalProfit">-</span>
+              </div>
               <div class="line-item">
-                <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+                <span class="line-label">Annual Cash Return <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
                 <span class="line-value" id="proj5AnnualisedReturn">-</span>
               </div>
             </div>
@@ -2298,7 +2317,7 @@
               <span class="period-headline-value" id="proj10HeadlineTotalProfit">-</span>
             </div>
             <div class="period-headline-cell">
-              <span class="period-headline-label">Return on Cash</span>
+              <span class="period-headline-label">Annual Cash Return</span>
               <span class="period-headline-value" id="proj10HeadlineReturnOnCash">-</span>
             </div>
           </div>
@@ -2386,11 +2405,15 @@
               <span class="proj-section-title">Investment Performance</span>
               <span class="proj-section-highlights">
                 <span class="proj-highlight"><span class="proj-highlight-label">Total Profit</span><span class="proj-highlight-value" id="proj10TotalProfit">-</span></span>
-                <span class="proj-highlight"><span class="proj-highlight-label">Total Cash Return %</span><span class="proj-highlight-value" id="proj10ReturnOnCash">-</span></span>
+                <span class="proj-highlight"><span class="proj-highlight-label">Annual Cash Return</span><span class="proj-highlight-value" id="proj10ReturnOnCash">-</span></span>
               </span>
               <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Cash Out Position</span>
+                <span class="line-value" id="proj10BodyCashOut">-</span>
+              </div>
               <div class="line-item muted">
                 <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
                 <span class="line-value" id="proj10CashInvested">-</span>
@@ -2399,8 +2422,12 @@
                 <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
                 <span class="line-value" id="proj10CumCashFlow">-</span>
               </div>
+              <div class="line-item muted">
+                <span class="line-label">Total Profit</span>
+                <span class="line-value" id="proj10BodyTotalProfit">-</span>
+              </div>
               <div class="line-item">
-                <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+                <span class="line-label">Annual Cash Return <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
                 <span class="line-value" id="proj10AnnualisedReturn">-</span>
               </div>
             </div>
@@ -2425,7 +2452,7 @@
               <span class="period-headline-value" id="projLifeHeadlineTotalProfit">-</span>
             </div>
             <div class="period-headline-cell">
-              <span class="period-headline-label">Return on Cash</span>
+              <span class="period-headline-label">Annual Cash Return</span>
               <span class="period-headline-value" id="projLifeHeadlineReturnOnCash">-</span>
             </div>
           </div>
@@ -2513,11 +2540,15 @@
               <span class="proj-section-title">Investment Performance</span>
               <span class="proj-section-highlights">
                 <span class="proj-highlight"><span class="proj-highlight-label">Total Profit</span><span class="proj-highlight-value" id="projLifeTotalProfit">-</span></span>
-                <span class="proj-highlight"><span class="proj-highlight-label">Total Cash Return %</span><span class="proj-highlight-value" id="projLifeReturnOnCash">-</span></span>
+                <span class="proj-highlight"><span class="proj-highlight-label">Annual Cash Return</span><span class="proj-highlight-value" id="projLifeReturnOnCash">-</span></span>
               </span>
               <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="proj-section-body" hidden>
+              <div class="line-item muted">
+                <span class="line-label">Cash Out Position</span>
+                <span class="line-value" id="projLifeBodyCashOut">-</span>
+              </div>
               <div class="line-item muted">
                 <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
                 <span class="line-value" id="projLifeCashInvested">-</span>
@@ -2526,8 +2557,12 @@
                 <span class="line-label">Cumulative Cash Flow <span class="help-tip" data-tip="Total rent income minus expenses over the period">?</span></span>
                 <span class="line-value" id="projLifeCumCashFlow">-</span>
               </div>
+              <div class="line-item muted">
+                <span class="line-label">Total Profit</span>
+                <span class="line-value" id="projLifeBodyTotalProfit">-</span>
+              </div>
               <div class="line-item">
-                <span class="line-label">Annual Cash Return % <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
+                <span class="line-label">Annual Cash Return <span class="help-tip" data-tip="Equivalent annual return rate — compare against shares or index funds">?</span></span>
                 <span class="line-value" id="projLifeAnnualisedReturn">-</span>
               </div>
             </div>
@@ -2684,9 +2719,7 @@
       rows.addEventListener('input', function(e) {
         const entry = e.target.closest('.property-entry');
         if (!entry) return;
-        if (!entry.classList.contains('selected')) {
-          selectEntry(entry);
-        } else if (e.target.dataset.field === 'name') {
+        if (e.target.dataset.field === 'name') {
           updateSectionLabels(entry);
         } else {
           calculate();
@@ -2700,8 +2733,7 @@
           const ltg = entry.querySelector('.loan-term-group');
           if (ltg) ltg.style.display = e.target.value === 'PI' ? '' : 'none';
         }
-        if (!entry.classList.contains('selected')) selectEntry(entry);
-        else calculate();
+        calculate();
       });
 
       // Auto-select first
@@ -3116,21 +3148,33 @@
         }
 
         const totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow;
-        const returnOnCash = totalUpfront > 0 ? (totalProfit / totalUpfront) * 100 : 0;
         const annualisedReturn = totalUpfront > 0 ? (Math.pow(1 + totalProfit / totalUpfront, 1 / years) - 1) * 100 : 0;
 
-        document.getElementById(`${prefix}CashInvested`).textContent = formatCurrency(totalUpfront);
+        const bodyCashOutEl = document.getElementById(`${prefix}BodyCashOut`);
+        if (bodyCashOutEl) {
+          bodyCashOutEl.textContent = formatCurrency(trueCashReturn);
+          bodyCashOutEl.className = 'line-value ' + (trueCashReturn >= 0 ? 'positive' : 'negative');
+        }
+
+        const cashInvestedEl = document.getElementById(`${prefix}CashInvested`);
+        if (cashInvestedEl) cashInvestedEl.textContent = formatCurrency(totalUpfront);
 
         const cumCfEl = document.getElementById(`${prefix}CumCashFlow`);
-        cumCfEl.textContent = formatCurrency(cumulativeCashFlow);
+        if (cumCfEl) cumCfEl.textContent = formatCurrency(cumulativeCashFlow);
+
+        const bodyTotalProfitEl = document.getElementById(`${prefix}BodyTotalProfit`);
+        if (bodyTotalProfitEl) {
+          bodyTotalProfitEl.textContent = formatCurrency(totalProfit);
+          bodyTotalProfitEl.className = 'line-value ' + (totalProfit >= 0 ? 'positive' : 'negative');
+        }
 
         const tpEl = document.getElementById(`${prefix}TotalProfit`);
         tpEl.textContent = formatCurrency(totalProfit);
         tpEl.className = 'line-value ' + (totalProfit >= 0 ? 'positive' : 'negative');
 
         const rocEl = document.getElementById(`${prefix}ReturnOnCash`);
-        rocEl.textContent = returnOnCash.toFixed(2) + '%';
-        rocEl.className = 'line-value ' + (returnOnCash >= 0 ? 'positive' : 'negative');
+        rocEl.textContent = annualisedReturn.toFixed(2) + '%';
+        rocEl.className = 'line-value ' + (annualisedReturn >= 0 ? 'positive' : 'negative');
 
         const arEl = document.getElementById(`${prefix}AnnualisedReturn`);
         arEl.textContent = annualisedReturn.toFixed(2) + '%';
@@ -3151,8 +3195,8 @@
 
         const hReturnOnCashEl = document.getElementById(`${prefix}HeadlineReturnOnCash`);
         if (hReturnOnCashEl) {
-          hReturnOnCashEl.textContent = returnOnCash.toFixed(2) + '%';
-          hReturnOnCashEl.className = 'period-headline-value ' + (returnOnCash >= 0 ? 'positive' : 'negative');
+          hReturnOnCashEl.textContent = annualisedReturn.toFixed(2) + '%';
+          hReturnOnCashEl.className = 'period-headline-value ' + (annualisedReturn >= 0 ? 'positive' : 'negative');
         }
       });
 
