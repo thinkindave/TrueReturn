@@ -353,7 +353,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.5rem;
-      align-items: start;
+      align-items: stretch;
     }
 
     .split-panel .card {
@@ -552,6 +552,13 @@
       font-weight: 700;
       color: var(--accent);
       font-variant-numeric: tabular-nums;
+    }
+
+    .computed-note-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: -0.25rem;
+      margin-bottom: 0.25rem;
     }
 
     .computed-note {
@@ -1677,16 +1684,13 @@
 
 
   /* ── Breakdown section modifier classes ── */
-  .proj-section--startup,
-  .proj-section--income {
+  .proj-section--startup {
     border-left: 3px solid var(--accent);
   }
-  .proj-section--startup .proj-section-header,
-  .proj-section--income .proj-section-header {
+  .proj-section--startup .proj-section-header {
     background: var(--accent-bg);
   }
-  .proj-section--startup .proj-section-header:hover,
-  .proj-section--income .proj-section-header:hover {
+  .proj-section--startup .proj-section-header:hover {
     background: var(--accent-bg-hover);
   }
   .proj-section--cashflow {
@@ -2015,26 +2019,6 @@
         </div>
       </div>
 
-      <!-- Income -->
-      <div class="proj-section proj-section--income">
-        <button class="proj-section-header" aria-expanded="false">
-          <span class="proj-section-title">Income</span>
-          <span class="proj-section-highlights">
-            <span class="proj-highlight">
-              <span class="proj-highlight-label">Annual Income</span>
-              <span class="proj-highlight-value" id="resAnnualRent">-</span>
-            </span>
-          </span>
-          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="proj-section-body" hidden>
-          <div class="line-item">
-            <span class="line-label">Weekly Rent</span>
-            <span class="line-value" id="resWeeklyRent">-</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Annual Cash Flow -->
       <div class="proj-section proj-section--cashflow">
         <button class="proj-section-header" aria-expanded="false">
@@ -2053,15 +2037,13 @@
         </button>
         <div class="proj-section-body" hidden>
 
-          <!-- Income sub-group -->
-          <p class="cf-subheading">Income</p>
           <div class="line-item">
-            <span class="line-label">Annual Rent</span>
-            <span class="line-value positive" id="resCfAnnualRent">-</span>
+            <span class="line-label">Annual Income (Rent)</span>
+            <span class="line-value" id="resCfAnnualRent">-</span>
           </div>
-
-          <!-- Expenses sub-group -->
-          <p class="cf-subheading">Expenses</p>
+          <div class="computed-note-row">
+            <span class="computed-note" id="resCfRentNote">-</span>
+          </div>
           <div class="line-item">
             <span class="line-label">Loan Payment</span>
             <span class="line-value" id="resCfLoanPayment">-</span>
@@ -2112,16 +2094,16 @@
         </button>
         <div class="proj-section-body" hidden>
           <div class="line-item muted">
+            <span class="line-label">Annual Rental Income</span>
+            <span class="line-value positive" id="resTaxRentalIncome">-</span>
+          </div>
+          <div class="line-item muted">
             <span class="line-label">Deductible Expenses</span>
             <span class="line-value" id="resDeductible">-</span>
           </div>
           <div class="line-item muted">
             <span class="line-label">Net Rental Position <span class="help-tip" data-tip="Annual rent minus deductible expenses. If negative, the loss can offset your taxable income (negative gearing).">?</span></span>
             <span class="line-value" id="resNetRental">-</span>
-          </div>
-          <div class="line-item muted">
-            <span class="line-label">Expenses After Tax Benefit</span>
-            <span class="line-value" id="resTotalExpensesAfterTax">-</span>
           </div>
           <div class="computed-note" style="margin-top: 0.5rem; line-height: 1.4;">Deductible expenses include loan interest, property management, insurance, council rates, and maintenance. If these exceed rental income, the loss can be offset against your other taxable income (negative gearing). The benefit is estimated at 30% of the rental loss. Does not include depreciation. Note: potential tax benefit is not included in Annual Cash Flow as it depends heavily on your individual tax situation.</div>
         </div>
@@ -2950,10 +2932,6 @@
       document.getElementById('resConveyancing').textContent = formatCurrency(conveyancing);
       document.getElementById('resTotalUpfront').textContent = formatCurrency(totalUpfront);
 
-      // Update DOM — Income
-      document.getElementById('resWeeklyRent').textContent = formatCurrency(weeklyRent) + '/wk';
-      document.getElementById('resAnnualRent').textContent = formatCurrency(annualRent) + '/yr';
-
       // Update DOM — Cash Flow header highlights
       const mCfEl = document.getElementById('resMonthlyCashFlow');
       if (mCfEl) {
@@ -2984,6 +2962,8 @@
         const loanBreakdownEl = document.getElementById('loanBreakdown');
         const cfNetEl = document.getElementById('resCfNetAnnual');
         cfRentEl.textContent = formatCurrency(annualRent) + '/yr';
+        const cfRentNoteEl = document.getElementById('resCfRentNote');
+        if (cfRentNoteEl) cfRentNoteEl.textContent = formatCurrency(weeklyRent) + '/wk · ' + formatCurrency(weeklyRent * 52 / 12) + '/mo';
         cfLoanEl.textContent = '-' + formatCurrency(annualLoanPayment) + '/yr';
         // Loan principal/interest sub-notes (P+I only)
         const annualPrincipal = loanType === 'PI' ? annualLoanPayment - annualInterestOnly : 0;
@@ -3005,6 +2985,8 @@
       const deductibleExpenses = annualInterestOnly + annualManagementFee + insurance + councilFees + maintenanceAllowance;
       const netRentalPosition = annualRent - deductibleExpenses;
       const taxBenefit = netRentalPosition < 0 ? Math.abs(netRentalPosition) * 0.30 : 0;
+      const taxRentalIncomeEl = document.getElementById('resTaxRentalIncome');
+      if (taxRentalIncomeEl) taxRentalIncomeEl.textContent = formatCurrency(annualRent) + '/yr';
       document.getElementById('resDeductible').textContent = formatCurrency(deductibleExpenses) + '/yr';
       const nrEl = document.getElementById('resNetRental');
       nrEl.textContent = formatCurrency(netRentalPosition) + '/yr';
@@ -3012,9 +2994,6 @@
       const tbEl = document.getElementById('resTaxBenefit');
       tbEl.textContent = taxBenefit > 0 ? formatCurrency(taxBenefit) + '/yr' : '-';
       tbEl.className = 'proj-highlight-value ' + (taxBenefit > 0 ? 'positive' : '');
-
-      const totalExpensesAfterTax = totalExpenses - taxBenefit;
-      document.getElementById('resTotalExpensesAfterTax').textContent = formatCurrency(totalExpensesAfterTax) + '/yr';
 
       // Update DOM — Results
       // Inline results
