@@ -1038,12 +1038,9 @@
       background: var(--accent-bg);
     }
 
-    .help-tip:hover::after {
-      content: attr(data-tip);
-      position: absolute;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
+    #globalTooltip {
+      position: fixed;
+      display: none;
       background: var(--bg-surface);
       color: var(--text-primary);
       font-size: 0.6875rem;
@@ -1054,8 +1051,30 @@
       box-shadow: 0 4px 12px var(--shadow-color);
       white-space: normal;
       max-width: 260px;
-      z-index: 10;
       line-height: 1.4;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    /* Assumptions list */
+    .assumptions-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .assumptions-list li {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding-left: 1rem;
+      position: relative;
+    }
+    .assumptions-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
     }
 
     .line-value {
@@ -1411,8 +1430,10 @@
     letter-spacing: 0.08em;
     color: var(--text-secondary);
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
   }
 
   .prop-col-label--result {
@@ -1731,6 +1752,16 @@
   .proj-section--tax .proj-section-header:hover {
     background: var(--warning-bg-hover);
   }
+  .proj-section--assumptions {
+    border-left: 3px solid var(--border-subtle);
+    margin-top: 0.5rem;
+  }
+  .proj-section--assumptions .proj-section-header {
+    background: var(--bg-elevated);
+  }
+  .proj-section--assumptions .proj-section-header:hover {
+    background: var(--bg-surface);
+  }
   .proj-highlight-value--hero {
     font-size: 1.05rem;
   }
@@ -1946,17 +1977,17 @@
           </div>
           <div class="property-table-labels">
             <div class="prop-col-label"></div>
-            <div class="prop-col-label">Name</div>
-            <div class="prop-col-label">Purchase Price</div>
-            <div class="prop-col-label">Deposit</div>
-            <div class="prop-col-label">Type</div>
-            <div class="prop-col-label">Term</div>
-            <div class="prop-col-label">State</div>
-            <div class="prop-col-label">Rate</div>
-            <div class="prop-col-label">Mgmt</div>
-            <div class="prop-col-label">Rent/wk</div>
-            <div class="prop-col-label">Growth/yr</div>
-            <div class="prop-col-label">Age</div>
+            <div class="prop-col-label">Name <span class="help-tip" data-tip="Label for this property — used in charts and comparisons">?</span></div>
+            <div class="prop-col-label">Purchase Price <span class="help-tip" data-tip="The agreed contract price, excluding stamp duty and acquisition costs">?</span></div>
+            <div class="prop-col-label">Deposit <span class="help-tip" data-tip="Percentage of purchase price paid upfront. The remainder is borrowed.">?</span></div>
+            <div class="prop-col-label">Type <span class="help-tip" data-tip="P&amp;I = Principal &amp; Interest. IO = Interest Only (no principal repaid).">?</span></div>
+            <div class="prop-col-label">Term <span class="help-tip" data-tip="Years over which the mortgage is repaid (P&amp;I loans only)">?</span></div>
+            <div class="prop-col-label">State <span class="help-tip" data-tip="Used to calculate stamp duty and other costs using state averages">?</span></div>
+            <div class="prop-col-label">Rate <span class="help-tip" data-tip="Annual interest rate on your mortgage">?</span></div>
+            <div class="prop-col-label">Mgmt <span class="help-tip" data-tip="Property manager's fee as a percentage of gross weekly rent">?</span></div>
+            <div class="prop-col-label">Rent/wk <span class="help-tip" data-tip="Current market rent for the property">?</span></div>
+            <div class="prop-col-label">Growth/yr <span class="help-tip" data-tip="Expected annual capital growth rate. The long-run Australian average is ~7%.">?</span></div>
+            <div class="prop-col-label">Age <span class="help-tip" data-tip="Used to estimate annual depreciation on building structure and fixtures">?</span></div>
             <div class="prop-col-label"></div>
           </div>
           <div class="property-rows">
@@ -2093,7 +2124,7 @@
             <span class="line-value" id="resDeposit">-</span>
           </div>
           <div class="line-item">
-            <span class="line-label">Stamp Duty <span class="help-tip" data-tip="Based on state selected">?</span></span>
+            <span class="line-label">Stamp Duty <span class="help-tip" data-tip="Based on thresholds for state selected">?</span></span>
             <span class="line-value" id="resStampDuty">-</span>
           </div>
           <div class="line-item">
@@ -2225,6 +2256,27 @@
             <span class="line-value" id="resNetRental">-</span>
           </div>
           <div class="computed-note">If deductible expenses exceed rental income, the loss can offset your taxable income (negative gearing). The tax benefit is estimated using your selected marginal tax rate. Depreciation is estimated at 1.75% (new/&lt;5y), 1.25% (mid-age/5-20y), or 0.75% (older/20y+) of 75% of the property value. Consult a quantity surveyor for an accurate depreciation schedule.<br><br>Note: potential tax benefit is not included in Annual Cash Flow as it depends heavily on your individual tax situation.</div>
+        </div>
+      </div>
+
+      <!-- Assumptions & Methodology -->
+      <div class="proj-section proj-section--assumptions">
+        <button class="proj-section-header" aria-expanded="false">
+          <span class="proj-section-title">Assumptions &amp; Methodology</span>
+          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="proj-section-body" hidden>
+          <ul class="assumptions-list">
+            <li>Stamp duty calculated using current (2024–25) state thresholds</li>
+            <li>Conveyancing / legal costs: $1,500</li>
+            <li>Building &amp; pest inspection: $600</li>
+            <li>Loan establishment fee: $800</li>
+            <li>CGT: 50% discount applied (asset held &gt;12 months), taxed at your selected marginal rate</li>
+            <li>Rental vacancy: 2 weeks per year</li>
+            <li>Insurance: 0.15% of purchase price p.a.</li>
+            <li>Council rates: 0.1% of purchase price p.a.</li>
+            <li>Maintenance: 0.5% of purchase price p.a.</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -2656,6 +2708,8 @@
     </main>
   </div>
 
+  <div id="globalTooltip" role="tooltip" aria-hidden="true"></div>
+
   <script>
     // Shared state
     window.TrueReturn = {
@@ -2880,6 +2934,7 @@
       });
     }
     initTheme();
+
 
 
     function formatCurrency(amount) {
@@ -3657,6 +3712,33 @@
     });
     initPropertySelection();
     window.addEventListener('load', function() { initGraphs(); });
+
+    // JS-positioned tooltip (fixed — never clipped by overflow)
+    (function() {
+      var tip = document.getElementById('globalTooltip');
+      document.addEventListener('mouseover', function(e) {
+        var el = e.target.closest('.help-tip');
+        if (!el) return;
+        var text = el.getAttribute('data-tip');
+        if (!text) return;
+        tip.textContent = text;
+        tip.style.display = 'block';
+        var r = el.getBoundingClientRect();
+        var left = r.left + r.width / 2;
+        var top = r.top - 8;
+        // Clamp horizontally so tooltip stays in viewport
+        tip.style.left = '0px';
+        tip.style.top = '0px';
+        tip.style.transform = 'none';
+        var tw = tip.offsetWidth;
+        left = Math.max(8, Math.min(left - tw / 2, window.innerWidth - tw - 8));
+        tip.style.left = left + 'px';
+        tip.style.top = (top - tip.offsetHeight) + 'px';
+      });
+      document.addEventListener('mouseout', function(e) {
+        if (e.target.closest('.help-tip')) tip.style.display = 'none';
+      });
+    })();
   </script>
 </body>
 </html>
