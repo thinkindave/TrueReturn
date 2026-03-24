@@ -1426,9 +1426,71 @@
   .property-table-labels,
   .property-row {
     display: grid;
-    grid-template-columns: 2rem 1.1fr 1.6fr 0.85fr 0.85fr 0.7fr 0.7fr 0.85fr 0.7fr 1fr 0.85fr 0.7fr 4rem;
+    grid-template-columns: 2rem 1.1fr 1.6fr 1fr 0.85fr 0.85fr 0.7fr 0.7fr 0.85fr 0.7fr 0.85fr 0.7fr 4rem;
     gap: 0 0.5rem;
     align-items: center;
+  }
+
+  body[data-mode="advanced"] .simple-only { display: none !important; }
+
+  body[data-mode="simple"] .advanced-only input,
+  body[data-mode="simple"] .advanced-only select {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    pointer-events: none;
+    cursor: default;
+    color: var(--text-secondary);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  body[data-mode="simple"] .advanced-only select {
+    background-image: none;
+  }
+  body[data-mode="simple"] .advanced-only.prop-col:has(select)::after {
+    display: none;
+  }
+  body[data-mode="simple"] .prop-col-header.advanced-only,
+  body[data-mode="simple"] .prop-col-label.advanced-only {
+    opacity: 0.6;
+  }
+
+  .mode-toggle {
+    display: flex;
+    align-items: center;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .mode-toggle-btn {
+    padding: 0.25rem 0.75rem;
+    border-radius: calc(var(--radius-sm) - 2px);
+    border: none;
+    background: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+  }
+
+  .mode-toggle-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .mode-toggle-btn:not(.active):hover {
+    color: var(--text-primary);
+  }
+
+  .mode-toggle-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
   }
 
   .property-table-labels {
@@ -2081,7 +2143,7 @@
   }
   </style>
 </head>
-<body>
+<body data-mode="simple">
   <header>
     <div class="header-content">
       <div>
@@ -2113,10 +2175,10 @@
           <div class="property-table-header">
             <h2>Properties</h2>
             <div class="property-table-actions">
-            <button class="add-property-btn" id="addPropertyBtn">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add Property
-            </button>
+            <div class="mode-toggle" role="group" aria-label="Calculator mode">
+              <button class="mode-toggle-btn active" id="modeSimpleBtn" aria-pressed="true">Simple</button>
+              <button class="mode-toggle-btn" id="modeAdvancedBtn" aria-pressed="false">Advanced</button>
+            </div>
             <div class="save-share-toolbar">
               <div class="export-dropdown" id="exportDropdown">
                 <button class="toolbar-btn toolbar-btn--secondary" id="exportDropdownBtn">
@@ -2150,15 +2212,15 @@
             <div class="prop-col-label"></div>
             <div class="prop-col-label">Name <span class="help-tip" data-tip="Label for this property — used in charts and comparisons">?</span></div>
             <div class="prop-col-label">Purchase Price <span class="help-tip" data-tip="The agreed contract price, excluding stamp duty and acquisition costs">?</span></div>
-            <div class="prop-col-label">Deposit <span class="help-tip" data-tip="Percentage of purchase price paid upfront. The remainder is borrowed.">?</span></div>
-            <div class="prop-col-label">Type <span class="help-tip" data-tip="P&amp;I = Principal &amp; Interest. IO = Interest Only (no principal repaid).">?</span></div>
-            <div class="prop-col-label">Term <span class="help-tip" data-tip="Years over which the mortgage is repaid (P&amp;I loans only)">?</span></div>
-            <div class="prop-col-label">State <span class="help-tip" data-tip="Used to calculate stamp duty and other costs using state averages">?</span></div>
-            <div class="prop-col-label">Rate <span class="help-tip" data-tip="Annual interest rate on your mortgage">?</span></div>
-            <div class="prop-col-label">Mgmt <span class="help-tip" data-tip="Property manager's fee as a percentage of gross weekly rent">?</span></div>
             <div class="prop-col-label">Rent/wk <span class="help-tip" data-tip="Current market rent for the property">?</span></div>
-            <div class="prop-col-label">Growth/yr <span class="help-tip" data-tip="Expected annual capital growth rate. The long-run Australian average is ~7%.">?</span></div>
-            <div class="prop-col-label">Age <span class="help-tip" data-tip="Used to estimate annual depreciation on building structure and fixtures">?</span></div>
+            <div class="prop-col-label advanced-only">Deposit <span class="help-tip" data-tip="Percentage of purchase price paid upfront. The remainder is borrowed.">?</span></div>
+            <div class="prop-col-label advanced-only">Type <span class="help-tip" data-tip="P&amp;I = Principal &amp; Interest. IO = Interest Only (no principal repaid).">?</span></div>
+            <div class="prop-col-label advanced-only">Term <span class="help-tip" data-tip="Years over which the mortgage is repaid (P&amp;I loans only)">?</span></div>
+            <div class="prop-col-label advanced-only">State <span class="help-tip" data-tip="Used to calculate stamp duty and other costs using state averages">?</span></div>
+            <div class="prop-col-label advanced-only">Rate <span class="help-tip" data-tip="Annual interest rate on your mortgage">?</span></div>
+            <div class="prop-col-label advanced-only">Mgmt <span class="help-tip" data-tip="Property manager's fee as a percentage of gross weekly rent">?</span></div>
+            <div class="prop-col-label advanced-only">Growth/yr <span class="help-tip" data-tip="Expected annual capital growth rate. The long-run Australian average is ~7%.">?</span></div>
+            <div class="prop-col-label advanced-only">Age <span class="help-tip" data-tip="Used to estimate annual depreciation on building structure and fixtures">?</span></div>
             <div class="prop-col-label"></div>
           </div>
           <div class="property-rows">
@@ -2179,18 +2241,24 @@
                   </div>
                 </div>
                 <div class="prop-col">
+                  <div class="input-wrapper has-prefix">
+                    <span class="prefix">$</span>
+                    <input type="number" data-field="weeklyRent" value="420" min="0" step="10">
+                  </div>
+                </div>
+                <div class="prop-col advanced-only">
                   <div class="input-wrapper has-suffix">
                     <input type="number" data-field="depositPct" value="20" min="0" max="100" step="1">
                     <span class="suffix">%</span>
                   </div>
                 </div>
-                <div class="prop-col">
+                <div class="prop-col advanced-only">
                   <select data-field="loanType">
                     <option value="IO">IO</option>
                     <option value="PI" selected>P&amp;I</option>
                   </select>
                 </div>
-                <div class="prop-col">
+                <div class="prop-col advanced-only">
                   <div class="loan-term-group">
                     <div class="input-wrapper has-suffix">
                       <input type="number" data-field="loanTerm" value="30" min="1" max="40" step="1">
@@ -2198,7 +2266,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="prop-col">
+                <div class="prop-col advanced-only">
                   <select data-field="state">
                     <option value="NSW">NSW</option>
                     <option value="VIC">VIC</option>
@@ -2210,31 +2278,25 @@
                     <option value="NT">NT</option>
                   </select>
                 </div>
-                <div class="prop-col">
+                <div class="prop-col advanced-only">
                   <div class="input-wrapper has-suffix">
                     <input type="number" data-field="interestRate" value="5.89" min="0" max="20" step="0.01">
                     <span class="suffix">%</span>
                   </div>
                 </div>
-                <div class="prop-col">
+                <div class="prop-col advanced-only">
                   <div class="input-wrapper has-suffix">
                     <input type="number" data-field="managementFee" value="6.6" min="0" max="100" step="0.1">
                     <span class="suffix">%</span>
                   </div>
                 </div>
-                <div class="prop-col">
-                  <div class="input-wrapper has-prefix">
-                    <span class="prefix">$</span>
-                    <input type="number" data-field="weeklyRent" value="420" min="0" step="10">
-                  </div>
-                </div>
-                <div class="prop-col">
+                <div class="prop-col advanced-only">
                   <div class="input-wrapper has-suffix">
                     <input type="number" data-field="expectedGrowth" value="5" min="-20" max="50" step="0.5">
                     <span class="suffix">%</span>
                   </div>
                 </div>
-                <div class="prop-col">
+                <div class="prop-col advanced-only">
                   <select data-field="propertyAge">
                     <option value="new" selected>&lt;5y</option>
                     <option value="mid">5-20y</option>
@@ -2251,6 +2313,12 @@
                 </div>
               </div>
             </div>
+          </div>
+          <div style="display:flex; justify-content:flex-end; margin-top:0.5rem;">
+            <button class="add-property-btn" id="addPropertyBtn">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Property
+            </button>
           </div>
         </div>
 
@@ -2379,7 +2447,7 @@
           <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="proj-section-body" hidden>
-          <div class="tax-rate-row">
+          <div class="tax-rate-row advanced-only">
             <span class="tax-rate-label">Your Marginal Tax Rate</span>
             <select id="marginalTaxRateSelect" class="tax-rate-select">
               <option value="0">0% (up to $18,200)</option>
@@ -2940,6 +3008,18 @@
       NT:  { conveyancing: 1000, insurance: 2500, council: 1700 },
     };
 
+    const SIMPLE_MODE_DEFAULTS = {
+      depositPct:     '20',
+      loanType:       'PI',
+      loanTerm:       '30',
+      state:          'QLD',
+      interestRate:   '6.72',
+      managementFee:  '8',
+      expectedGrowth: '6',
+      propertyAge:    'mid',
+    };
+    const SIMPLE_MODE_TAX = '0.37';
+
     function selectEntry(entry) {
       document.querySelectorAll('.property-entry').forEach(e => e.classList.remove('selected'));
       entry.classList.add('selected');
@@ -2961,6 +3041,21 @@
           btn.removeAttribute('disabled');
         }
       });
+    }
+
+    function applyMode(mode) {
+      if (mode !== 'simple' && mode !== 'advanced') mode = 'simple';
+      document.body.dataset.mode = mode;
+      localStorage.setItem('truereturn_mode', mode);
+
+      const simpleBtn = document.getElementById('modeSimpleBtn');
+      const advancedBtn = document.getElementById('modeAdvancedBtn');
+      if (simpleBtn) simpleBtn.classList.toggle('active', mode === 'simple');
+      if (advancedBtn) advancedBtn.classList.toggle('active', mode === 'advanced');
+      document.getElementById('modeSimpleBtn').setAttribute('aria-pressed', mode === 'simple' ? 'true' : 'false');
+      document.getElementById('modeAdvancedBtn').setAttribute('aria-pressed', mode === 'advanced' ? 'true' : 'false');
+
+      calculate();
     }
 
     function initPropertySelection() {
@@ -3029,13 +3124,13 @@
       const template = document.querySelector('.property-entry');
       const newEntry = template.cloneNode(true);
 
-      // Reset input values to defaults
-      const defaults = { name: '', purchasePrice: '', depositPct: 20, loanTerm: 30, interestRate: 5.89, managementFee: 6.6, weeklyRent: '', expectedGrowth: 5, propertyAge: 'new' };
+      // Reset input values: clear all fields, then apply SIMPLE_MODE_DEFAULTS
       newEntry.querySelectorAll('[data-field]').forEach(el => {
-        const field = el.dataset.field;
-        if ((el.tagName === 'INPUT' || el.tagName === 'SELECT') && defaults[field] !== undefined) {
-          el.value = defaults[field];
-        }
+        if (el.tagName === 'INPUT' || el.tagName === 'SELECT') el.value = '';
+      });
+      Object.keys(SIMPLE_MODE_DEFAULTS).forEach(function(field) {
+        const el = newEntry.querySelector('[data-field="' + field + '"]');
+        if (el) el.value = SIMPLE_MODE_DEFAULTS[field];
       });
 
       // Reset result displays
@@ -4457,6 +4552,15 @@
     })();
 
     initPropertySelection();
+
+    document.getElementById('modeSimpleBtn').addEventListener('click', function() { applyMode('simple'); });
+    document.getElementById('modeAdvancedBtn').addEventListener('click', function() { applyMode('advanced'); });
+
+    (function() {
+      var savedMode = localStorage.getItem('truereturn_mode') || 'simple';
+      applyMode(savedMode);
+    })();
+
     window.addEventListener('load', function() { initGraphs(); });
 
     // JS-positioned tooltip (fixed — never clipped by overflow)

@@ -1597,6 +1597,102 @@ test('chartImgUrl containing " is escaped to &quot; in img src', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Simple Mode Defaults
+// ---------------------------------------------------------------------------
+
+// Constants copied verbatim from index.html
+const SIMPLE_MODE_DEFAULTS = {
+  depositPct:     '20',
+  loanType:       'PI',
+  loanTerm:       '30',
+  state:          'QLD',
+  interestRate:   '6.72',
+  managementFee:  '8',
+  expectedGrowth: '6',
+  propertyAge:    'mid',
+};
+const SIMPLE_MODE_TAX = '0.37';
+
+// --- SIMPLE_MODE_DEFAULTS completeness ---
+test('SIMPLE_MODE_DEFAULTS has exactly 8 keys', () => {
+  const keys = Object.keys(SIMPLE_MODE_DEFAULTS);
+  assert.strictEqual(keys.length, 8, `Expected 8 keys, got ${keys.length}: ${keys.join(', ')}`);
+});
+
+test('SIMPLE_MODE_DEFAULTS contains all expected keys', () => {
+  const expected = ['depositPct', 'loanType', 'loanTerm', 'state', 'interestRate', 'managementFee', 'expectedGrowth', 'propertyAge'];
+  for (const key of expected) {
+    assert.ok(Object.prototype.hasOwnProperty.call(SIMPLE_MODE_DEFAULTS, key), `Missing key: ${key}`);
+  }
+});
+
+// --- SIMPLE_MODE_DEFAULTS values ---
+test('SIMPLE_MODE_DEFAULTS depositPct is "20"', () => {
+  assert.strictEqual(SIMPLE_MODE_DEFAULTS.depositPct, '20');
+});
+
+test('SIMPLE_MODE_DEFAULTS loanType is "PI"', () => {
+  assert.strictEqual(SIMPLE_MODE_DEFAULTS.loanType, 'PI');
+});
+
+test('SIMPLE_MODE_DEFAULTS loanTerm is "30"', () => {
+  assert.strictEqual(SIMPLE_MODE_DEFAULTS.loanTerm, '30');
+});
+
+test('SIMPLE_MODE_DEFAULTS state is "QLD"', () => {
+  assert.strictEqual(SIMPLE_MODE_DEFAULTS.state, 'QLD');
+});
+
+test('SIMPLE_MODE_DEFAULTS interestRate is "6.72"', () => {
+  assert.strictEqual(SIMPLE_MODE_DEFAULTS.interestRate, '6.72');
+});
+
+test('SIMPLE_MODE_DEFAULTS managementFee is "8"', () => {
+  assert.strictEqual(SIMPLE_MODE_DEFAULTS.managementFee, '8');
+});
+
+test('SIMPLE_MODE_DEFAULTS expectedGrowth is "6"', () => {
+  assert.strictEqual(SIMPLE_MODE_DEFAULTS.expectedGrowth, '6');
+});
+
+test('SIMPLE_MODE_DEFAULTS propertyAge is "mid"', () => {
+  assert.strictEqual(SIMPLE_MODE_DEFAULTS.propertyAge, 'mid');
+});
+
+// --- SIMPLE_MODE_TAX ---
+test('SIMPLE_MODE_TAX is "0.37"', () => {
+  assert.strictEqual(SIMPLE_MODE_TAX, '0.37');
+});
+
+// --- All SIMPLE_MODE_DEFAULTS values are strings (inputs expect strings) ---
+test('all SIMPLE_MODE_DEFAULTS values are strings', () => {
+  for (const [key, value] of Object.entries(SIMPLE_MODE_DEFAULTS)) {
+    assert.strictEqual(typeof value, 'string', `Expected string for key "${key}", got ${typeof value}`);
+  }
+});
+
+// --- SIMPLE_MODE_TAX is a string ---
+test('SIMPLE_MODE_TAX is a string', () => {
+  assert.strictEqual(typeof SIMPLE_MODE_TAX, 'string', `Expected string, got ${typeof SIMPLE_MODE_TAX}`);
+});
+
+// --- Boundary / edge cases ---
+test('SIMPLE_MODE_DEFAULTS interestRate parses to a finite positive number', () => {
+  const rate = parseFloat(SIMPLE_MODE_DEFAULTS.interestRate);
+  assert.ok(isFinite(rate) && rate > 0, `interestRate "${SIMPLE_MODE_DEFAULTS.interestRate}" should parse to a finite positive number`);
+});
+
+test('SIMPLE_MODE_DEFAULTS depositPct parses to a number between 1 and 100', () => {
+  const pct = parseFloat(SIMPLE_MODE_DEFAULTS.depositPct);
+  assert.ok(pct >= 1 && pct <= 100, `depositPct "${SIMPLE_MODE_DEFAULTS.depositPct}" should be between 1 and 100`);
+});
+
+test('SIMPLE_MODE_TAX parses to a number between 0 and 1', () => {
+  const tax = parseFloat(SIMPLE_MODE_TAX);
+  assert.ok(tax > 0 && tax < 1, `SIMPLE_MODE_TAX "${SIMPLE_MODE_TAX}" should parse to a number between 0 and 1`);
+});
+
+// ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
 
