@@ -1206,6 +1206,397 @@ test('deductibleExpenses hand-calculated spot-check: 18000+1560+1800+2000+2500+5
 });
 
 // ---------------------------------------------------------------------------
+// Base64 round-trip (Save & Share)
+// The encode pattern is copied verbatim from shareURL() in index.html:
+//   btoa(unescape(encodeURIComponent(JSON.stringify(state))))
+// The decode pattern is copied verbatim from the page-load IIFE in index.html:
+//   JSON.parse(decodeURIComponent(escape(atob(encoded))))
+// ---------------------------------------------------------------------------
+
+console.log('\nBase64 round-trip (Save & Share)');
+
+function b64Encode(state) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+}
+
+function b64Decode(encoded) {
+  return JSON.parse(decodeURIComponent(escape(atob(encoded))));
+}
+
+test('a typical state object survives the round-trip unchanged', () => {
+  const original = {
+    version: 1,
+    taxRate: '0.37',
+    properties: [
+      { name: 'Main St Unit', purchasePrice: '650000', depositPct: '20', state: 'NSW', interestRate: '6.5' }
+    ]
+  };
+  const result = b64Decode(b64Encode(original));
+  assert.deepStrictEqual(result, original);
+});
+
+test('a Unicode property name survives the round-trip unchanged', () => {
+  const original = {
+    version: 1,
+    taxRate: '0.325',
+    properties: [
+      { name: 'Château St-Pierre', purchasePrice: '800000', state: 'VIC' }
+    ]
+  };
+  const result = b64Decode(b64Encode(original));
+  assert.strictEqual(result.properties[0].name, 'Château St-Pierre');
+});
+
+test('a state with an empty properties array survives the round-trip', () => {
+  const original = { version: 1, taxRate: '0.37', properties: [] };
+  const result = b64Decode(b64Encode(original));
+  assert.deepStrictEqual(result, original);
+  assert.ok(Array.isArray(result.properties));
+  assert.strictEqual(result.properties.length, 0);
+});
+
+test('a state with 8 properties survives the round-trip with all 8 intact', () => {
+  const props = Array.from({ length: 8 }, (_, i) => ({
+    name: `Property ${i + 1}`,
+    purchasePrice: String(500000 + i * 50000),
+    state: 'QLD'
+  }));
+  const original = { version: 1, taxRate: '0.37', properties: props };
+  const result = b64Decode(b64Encode(original));
+  assert.deepStrictEqual(result, original);
+  assert.strictEqual(result.properties.length, 8);
+});
+
+// ---------------------------------------------------------------------------
+// State schema validation (guard from deserializeState in index.html):
+//   if (!state || !Array.isArray(state.properties) || state.properties.length === 0) return;
+// Modelled here as a pure predicate so it can be tested without the DOM.
+// ---------------------------------------------------------------------------
+
+console.log('\nState schema validation');
+
+function isValidState(state) {
+  if (!state || !Array.isArray(state.properties) || state.properties.length === 0) return false;
+  return true;
+}
+
+test('null is rejected', () => {
+  assert.strictEqual(isValidState(null), false);
+});
+
+test('an empty object (no properties key) is rejected', () => {
+  assert.strictEqual(isValidState({}), false);
+});
+
+test('a state with an empty properties array is rejected', () => {
+  assert.strictEqual(isValidState({ version: 1, properties: [] }), false);
+});
+
+test('a state with at least one property is accepted', () => {
+  assert.strictEqual(isValidState({ version: 1, properties: [{ name: 'Test' }] }), true);
+});
+
+// ---------------------------------------------------------------------------
+// slice(0, 8) cap — mirrors state.properties.slice(0, 8) in deserializeState
+// ---------------------------------------------------------------------------
+
+console.log('\nslice(0, 8) property cap');
+
+test('a state with 10 properties is capped to 8 after slice(0, 8)', () => {
+  const props = Array.from({ length: 10 }, (_, i) => ({ name: `Property ${i + 1}` }));
+  const capped = props.slice(0, 8);
+  assert.strictEqual(capped.length, 8);
+  assert.strictEqual(capped[0].name, 'Property 1');
+  assert.strictEqual(capped[7].name, 'Property 8');
+});
+
+test('a state with exactly 8 properties is unchanged after slice(0, 8)', () => {
+  const props = Array.from({ length: 8 }, (_, i) => ({ name: `Property ${i + 1}` }));
+  const capped = props.slice(0, 8);
+  assert.strictEqual(capped.length, 8);
+});
+
+test('a state with 3 properties is unchanged after slice(0, 8)', () => {
+  const props = Array.from({ length: 3 }, (_, i) => ({ name: `Property ${i + 1}` }));
+  const capped = props.slice(0, 8);
+  assert.strictEqual(capped.length, 3);
+});
+
+// ---------------------------------------------------------------------------
+// _esc (copied verbatim from index.html)
+// ---------------------------------------------------------------------------
+
+function _esc(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+console.log('\n_esc');
+
+test('plain string is returned unchanged', () => {
+  assert.strictEqual(_esc('hello'), 'hello');
+});
+
+test('ampersand is escaped to &amp;', () => {
+  assert.strictEqual(_esc('a & b'), 'a &amp; b');
+});
+
+test('angle brackets are escaped', () => {
+  assert.strictEqual(_esc('<script>'), '&lt;script&gt;');
+});
+
+test('double quotes are escaped to &quot;', () => {
+  assert.strictEqual(_esc('"quoted"'), '&quot;quoted&quot;');
+});
+
+test('null returns empty string', () => {
+  assert.strictEqual(_esc(null), '');
+});
+
+test('undefined returns empty string', () => {
+  assert.strictEqual(_esc(undefined), '');
+});
+
+test('number 42 is coerced to string "42"', () => {
+  assert.strictEqual(_esc(42), '42');
+});
+
+test('all four special chars in one string', () => {
+  assert.strictEqual(_esc('<a href="x&y">'), '&lt;a href=&quot;x&amp;y&quot;&gt;');
+});
+
+// ---------------------------------------------------------------------------
+// _buildPdfHtml (copied verbatim from index.html — depends on _esc above)
+// ---------------------------------------------------------------------------
+
+function _buildPdfHtml(summaryRows, propertyPages) {
+  var date = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+  var headerHtml = '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16pt;border-bottom:2px solid #10B981;padding-bottom:8pt">'
+    + '<span style="font-size:16pt;font-weight:700;color:#10B981">TrueReturn</span>'
+    + '<span style="font-size:9pt;color:#666">' + date + '</span>'
+    + '</div>';
+
+  var summaryHtml = '<div class="pdf-page">' + headerHtml
+    + '<div style="font-size:13pt;font-weight:600;margin-bottom:10pt">Property Summary</div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:9pt">'
+    + '<thead><tr style="background:#f3f4f6">'
+    + ['Name','Purchase Price','Deposit','Loan','Rate','Rent/wk','Growth','State'].map(function(h) {
+        return '<th style="text-align:left;padding:5pt 6pt;border-bottom:1px solid #ddd;font-weight:600">' + h + '</th>';
+      }).join('')
+    + '</tr></thead><tbody>'
+    + summaryRows.map(function(row, i) {
+        var bg = i % 2 === 0 ? 'white' : '#f9fafb';
+        return '<tr style="background:' + bg + '">'
+          + row.map(function(cell) {
+              return '<td style="padding:5pt 6pt;border-bottom:1px solid #eee">' + _esc(cell) + '</td>';
+            }).join('')
+          + '</tr>';
+      }).join('')
+    + '</tbody></table></div>';
+
+  var propertyHtml = propertyPages.map(function(p) {
+    function row(label, val, indent) {
+      var pad = indent ? 'padding-left:16pt' : '';
+      return '<tr><td style="padding:4pt 6pt;color:#555;' + pad + '">' + _esc(label) + '</td>'
+           + '<td style="padding:4pt 6pt;text-align:right;font-weight:500">' + _esc(val) + '</td></tr>';
+    }
+    function section(title, rows) {
+      return '<div class="pdf-section">'
+        + '<div style="font-size:10pt;font-weight:600;margin-bottom:4pt;color:#10B981;border-bottom:1px solid #ddd;padding-bottom:3pt">' + title + '</div>'
+        + '<table style="width:100%;border-collapse:collapse;font-size:9pt">' + rows + '</table>'
+        + '</div>';
+    }
+    function projTable(p5, p10, p15) {
+      function prow(label, k) {
+        return '<tr><td style="padding:3pt 6pt;color:#555">' + _esc(label) + '</td>'
+             + '<td style="padding:3pt 6pt;text-align:right">' + _esc(p5[k]) + '</td>'
+             + '<td style="padding:3pt 6pt;text-align:right">' + _esc(p10[k]) + '</td>'
+             + '<td style="padding:3pt 6pt;text-align:right">' + _esc(p15[k]) + '</td>'
+             + '</tr>';
+      }
+      return '<div class="pdf-section">'
+        + '<div style="font-size:10pt;font-weight:600;margin-bottom:4pt;color:#10B981;border-bottom:1px solid #ddd;padding-bottom:3pt">Projections</div>'
+        + '<table style="width:100%;border-collapse:collapse;font-size:9pt">'
+        + '<thead><tr style="background:#f3f4f6">'
+        + '<th style="padding:4pt 6pt;text-align:left">Metric</th>'
+        + '<th style="padding:4pt 6pt;text-align:right">5 Years</th>'
+        + '<th style="padding:4pt 6pt;text-align:right">10 Years</th>'
+        + '<th style="padding:4pt 6pt;text-align:right">15 Years</th>'
+        + '</tr></thead><tbody>'
+        + prow('Property Value', 'value')
+        + prow('Capital Growth', 'growth')
+        + prow('Remaining Loan', 'loan')
+        + prow('Total Equity', 'equity')
+        + prow('Usable Equity (80%)', 'usableEquity')
+        + prow('Est. Weekly Rent', 'rent')
+        + prow('Est. Annual Cash Flow', 'cashFlow')
+        + prow('True Cash Return', 'trueReturn')
+        + '<tr><td colspan="4" style="padding:2pt 0"></td></tr>'
+        + prow('Sale Price', 'sale')
+        + prow('Sales Costs', 'saleCosts')
+        + prow('Loan Payout', 'loanPayout')
+        + prow('Net Proceeds', 'netProceeds')
+        + prow('Capital Gains Tax', 'cgt')
+        + prow('Total Profit', 'totalProfit')
+        + prow('Annual Cash Return', 'returnOnCash')
+        + '</tbody></table></div>';
+    }
+    var cashUpFront = section('Cash Up Front',
+      row('Total Cash Up Front', p.totalUpfront)
+      + row('Deposit', p.deposit, true)
+      + row('Stamp Duty', p.stampDuty, true)
+      + row('Conveyancing', p.conveyancing, true)
+    );
+    var annualCF = section('Annual Cash Flow',
+      row('Monthly Cash Flow', p.monthlyCF)
+      + row('Annual Cash Flow', p.annualCF)
+      + row('Annual Rental Income', p.annualRent, true)
+      + row('Loan Repayment', p.loanPayment, true)
+      + row('Management Fee', p.management, true)
+      + row('Insurance', p.insurance, true)
+      + row('Council Rates', p.council, true)
+      + row('Vacancy Allowance', p.vacancy, true)
+      + row('Maintenance', p.maintenance, true)
+      + row('Net Annual Cash Flow', p.netAnnualCF)
+    );
+    var taxPos = section('Tax Position',
+      row('Annual Rental Income', p.taxRentalIncome)
+      + row('Loan Interest', p.taxInterest, true)
+      + row('Management Fee', p.taxMgmt, true)
+      + row('Insurance', p.taxInsurance, true)
+      + row('Council Rates', p.taxCouncil, true)
+      + row('Maintenance', p.taxMaintenance, true)
+      + row('Depreciation (est.)', p.depreciation, true)
+      + row('Total Deductibles', p.totalDeductible)
+      + row('Net Rental Position', p.netRental)
+      + row('Est. Tax Benefit', p.taxBenefit)
+    );
+    var projHtml = projTable(p.p5, p.p10, p.p15);
+    var chartHtml = p.chartImgUrl
+      ? '<div class="pdf-section"><div style="font-size:10pt;font-weight:600;margin-bottom:4pt;color:#10B981;border-bottom:1px solid #ddd;padding-bottom:3pt">Profit Over Time</div>'
+        + '<img src="' + _esc(p.chartImgUrl) + '" style="width:100%;height:auto;display:block" /></div>'
+      : '';
+    return '<div class="pdf-page">' + headerHtml
+      + '<div style="font-size:13pt;font-weight:600;margin-bottom:10pt">' + _esc(p.name) + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12pt">'
+      + '<div>' + cashUpFront + annualCF + '</div>'
+      + '<div>' + taxPos + '</div>'
+      + '</div>'
+      + projHtml
+      + chartHtml
+      + '</div>';
+  }).join('');
+
+  return summaryHtml + propertyHtml;
+}
+
+// Minimal projection object used across _buildPdfHtml tests
+function makeProj() {
+  return { value: '$0', growth: '$0', loan: '$0', equity: '$0', usableEquity: '$0',
+           rent: '$0', cashFlow: '$0', trueReturn: '0%', sale: '$0', saleCosts: '$0',
+           loanPayout: '$0', netProceeds: '$0', cgt: '$0', totalProfit: '$0', returnOnCash: '0%' };
+}
+
+// Minimal property page used across _buildPdfHtml tests
+function makePage(overrides) {
+  var base = {
+    name: 'Test Property', totalUpfront: '$0', deposit: '$0', stampDuty: '$0',
+    conveyancing: '$0', monthlyCF: '$0', annualCF: '$0', annualRent: '$0',
+    loanPayment: '$0', management: '$0', insurance: '$0', council: '$0',
+    vacancy: '$0', maintenance: '$0', netAnnualCF: '$0',
+    taxRentalIncome: '$0', taxInterest: '$0', taxMgmt: '$0', taxInsurance: '$0',
+    taxCouncil: '$0', taxMaintenance: '$0', depreciation: '$0',
+    totalDeductible: '$0', netRental: '$0', taxBenefit: '$0',
+    p5: makeProj(), p10: makeProj(), p15: makeProj(),
+    chartImgUrl: null
+  };
+  if (overrides) {
+    Object.keys(overrides).forEach(function(k) { base[k] = overrides[k]; });
+  }
+  return base;
+}
+
+console.log('\n_buildPdfHtml');
+
+test('result contains the word TrueReturn (header present)', () => {
+  var html = _buildPdfHtml([], []);
+  assert.ok(html.includes('TrueReturn'), 'Expected "TrueReturn" in output');
+});
+
+test('result contains the property name when one page is supplied', () => {
+  var page = makePage({ name: 'Harbour View Apartment' });
+  var html = _buildPdfHtml([['Harbour View Apartment', '$800,000', '$160,000', '$640,000', '6%', '$600', '5%', 'NSW']], [page]);
+  assert.ok(html.includes('Harbour View Apartment'), 'Expected property name in output');
+});
+
+test('result contains projection table headers 5 Years, 10 Years, 15 Years', () => {
+  var html = _buildPdfHtml([], [makePage()]);
+  assert.ok(html.includes('5 Years'), 'Expected "5 Years" header');
+  assert.ok(html.includes('10 Years'), 'Expected "10 Years" header');
+  assert.ok(html.includes('15 Years'), 'Expected "15 Years" header');
+});
+
+test('result contains two property names when two pages are supplied', () => {
+  var page1 = makePage({ name: 'Alpha' });
+  var page2 = makePage({ name: 'Beta' });
+  var html = _buildPdfHtml([], [page1, page2]);
+  assert.ok(html.includes('Alpha'), 'Expected "Alpha" in output');
+  assert.ok(html.includes('Beta'), 'Expected "Beta" in output');
+});
+
+test('result contains an img tag when chartImgUrl is non-null', () => {
+  var page = makePage({ chartImgUrl: 'data:image/png;base64,abc123' });
+  var html = _buildPdfHtml([], [page]);
+  assert.ok(html.includes('<img'), 'Expected <img tag when chartImgUrl is set');
+  assert.ok(html.includes('data:image/png;base64,abc123'), 'Expected chartImgUrl value in src');
+});
+
+test('result does NOT contain an img tag when chartImgUrl is null', () => {
+  var page = makePage({ chartImgUrl: null });
+  var html = _buildPdfHtml([], [page]);
+  assert.ok(!html.includes('<img'), 'Expected no <img tag when chartImgUrl is null');
+});
+
+test('summary row cell values appear in the output', () => {
+  var summaryRows = [
+    ['Beach House', '$500,000', '$100,000', '$400,000', '5.5%', '$450', '4%', 'QLD']
+  ];
+  var html = _buildPdfHtml(summaryRows, []);
+  assert.ok(html.includes('Beach House'), 'Expected summary row name in output');
+  assert.ok(html.includes('$500,000'), 'Expected purchase price in output');
+  assert.ok(html.includes('QLD'), 'Expected state in output');
+});
+
+test('summary row cell values are HTML-escaped', () => {
+  var summaryRows = [
+    ['<b>Bold & Co</b>', '$0', '$0', '$0', '0%', '$0', '0%', 'VIC']
+  ];
+  var html = _buildPdfHtml(summaryRows, []);
+  assert.ok(!html.includes('<b>Bold'), 'Raw <b> tag should not appear in output');
+  assert.ok(html.includes('&lt;b&gt;Bold &amp; Co&lt;/b&gt;'), 'Expected escaped cell value');
+});
+
+test('property name is HTML-escaped', () => {
+  var page = makePage({ name: '<Evil & "Tricky">' });
+  var html = _buildPdfHtml([], [page]);
+  assert.ok(!html.includes('<Evil'), 'Raw <Evil should not appear in property name');
+  assert.ok(html.includes('&lt;Evil &amp; &quot;Tricky&quot;&gt;'), 'Expected escaped property name');
+});
+
+test('empty summaryRows and empty propertyPages still returns a string', () => {
+  var html = _buildPdfHtml([], []);
+  assert.strictEqual(typeof html, 'string');
+  assert.ok(html.length > 0, 'Expected non-empty string');
+});
+
+test('chartImgUrl containing " is escaped to &quot; in img src', () => {
+  var page = makePage({ chartImgUrl: 'data:image/png;base64," onload="alert(1)' });
+  var html = _buildPdfHtml([], [page]);
+  assert.ok(html.includes('&quot;'), '_buildPdfHtml: chartImgUrl containing " is escaped to &quot; in img src');
+  assert.ok(!html.includes('" onload="'), 'Raw " onload=" must not appear unescaped in output');
+});
+
+// ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
 

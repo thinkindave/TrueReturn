@@ -1793,6 +1793,12 @@
     margin-bottom: 0;
   }
 
+  .property-table-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
   .add-property-btn {
     display: flex;
     align-items: center;
@@ -1954,6 +1960,125 @@
     margin-left: 0.25rem;
     vertical-align: middle;
   }
+
+  .save-share-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .export-dropdown {
+    position: relative;
+  }
+  .toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+  }
+  .toolbar-btn--secondary {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+  .toolbar-btn--secondary:hover {
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
+  .toolbar-btn--ghost {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+  }
+  .toolbar-btn--ghost:hover { color: var(--negative); }
+  .export-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    z-index: 200;
+    min-width: 110px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+  }
+  .export-menu-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+  .export-menu-item:hover { background: var(--bg-surface); }
+  #shareToast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: var(--accent);
+    color: var(--text-primary);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    z-index: 9999;
+    box-shadow: 0 4px 12px var(--shadow-color);
+  }
+
+  #pdfRoot { display: none; }
+
+  @media print {
+    header, .app-layout, .positioning-banner,
+    #shareToast, #globalTooltip { display: none !important; }
+
+    body { background: white !important; color: #111 !important; margin: 0; }
+    #pdfRoot { display: block !important; }
+
+    @page { size: A4 portrait; margin: 15mm; }
+    @page :first { size: A4 landscape; margin: 15mm; }
+
+    .pdf-page {
+      page-break-after: always;
+      break-after: page;
+      padding: 0;
+    }
+    .pdf-page:last-child {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+    .pdf-section {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      margin-bottom: 12pt;
+    }
+
+    #pdfRoot {
+      --bg-body: white;
+      --bg-surface: white;
+      --bg-elevated: #f9fafb;
+      --bg-input: white;
+      --text-primary: #111;
+      --text-secondary: #444;
+      --text-muted: #555;
+      --border-default: #e5e7eb;
+      --border-subtle: #d1d5db;
+      --card-gradient: none;
+      --card-glow: none;
+      background: white;
+      color: #111;
+      font-family: 'Inter', sans-serif;
+      font-size: 8.5pt;
+    }
+  }
   </style>
 </head>
 <body>
@@ -1987,10 +2112,39 @@
         <div class="card property-table">
           <div class="property-table-header">
             <h2>Properties</h2>
+            <div class="property-table-actions">
             <button class="add-property-btn" id="addPropertyBtn">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add Property
             </button>
+            <div class="save-share-toolbar">
+              <div class="export-dropdown" id="exportDropdown">
+                <button class="toolbar-btn toolbar-btn--secondary" id="exportDropdownBtn">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="export-menu" id="exportMenu" hidden>
+                  <button class="export-menu-item" id="exportJsonBtn">JSON</button>
+                  <button class="export-menu-item" id="exportXlsxBtn">XLSX</button>
+                  <button class="export-menu-item" id="exportPdfBtn">PDF</button>
+                </div>
+              </div>
+              <button class="toolbar-btn toolbar-btn--secondary" id="importBtn">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Import
+              </button>
+              <button class="toolbar-btn toolbar-btn--secondary" id="shareBtn">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                Share
+              </button>
+              <button class="toolbar-btn toolbar-btn--ghost" id="clearStateBtn" title="Clear all saved data and reset">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Clear
+              </button>
+            </div>
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display:none">
           </div>
           <div class="property-table-labels">
             <div class="prop-col-label"></div>
@@ -2725,6 +2879,7 @@
     </main>
   </div>
 
+  <div id="shareToast" style="display:none">Link copied!</div>
   <div id="globalTooltip" role="tooltip" aria-hidden="true"></div>
 
   <script>
@@ -3047,6 +3202,524 @@
       return buildingValue * 0.0075;
     }
 
+    function serializeState() {
+      var entries = Array.from(document.querySelectorAll('.property-entry'));
+      return {
+        version: 1,
+        taxRate: document.getElementById('marginalTaxRateSelect').value,
+        properties: entries.map(function(entry) {
+          var obj = {};
+          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge'].forEach(function(f) {
+            var el = entry.querySelector('[data-field="' + f + '"]');
+            obj[f] = el ? el.value : '';
+          });
+          return obj;
+        })
+      };
+    }
+
+    function deserializeState(state) {
+      if (!state || !Array.isArray(state.properties) || state.properties.length === 0) return;
+      var rows = document.querySelector('.property-rows');
+      var template = rows.querySelector('.property-entry');
+      if (!template) return;
+      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge'];
+      var newEntries = state.properties.slice(0, 8).map(function(prop) {
+        var clone = template.cloneNode(true);
+        clone.classList.remove('selected');
+        fields.forEach(function(f) {
+          var el = clone.querySelector('[data-field="' + f + '"]');
+          if (el && prop[f] !== undefined) el.value = prop[f];
+        });
+        var loanTypeEl = clone.querySelector('[data-field="loanType"]');
+        var loanTermGroup = clone.querySelector('.loan-term-group');
+        if (loanTypeEl && loanTermGroup) {
+          loanTermGroup.style.display = loanTypeEl.value === 'IO' ? 'none' : '';
+        }
+        return clone;
+      });
+      rows.innerHTML = '';
+      newEntries.forEach(function(entry) { rows.appendChild(entry); });
+      var taxSelect = document.getElementById('marginalTaxRateSelect');
+      if (taxSelect && state.taxRate != null) taxSelect.value = state.taxRate;
+      var firstEntry = rows.querySelector('.property-entry');
+      if (firstEntry) selectEntry(firstEntry);
+      updateDeleteButtonState();
+    }
+
+    function autoSave() {
+      try { localStorage.setItem('truereturn_state', JSON.stringify(serializeState())); } catch(e) {}
+    }
+
+    function shareURL() {
+      try {
+        var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(serializeState()))));
+        history.replaceState(null, '', '#s=' + encoded);
+        var url = window.location.href;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(showShareToast).catch(showShareToast);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+          showShareToast();
+        }
+      } catch(e) {}
+    }
+
+    function showShareToast() {
+      var t = document.getElementById('shareToast');
+      if (!t) return;
+      t.style.display = 'block';
+      setTimeout(function() { t.style.display = 'none'; }, 2000);
+    }
+
+    function exportJSON() {
+      var blob = new Blob([JSON.stringify(serializeState(), null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      var href = URL.createObjectURL(blob);
+      a.href = href;
+      a.download = 'truereturn-' + new Date().toISOString().slice(0,10) + '.json';
+      a.click();
+      setTimeout(function() { URL.revokeObjectURL(href); }, 100);
+    }
+
+    function importJSON() {
+      document.getElementById('importFileInput').click();
+    }
+
+    function exportXLSX() {
+      function doExport() {
+        var XLSX = window.XLSX;
+        var state = serializeState();
+        var entries = Array.from(document.querySelectorAll('.property-entry'));
+        var originalSelected = document.querySelector('.property-entry.selected');
+
+        function g(id) {
+          var el = document.getElementById(id);
+          return el ? el.textContent.trim() : '';
+        }
+        var usedNames = {};
+        function safeName(name, i) {
+          var n = (name || '').replace(/[\[\]:*?\/\\|]/g, '').trim().slice(0, 28);
+          n = n || ('Property ' + (i + 1));
+          if (usedNames[n]) {
+            var base = n.slice(0, 25);
+            var j = 2;
+            while (usedNames[base + ' ' + j]) j++;
+            n = base + ' ' + j;
+          }
+          usedNames[n] = true;
+          return n;
+        }
+
+        var wb = XLSX.utils.book_new();
+
+        // Sheet 1: Summary of all property inputs
+        var summaryHeaders = ['Name','Purchase Price','Deposit %','Loan Type','Loan Term','State','Interest Rate %','Mgmt Fee %','Weekly Rent','Growth %','Property Age'];
+        var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge'];
+        var summaryRows = state.properties.map(function(p) {
+          return fields.map(function(f) { return p[f] || ''; });
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([summaryHeaders].concat(summaryRows)), 'Summary');
+
+        // One sheet per property with full Breakdown + Projections
+        _xlsxExporting = true;
+        try {
+        entries.forEach(function(entry, i) {
+          selectEntry(entry);
+          var name = (entry.querySelector('[data-field="name"]') || {}).value || ('Property ' + (i + 1));
+          var rows = [
+            [name],
+            [],
+            ['CASH UP FRONT'],
+            ['Total Cash Up Front',          g('resTotalUpfront')],
+            ['  Deposit',                    g('resDeposit')],
+            ['  Stamp Duty',                 g('resStampDuty')],
+            ['  Conveyancing',               g('resConveyancing')],
+            [],
+            ['ANNUAL CASH FLOW'],
+            ['  Monthly Cash Flow',          g('resMonthlyCashFlow')],
+            ['  Annual Cash Flow',           g('resAnnualCashFlow')],
+            ['  Annual Rental Income',       g('resCfAnnualRent')],
+            ['  Loan Repayment',             g('resCfLoanPayment')],
+            ['  Management Fee',             g('resCfManagement')],
+            ['  Insurance',                  g('resCfInsurance')],
+            ['  Council Rates',              g('resCfCouncil')],
+            ['  Vacancy Allowance',          g('resCfVacancy')],
+            ['  Maintenance',                g('resCfMaintenance')],
+            ['  Net Annual Cash Flow',       g('resCfNetAnnual')],
+            [],
+            ['TAX POSITION'],
+            ['  Annual Rental Income',       g('resTaxRentalIncome')],
+            ['  Loan Interest',              g('resTaxLoanInterest')],
+            ['  Management Fee',             g('resTaxMgmt')],
+            ['  Insurance',                  g('resTaxInsurance')],
+            ['  Council Rates',              g('resTaxCouncil')],
+            ['  Maintenance',               g('resTaxMaintenance')],
+            ['  Depreciation (est.)',        g('resDepreciation')],
+            ['  Total Deductibles',          g('resDeductible')],
+            ['  Net Rental Position',        g('resNetRental')],
+            ['  Est. Tax Benefit',           g('resTaxBenefit')],
+            [],
+            ['PROJECTIONS',                  '5 Years',              '10 Years',              '15 Years'],
+            ['Property Value',               g('proj5Value'),        g('proj10Value'),        g('projLifeValue')],
+            ['Capital Growth',               g('proj5Growth'),       g('proj10Growth'),       g('projLifeGrowth')],
+            ['Remaining Loan',               g('proj5Loan'),         g('proj10Loan'),         g('projLifeLoan')],
+            ['Total Equity',                 g('proj5Equity'),       g('proj10Equity'),       g('projLifeEquity')],
+            ['Usable Equity (80%)',           g('proj5UsableEquity'), g('proj10UsableEquity'), g('projLifeUsableEquity')],
+            ['Est. Weekly Rent',             g('proj5Rent'),         g('proj10Rent'),         g('projLifeRent')],
+            ['Est. Annual Cash Flow',        g('proj5CashFlow'),     g('proj10CashFlow'),     g('projLifeCashFlow')],
+            ['True Cash Return',             g('proj5TrueReturn'),   g('proj10TrueReturn'),   g('projLifeTrueReturn')],
+            [],
+            ['CASH OUT (IF SOLD)',           '5 Years',              '10 Years',              '15 Years'],
+            ['Sale Price',                   g('proj5Sale'),         g('proj10Sale'),         g('projLifeSale')],
+            ['Sales Costs',                  g('proj5SaleCosts'),    g('proj10SaleCosts'),    g('projLifeSaleCosts')],
+            ['Loan Payout',                  g('proj5LoanPayout'),   g('proj10LoanPayout'),   g('projLifeLoanPayout')],
+            ['Net Proceeds',                 g('proj5NetProceeds'),  g('proj10NetProceeds'),  g('projLifeNetProceeds')],
+            ['Capital Gains Tax',            g('proj5CGT'),          g('proj10CGT'),          g('projLifeCGT')],
+            ['Total Profit',                 g('proj5TotalProfit'),  g('proj10TotalProfit'),  g('projLifeTotalProfit')],
+            ['Annual Cash Return',           g('proj5ReturnOnCash'), g('proj10ReturnOnCash'), g('projLifeReturnOnCash')],
+            [],
+            ['Total Cash Invested',          g('proj5CashInvested'),     g('proj10CashInvested'),     g('projLifeCashInvested')],
+            ['Cumulative Cash Flow',         g('proj5CumCashFlow'),      g('proj10CumCashFlow'),      g('projLifeCumCashFlow')],
+            ['Annualised Return',            g('proj5AnnualisedReturn'), g('proj10AnnualisedReturn'), g('projLifeAnnualisedReturn')],
+          ];
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), safeName(name, i));
+        });
+
+        } finally {
+          _xlsxExporting = false;
+        }
+
+        // Restore original selection
+        if (originalSelected) selectEntry(originalSelected);
+        renderGraphs();
+
+        XLSX.writeFile(wb, 'truereturn-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+      }
+      if (window.XLSX) { try { doExport(); } catch(e) { alert('XLSX export error: ' + e.message); } return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload = function() { try { doExport(); } catch(e) { alert('XLSX export error: ' + e.message); } };
+      s.onerror = function() { alert('Failed to load XLSX library. Please check your internet connection.'); };
+      document.head.appendChild(s);
+    }
+
+    function exportPDF() {
+      var entries = Array.from(document.querySelectorAll('.property-entry'));
+      if (entries.length === 0) return;
+      var originalSelected = document.querySelector('.property-entry.selected');
+
+      var summaryRows = entries.map(function(entry) {
+        function ef(f) { var el = entry.querySelector('[data-field="' + f + '"]'); return el ? el.value : ''; }
+        return [
+          ef('name') || 'Property',
+          ef('purchasePrice') ? '$' + Number(ef('purchasePrice')).toLocaleString() : '-',
+          ef('depositPct') + '%',
+          ef('loanType') === 'IO' ? 'IO' : 'P&I',
+          ef('interestRate') + '%',
+          '$' + ef('weeklyRent') + '/wk',
+          ef('expectedGrowth') + '%',
+          ef('state')
+        ];
+      });
+
+      var propertyPages = [];
+      _xlsxExporting = true;
+      try {
+        entries.forEach(function(entry, i) {
+          selectEntry(entry);
+          var name = (entry.querySelector('[data-field="name"]') || {}).value || ('Property ' + (i + 1));
+          function g(id) { var el = document.getElementById(id); return el ? el.textContent.trim() : '-'; }
+          function snap(prefix) {
+            return {
+              value:        g(prefix + 'Value'),
+              growth:       g(prefix + 'Growth'),
+              loan:         g(prefix + 'Loan'),
+              equity:       g(prefix + 'Equity'),
+              usableEquity: g(prefix + 'UsableEquity'),
+              rent:         g(prefix + 'Rent'),
+              cashFlow:     g(prefix + 'CashFlow'),
+              trueReturn:   g(prefix + 'TrueReturn'),
+              sale:         g(prefix + 'Sale'),
+              saleCosts:    g(prefix + 'SaleCosts'),
+              loanPayout:   g(prefix + 'LoanPayout'),
+              netProceeds:  g(prefix + 'NetProceeds'),
+              cgt:          g(prefix + 'CGT'),
+              totalProfit:  g(prefix + 'TotalProfit'),
+              returnOnCash: g(prefix + 'ReturnOnCash')
+            };
+          }
+          var growthRate = (parseFloat((entry.querySelector('[data-field="expectedGrowth"]') || {}).value) || 0) / 100;
+          var chartSvg = _buildPropertyChartSvg(entry, growthRate);
+          propertyPages.push({
+            name: name,
+            chartSvg: chartSvg,
+            totalUpfront:    g('resTotalUpfront'),
+            deposit:         g('resDeposit'),
+            stampDuty:       g('resStampDuty'),
+            conveyancing:    g('resConveyancing'),
+            monthlyCF:       g('resMonthlyCashFlow'),
+            annualCF:        g('resAnnualCashFlow'),
+            annualRent:      g('resCfAnnualRent'),
+            loanPayment:     g('resCfLoanPayment'),
+            management:      g('resCfManagement'),
+            insurance:       g('resCfInsurance'),
+            council:         g('resCfCouncil'),
+            vacancy:         g('resCfVacancy'),
+            maintenance:     g('resCfMaintenance'),
+            netAnnualCF:     g('resCfNetAnnual'),
+            taxRentalIncome: g('resTaxRentalIncome'),
+            taxInterest:     g('resTaxLoanInterest'),
+            taxMgmt:         g('resTaxMgmt'),
+            taxInsurance:    g('resTaxInsurance'),
+            taxCouncil:      g('resTaxCouncil'),
+            taxMaintenance:  g('resTaxMaintenance'),
+            depreciation:    g('resDepreciation'),
+            totalDeductible: g('resDeductible'),
+            netRental:       g('resNetRental'),
+            taxBenefit:      g('resTaxBenefit'),
+            p5:  snap('proj5'),
+            p10: snap('proj10'),
+            p15: snap('projLife')
+          });
+        });
+      } finally {
+        _xlsxExporting = false;
+      }
+
+      if (originalSelected) selectEntry(originalSelected);
+      renderGraphs();
+
+      var root = document.createElement('div');
+      root.id = 'pdfRoot';
+      root.innerHTML = _buildPdfHtml(summaryRows, propertyPages);
+      document.body.appendChild(root);
+
+      var _cleanedUp = false;
+      function cleanup() {
+        if (_cleanedUp) return;
+        _cleanedUp = true;
+        root.remove();
+        window.removeEventListener('afterprint', cleanup);
+      }
+      window.addEventListener('afterprint', cleanup);
+      window.print();
+      setTimeout(cleanup, 60000);
+    }
+
+    function _buildPropertyChartSvg(entry, growthRate) {
+      var W = 520, H = 160;
+      var padL = 58, padR = 24, padT = 22, padB = 22;
+      var cW = W - padL - padR, cH = H - padT - padB;
+      try {
+        var data = [];
+        for (var y = 1; y <= GRAPH_YEARS; y++) {
+          data.push(calcScenarioProfit(entry, y, growthRate));
+        }
+        var minV = Math.min.apply(null, data);
+        var maxV = Math.max.apply(null, data);
+        var range = maxV - minV || 1;
+        minV -= range * 0.05; maxV += range * 0.1; range = maxV - minV;
+
+        function xp(i) { return (padL + (i / (data.length - 1)) * cW).toFixed(1); }
+        function yp(v) { return (padT + (1 - (v - minV) / range) * cH).toFixed(1); }
+        function fmt(v) {
+          if (Math.abs(v) >= 1000000) return '$' + (v / 1000000).toFixed(1) + 'M';
+          if (Math.abs(v) >= 1000) return '$' + (v / 1000).toFixed(0) + 'k';
+          return '$' + Math.round(v);
+        }
+
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" style="display:block;width:100%;height:auto">';
+
+        // Grid lines + y-axis labels
+        for (var t = 0; t <= 4; t++) {
+          var gy = (padT + (t / 4) * cH).toFixed(1);
+          var gv = maxV - (t / 4) * range;
+          svg += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy + '" stroke="#eee" stroke-width="0.5"/>';
+          svg += '<text x="' + (padL - 4) + '" y="' + (parseFloat(gy) + 3).toFixed(1) + '" text-anchor="end" font-size="8" fill="#666">' + _esc(fmt(gv)) + '</text>';
+        }
+
+        // Zero line
+        if (minV < 0 && maxV > 0) {
+          svg += '<line x1="' + padL + '" y1="' + yp(0) + '" x2="' + (W - padR) + '" y2="' + yp(0) + '" stroke="#bbb" stroke-width="1"/>';
+        }
+
+        // X-axis labels + profit values at yr 5, 10, 15
+        [5, 10, 15].forEach(function(yr) {
+          var idx = yr - 1;
+          var cx = xp(idx);
+          var cy = parseFloat(yp(data[idx]));
+          svg += '<text x="' + cx + '" y="' + (H - 5) + '" text-anchor="middle" font-size="8" fill="#666">Yr ' + yr + '</text>';
+          svg += '<circle cx="' + cx + '" cy="' + cy + '" r="3" fill="#10B981"/>';
+          svg += '<text x="' + cx + '" y="' + (cy - 6).toFixed(1) + '" text-anchor="middle" font-size="7.5" font-weight="600" fill="#10B981">' + _esc(fmt(data[idx])) + '</text>';
+        });
+
+        // Filled area
+        var areaPoints = xp(0) + ',' + yp(data[0]);
+        for (var i = 1; i < data.length; i++) areaPoints += ' ' + xp(i) + ',' + yp(data[i]);
+        var baseline = yp(Math.max(minV, 0));
+        areaPoints += ' ' + xp(data.length - 1) + ',' + baseline + ' ' + xp(0) + ',' + baseline;
+        svg += '<polygon points="' + areaPoints + '" fill="rgba(16,185,129,0.12)" stroke="none"/>';
+
+        // Line
+        var linePoints = xp(0) + ',' + yp(data[0]);
+        for (var i = 1; i < data.length; i++) linePoints += ' ' + xp(i) + ',' + yp(data[i]);
+        svg += '<polyline points="' + linePoints + '" fill="none" stroke="#10B981" stroke-width="2" stroke-linejoin="round"/>';
+
+        // Milestone dots and labels drawn on top of line
+        [5, 10, 15].forEach(function(yr) {
+          var idx = yr - 1;
+          var cx = xp(idx);
+          var cy = parseFloat(yp(data[idx]));
+          svg += '<circle cx="' + cx + '" cy="' + cy + '" r="3" fill="#10B981"/>';
+        });
+
+        svg += '</svg>';
+        return svg;
+      } catch(e) {
+        return null;
+      }
+    }
+
+    function _buildPdfHtml(summaryRows, propertyPages) {
+      var date = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+      var headerHtml = '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8pt;border-bottom:2px solid #10B981;padding-bottom:5pt">'
+        + '<span style="font-size:13pt;font-weight:700;color:#10B981">TrueReturn</span>'
+        + '<span style="font-size:8pt;color:#666">' + date + '</span>'
+        + '</div>';
+
+      var summaryHtml = '<div class="pdf-page">' + headerHtml
+        + '<div style="font-size:13pt;font-weight:600;margin-bottom:10pt">Portfolio Summary</div>'
+        + '<table style="width:100%;border-collapse:collapse;font-size:9pt">'
+        + '<thead><tr style="background:#f3f4f6">'
+        + ['Name','Purchase Price','Deposit','Loan','Rate','Rent/wk','Growth','State'].map(function(h) {
+            return '<th style="text-align:left;padding:3pt 5pt;border-bottom:1px solid #ddd;font-weight:600">' + h + '</th>';
+          }).join('')
+        + '</tr></thead><tbody>'
+        + summaryRows.map(function(row, i) {
+            var bg = i % 2 === 0 ? 'white' : '#f9fafb';
+            return '<tr style="background:' + bg + '">'
+              + row.map(function(cell) {
+                  return '<td style="padding:3pt 5pt;border-bottom:1px solid #eee">' + _esc(cell) + '</td>';
+                }).join('')
+              + '</tr>';
+          }).join('')
+        + '</tbody></table></div>';
+
+      var propertyHtml = propertyPages.map(function(p) {
+        function row(label, val, indent, bold) {
+          var pad = indent ? 'padding-left:12pt' : '';
+          var sz = indent ? 'font-size:7.5pt;' : 'font-size:8.5pt;';
+          var fw = bold ? 'font-weight:700;' : (indent ? '' : 'font-weight:500;');
+          var co = bold ? 'color:#111;' : 'color:#555;';
+          return '<tr><td style="padding:1pt 3pt;' + co + sz + fw + pad + '">' + _esc(label) + '</td>'
+               + '<td style="padding:1pt 3pt;text-align:right;' + sz + fw + '">' + _esc(val) + '</td></tr>';
+        }
+        function section(title, rows) {
+          return '<div class="pdf-section" style="margin-bottom:12pt">'
+            + '<div style="font-size:8.5pt;font-weight:600;margin-bottom:2pt;color:#10B981;border-bottom:1px solid #ddd;padding-bottom:2pt">' + title + '</div>'
+            + '<table style="width:100%;border-collapse:collapse">' + rows + '</table>'
+            + '</div>';
+        }
+        function projTable(p5, p10, p15) {
+          function prow(label, k, minor, bold) {
+            var sz = minor ? 'font-size:7.5pt;' : 'font-size:8.5pt;';
+            var pad = minor ? 'padding-left:12pt' : '';
+            var fw = bold ? 'font-weight:700;' : '';
+            var co = bold ? 'color:#111;' : 'color:#555;';
+            return '<tr><td style="padding:1pt 3pt;' + co + sz + fw + pad + '">' + _esc(label) + '</td>'
+                 + '<td style="padding:1pt 3pt;text-align:right;' + sz + fw + '">' + _esc(p5[k]) + '</td>'
+                 + '<td style="padding:1pt 3pt;text-align:right;' + sz + fw + '">' + _esc(p10[k]) + '</td>'
+                 + '<td style="padding:1pt 3pt;text-align:right;' + sz + fw + '">' + _esc(p15[k]) + '</td>'
+                 + '</tr>';
+          }
+          return '<div class="pdf-section" style="margin-bottom:12pt">'
+            + '<div style="font-size:8.5pt;font-weight:600;margin-bottom:2pt;color:#10B981;border-bottom:1px solid #ddd;padding-bottom:2pt">Projections</div>'
+            + '<table style="width:100%;border-collapse:collapse">'
+            + '<thead><tr style="background:#f3f4f6">'
+            + '<th style="padding:1.5pt 3pt;text-align:left;font-size:8.5pt">Metric</th>'
+            + '<th style="padding:1.5pt 3pt;text-align:right;font-size:8.5pt">5 Years</th>'
+            + '<th style="padding:1.5pt 3pt;text-align:right;font-size:8.5pt">10 Years</th>'
+            + '<th style="padding:1.5pt 3pt;text-align:right;font-size:8.5pt">15 Years</th>'
+            + '</tr></thead><tbody>'
+            + prow('Property Value', 'value')
+            + prow('Capital Growth', 'growth')
+            + prow('Remaining Loan', 'loan', true)
+            + prow('Total Equity', 'equity', true)
+            + prow('Usable Equity (80%)', 'usableEquity')
+            + prow('Est. Weekly Rent', 'rent', true)
+            + prow('Est. Annual Cash Flow', 'cashFlow', true)
+            + prow('True Cash Return', 'trueReturn')
+            + '<tr><td colspan="4" style="padding:1pt 0"></td></tr>'
+            + prow('Sale Price', 'sale')
+            + prow('Sales Costs', 'saleCosts', true)
+            + prow('Loan Payout', 'loanPayout', true)
+            + prow('Net Proceeds', 'netProceeds', true)
+            + prow('Capital Gains Tax', 'cgt', true)
+            + prow('Total Profit', 'totalProfit', false, true)
+            + prow('Annual Cash Return', 'returnOnCash', false, true)
+            + '</tbody></table></div>';
+        }
+        var cashUpFront = section('Cash Up Front',
+          row('Total Cash Up Front', p.totalUpfront)
+          + row('Deposit', p.deposit, true)
+          + row('Stamp Duty', p.stampDuty, true)
+          + row('Conveyancing', p.conveyancing, true)
+        );
+        var annualCF = section('Annual Cash Flow',
+          row('Monthly Cash Flow', p.monthlyCF)
+          + row('Annual Cash Flow', p.annualCF)
+          + row('Annual Rental Income', p.annualRent, true)
+          + row('Loan Repayment', p.loanPayment, true)
+          + row('Management Fee', p.management, true)
+          + row('Insurance', p.insurance, true)
+          + row('Council Rates', p.council, true)
+          + row('Vacancy Allowance', p.vacancy, true)
+          + row('Maintenance', p.maintenance, true)
+          + row('Net Annual Cash Flow', p.netAnnualCF, false, true)
+        );
+        var taxPos = section('Tax Position',
+          row('Annual Rental Income', p.taxRentalIncome)
+          + row('Loan Interest', p.taxInterest, true)
+          + row('Management Fee', p.taxMgmt, true)
+          + row('Insurance', p.taxInsurance, true)
+          + row('Council Rates', p.taxCouncil, true)
+          + row('Maintenance', p.taxMaintenance, true)
+          + row('Depreciation (est.)', p.depreciation, true)
+          + row('Total Deductibles', p.totalDeductible)
+          + row('Net Rental Position', p.netRental)
+          + row('Est. Tax Benefit', p.taxBenefit)
+        ) + '<p style="font-size:7pt;color:#888;margin:-8pt 0 0 0;font-style:italic">Note: Est. Tax Benefit is not included in Annual Cash Flow as it depends heavily on your individual tax situation.</p>';
+        var projHtml = projTable(p.p5, p.p10, p.p15);
+        var chartHtml = p.chartSvg
+          ? '<div class="pdf-section" style="page-break-inside:avoid;break-inside:avoid;margin-top:16pt"><div style="font-size:8.5pt;font-weight:600;margin-bottom:6pt;color:#10B981;border-bottom:1px solid #ddd;padding-bottom:2pt">Profit Over Time</div>'
+            + '<div style="padding:0 16pt">' + p.chartSvg + '</div></div>'
+          : '';
+        return '<div class="pdf-page">' + headerHtml
+          + '<div style="font-size:11pt;font-weight:600;margin-bottom:6pt">' + _esc(p.name) + '</div>'
+          + '<div style="display:flex;gap:8pt">'
+          + '<div style="flex:1;min-width:0">' + cashUpFront + annualCF + '</div>'
+          + '<div style="flex:1;min-width:0">' + taxPos + '</div>'
+          + '</div>'
+          + projHtml
+          + chartHtml
+          + '</div>';
+      }).join('');
+
+      return summaryHtml + propertyHtml;
+    }
+
+    function _esc(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    var _autoSaveTimer = null;
+    var _xlsxExporting = false;
+
     function calculate() {
       const purchasePrice = getVal('purchasePrice');
       const depositPct = getVal('depositPct') / 100;
@@ -3358,7 +4031,11 @@
         }
       });
 
-      renderGraphs();
+      if (!_xlsxExporting) renderGraphs();
+      if (!_xlsxExporting) {
+        clearTimeout(_autoSaveTimer);
+        _autoSaveTimer = setTimeout(autoSave, 500);
+      }
     }
 
     const GRAPH_COLORS = ['#10B981','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#F97316','#EC4899'];
@@ -3727,6 +4404,58 @@
       }
       _chart1.update();
     });
+
+    // Export dropdown toggle
+    document.getElementById('exportDropdownBtn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      var menu = document.getElementById('exportMenu');
+      menu.hidden = !menu.hidden;
+    });
+    document.addEventListener('click', function() {
+      document.getElementById('exportMenu').hidden = true;
+    });
+    document.getElementById('exportJsonBtn').addEventListener('click', function() { exportJSON(); document.getElementById('exportMenu').hidden = true; });
+    document.getElementById('exportXlsxBtn').addEventListener('click', function() { exportXLSX(); document.getElementById('exportMenu').hidden = true; });
+    document.getElementById('exportPdfBtn').addEventListener('click', function() { exportPDF(); document.getElementById('exportMenu').hidden = true; });
+    document.getElementById('importBtn').addEventListener('click', importJSON);
+    document.getElementById('shareBtn').addEventListener('click', shareURL);
+    document.getElementById('clearStateBtn').addEventListener('click', function() {
+      if (!confirm('Clear all saved data and reset to defaults?')) return;
+      localStorage.removeItem('truereturn_state');
+      history.replaceState(null, '', window.location.pathname);
+      location.reload();
+    });
+    document.getElementById('importFileInput').addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          var state = JSON.parse(ev.target.result);
+          if (state && state.version) { deserializeState(state); autoSave(); }
+        } catch(e) { alert('Invalid TrueReturn file.'); }
+      };
+      reader.readAsText(file);
+      this.value = '';
+    });
+
+    (function() {
+      var loaded = false;
+      if (location.hash.startsWith('#s=')) {
+        try {
+          var raw = decodeURIComponent(escape(atob(location.hash.slice(3))));
+          var state = JSON.parse(raw);
+          if (state && state.version) { deserializeState(state); loaded = true; }
+        } catch(e) {}
+      }
+      if (!loaded) {
+        try {
+          var saved = localStorage.getItem('truereturn_state');
+          if (saved) { var state = JSON.parse(saved); if (state && state.version) { deserializeState(state); loaded = true; } }
+        } catch(e) {}
+      }
+    })();
+
     initPropertySelection();
     window.addEventListener('load', function() { initGraphs(); });
 
