@@ -1674,25 +1674,28 @@ test('chartImgUrl containing " is escaped to &quot; in img src', () => {
 
 // Constants copied verbatim from index.html
 const SIMPLE_MODE_DEFAULTS = {
-  depositPct:     '20',
-  loanType:       'PI',
-  loanTerm:       '30',
-  state:          'QLD',
-  interestRate:   '6.72',
-  managementFee:  '8',
-  expectedGrowth: '6',
-  propertyAge:    'mid',
+  purchasePrice:   '650000',
+  weeklyRent:      '550',
+  depositPct:      '20',
+  loanType:        'PI',
+  loanTerm:        '30',
+  state:           'QLD',
+  interestRate:    '6.72',
+  managementFee:   '8',
+  expectedGrowth:  '6',
+  propertyAge:     'mid',
+  marginalTaxRate: '0.37',
 };
 const SIMPLE_MODE_TAX = '0.37';
 
 // --- SIMPLE_MODE_DEFAULTS completeness ---
-test('SIMPLE_MODE_DEFAULTS has exactly 8 keys', () => {
+test('SIMPLE_MODE_DEFAULTS has exactly 11 keys', () => {
   const keys = Object.keys(SIMPLE_MODE_DEFAULTS);
-  assert.strictEqual(keys.length, 8, `Expected 8 keys, got ${keys.length}: ${keys.join(', ')}`);
+  assert.strictEqual(keys.length, 11, `Expected 11 keys, got ${keys.length}: ${keys.join(', ')}`);
 });
 
 test('SIMPLE_MODE_DEFAULTS contains all expected keys', () => {
-  const expected = ['depositPct', 'loanType', 'loanTerm', 'state', 'interestRate', 'managementFee', 'expectedGrowth', 'propertyAge'];
+  const expected = ['purchasePrice', 'weeklyRent', 'depositPct', 'loanType', 'loanTerm', 'state', 'interestRate', 'managementFee', 'expectedGrowth', 'propertyAge', 'marginalTaxRate'];
   for (const key of expected) {
     assert.ok(Object.prototype.hasOwnProperty.call(SIMPLE_MODE_DEFAULTS, key), `Missing key: ${key}`);
   }
@@ -1729,6 +1732,14 @@ test('SIMPLE_MODE_DEFAULTS expectedGrowth is "6"', () => {
 
 test('SIMPLE_MODE_DEFAULTS propertyAge is "mid"', () => {
   assert.strictEqual(SIMPLE_MODE_DEFAULTS.propertyAge, 'mid');
+});
+
+test('SIMPLE_MODE_DEFAULTS purchasePrice is "650000"', () => {
+  assert.strictEqual(SIMPLE_MODE_DEFAULTS.purchasePrice, '650000');
+});
+
+test('SIMPLE_MODE_DEFAULTS weeklyRent is "550"', () => {
+  assert.strictEqual(SIMPLE_MODE_DEFAULTS.weeklyRent, '550');
 });
 
 // --- SIMPLE_MODE_TAX ---
