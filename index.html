@@ -2098,6 +2098,235 @@
 
   #pdfRoot { display: none; }
 
+  /* ── Mobile (max-width: 767px) ── */
+  @media (max-width: 767px) {
+    .split-panel {
+      grid-template-columns: 1fr;
+    }
+
+    .content-area {
+      padding: 0 0.625rem;
+      margin: 0.75rem auto;
+    }
+
+    header {
+      padding: 0.875rem 1rem;
+    }
+    .header-about-link {
+      display: none;
+    }
+
+    .period-headlines {
+      grid-template-columns: 1fr;
+    }
+    .period-headline-cell {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      border-right: none;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.4rem 0.5rem;
+    }
+    .period-headline-cell:last-child {
+      border-bottom: none;
+    }
+    .period-headline-value {
+      font-size: 0.875rem;
+      text-align: right;
+    }
+    .period-headline-label {
+      font-size: 0.6rem;
+    }
+
+    .toolbar-btn-label {
+      display: none;
+    }
+    .toolbar-btn {
+      padding: 0.35rem 0.5rem;
+    }
+
+    .property-table-header {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .property-table-actions {
+      width: 100%;
+    }
+
+    .card {
+      overflow-x: hidden;
+    }
+
+    /* Hide column headers on mobile */
+    .property-table-labels {
+      display: none;
+    }
+
+    /* Each property entry becomes a card */
+    .mobile-card-view .property-entry {
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid transparent;
+      border-radius: var(--radius-sm);
+      margin-bottom: 0.5rem;
+      padding: 0.625rem;
+      background: var(--bg-elevated);
+      max-width: 560px;
+    }
+    .mobile-card-view .property-entry.selected {
+      border-left-color: var(--accent);
+      background: var(--accent-bg);
+    }
+
+    /* Property row: flex-wrap so name row + field rows stack cleanly */
+    .mobile-card-view .property-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.25rem 0.375rem;
+    }
+
+    /* Name input: row 1, full width */
+    .mobile-card-view .prop-col:not([data-label]):not(.prop-col-num):not(.prop-col-delete) {
+      flex: 0 0 100%;
+      order: 1;
+      min-width: 0;
+    }
+
+    /* All labeled fields: full-width rows, order 2 */
+    .mobile-card-view .prop-col[data-label] {
+      flex: 0 0 100%;
+      order: 2;
+      display: grid;
+      grid-template-columns: 4.5rem 1fr;
+      align-items: center;
+      min-height: 2.25rem;
+    }
+    .mobile-card-view .prop-col[data-label]::before {
+      content: attr(data-label);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    /* Show details toggle — only visible in simple+mobile */
+    .card-details-toggle { display: none; }
+    body[data-mode="simple"] .mobile-card-view .card-details-toggle {
+      display: flex;
+      flex: 0 0 100%;
+      order: 3;
+      align-items: center;
+      gap: 0.3rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 0.25rem 0;
+    }
+    body[data-mode="simple"] .mobile-card-view .card-details-toggle svg {
+      transition: transform 0.2s ease;
+    }
+    body[data-mode="simple"] .mobile-card-view .property-entry.details-expanded .card-details-toggle svg {
+      transform: rotate(180deg);
+    }
+    /* Hide advanced fields in simple+mobile by default */
+    body[data-mode="simple"] .mobile-card-view .advanced-only.prop-col {
+      display: none;
+    }
+    /* Show when expanded */
+    body[data-mode="simple"] .mobile-card-view .property-entry.details-expanded .advanced-only.prop-col {
+      display: grid;
+    }
+
+    /* View + Copy + Delete: all on the same row, order 4 */
+    .mobile-card-view .prop-col-num {
+      flex: 1 1 0;
+      order: 4;
+      display: flex;
+      margin-top: 0.375rem;
+      padding-top: 0.375rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .mobile-card-view .prop-col-delete {
+      flex: 2 1 0;
+      order: 4;
+      display: flex;
+      flex-direction: row;
+      gap: 0.5rem;
+      margin-top: 0.375rem;
+      padding-top: 0.375rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Inputs/selects fill the input column consistently */
+    .mobile-card-view .prop-col .input-wrapper,
+    .mobile-card-view .prop-col select,
+    .mobile-card-view .prop-col input {
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    /* Name input: bold */
+    .mobile-card-view [data-field="name"] {
+      font-weight: 600;
+      width: 100%;
+    }
+
+    /* Hide text labels on desktop, show in card view */
+    .card-btn-label { display: none; }
+    .mobile-card-view .card-btn-label { display: inline; }
+
+    /* All 3 action buttons: green, taller, icon + text */
+    .mobile-card-view .focus-row-btn,
+    .mobile-card-view .copy-row-btn,
+    .mobile-card-view .delete-row-btn {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      padding: 0.625rem 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: inherit;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+    .mobile-card-view .focus-row-btn,
+    .mobile-card-view .copy-row-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+    }
+    /* Selected card: View button outlined so text is readable + signals "currently viewing" */
+    .mobile-card-view .property-entry.selected .focus-row-btn {
+      background: var(--accent-bg);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+    }
+    .mobile-card-view .delete-row-btn {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+    /* Show icons in card view */
+    .mobile-card-view .focus-row-btn svg,
+    .mobile-card-view .copy-row-btn svg,
+    .mobile-card-view .delete-row-btn svg {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+    }
+  }
+
   @media print {
     header, .app-layout, .positioning-banner,
     #shareToast, #globalTooltip { display: none !important; }
@@ -2183,7 +2412,7 @@
               <div class="export-dropdown" id="exportDropdown">
                 <button class="toolbar-btn toolbar-btn--secondary" id="exportDropdownBtn">
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Export
+                  <span class="toolbar-btn-label">Export</span>
                   <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="export-menu" id="exportMenu" hidden>
@@ -2193,16 +2422,16 @@
                 </div>
               </div>
               <button class="toolbar-btn toolbar-btn--secondary" id="importBtn">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Import
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="toolbar-btn-label">Import</span>
               </button>
               <button class="toolbar-btn toolbar-btn--secondary" id="shareBtn">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-                Share
+                <span class="toolbar-btn-label">Share</span>
               </button>
               <button class="toolbar-btn toolbar-btn--ghost" id="clearStateBtn" title="Clear all saved data and reset">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                Clear
+                <span class="toolbar-btn-label">Clear</span>
               </button>
             </div>
             </div>
@@ -2229,36 +2458,37 @@
                 <div class="prop-col prop-col-num">
                   <button class="focus-row-btn" title="Select property">
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <span class="card-btn-label">View</span>
                   </button>
                 </div>
                 <div class="prop-col">
                   <input type="text" data-field="name" placeholder="Property name…">
                 </div>
-                <div class="prop-col">
+                <div class="prop-col" data-label="Price">
                   <div class="input-wrapper has-prefix">
                     <span class="prefix">$</span>
                     <input type="number" data-field="purchasePrice" value="295000" min="0" step="1000">
                   </div>
                 </div>
-                <div class="prop-col">
+                <div class="prop-col" data-label="Rent/wk">
                   <div class="input-wrapper has-prefix">
                     <span class="prefix">$</span>
                     <input type="number" data-field="weeklyRent" value="420" min="0" step="10">
                   </div>
                 </div>
-                <div class="prop-col advanced-only">
+                <div class="prop-col advanced-only" data-label="Deposit">
                   <div class="input-wrapper has-suffix">
                     <input type="number" data-field="depositPct" value="20" min="0" max="100" step="1">
                     <span class="suffix">%</span>
                   </div>
                 </div>
-                <div class="prop-col advanced-only">
+                <div class="prop-col advanced-only" data-label="Type">
                   <select data-field="loanType">
                     <option value="IO">IO</option>
                     <option value="PI" selected>P&amp;I</option>
                   </select>
                 </div>
-                <div class="prop-col advanced-only">
+                <div class="prop-col advanced-only" data-label="Term">
                   <div class="loan-term-group">
                     <div class="input-wrapper has-suffix">
                       <input type="number" data-field="loanTerm" value="30" min="1" max="40" step="1">
@@ -2266,7 +2496,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="prop-col advanced-only">
+                <div class="prop-col advanced-only" data-label="State">
                   <select data-field="state">
                     <option value="NSW">NSW</option>
                     <option value="VIC">VIC</option>
@@ -2278,37 +2508,43 @@
                     <option value="NT">NT</option>
                   </select>
                 </div>
-                <div class="prop-col advanced-only">
+                <div class="prop-col advanced-only" data-label="Rate">
                   <div class="input-wrapper has-suffix">
                     <input type="number" data-field="interestRate" value="5.89" min="0" max="20" step="0.01">
                     <span class="suffix">%</span>
                   </div>
                 </div>
-                <div class="prop-col advanced-only">
+                <div class="prop-col advanced-only" data-label="Mgmt">
                   <div class="input-wrapper has-suffix">
                     <input type="number" data-field="managementFee" value="6.6" min="0" max="100" step="0.1">
                     <span class="suffix">%</span>
                   </div>
                 </div>
-                <div class="prop-col advanced-only">
+                <div class="prop-col advanced-only" data-label="Growth">
                   <div class="input-wrapper has-suffix">
                     <input type="number" data-field="expectedGrowth" value="5" min="-20" max="50" step="0.5">
                     <span class="suffix">%</span>
                   </div>
                 </div>
-                <div class="prop-col advanced-only">
+                <div class="prop-col advanced-only" data-label="Age">
                   <select data-field="propertyAge">
                     <option value="new" selected>&lt;5y</option>
                     <option value="mid">5-20y</option>
                     <option value="old">&gt;20y</option>
                   </select>
                 </div>
+                <button class="card-details-toggle" aria-expanded="false">
+                  <span class="card-details-toggle-label">Show details</span>
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
                 <div class="prop-col prop-col-delete">
                   <button class="copy-row-btn" title="Duplicate property">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span class="card-btn-label">Copy</span>
                   </button>
                   <button class="delete-row-btn" title="Remove property">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                    <span class="card-btn-label">Delete</span>
                   </button>
                 </div>
               </div>
@@ -4599,6 +4835,29 @@
         if (e.target.closest('.help-tip')) tip.style.display = 'none';
       });
     })();
+
+    // Mobile card view toggle
+    (function() {
+      var mq = window.matchMedia('(max-width: 767px)');
+      function syncCardView() {
+        var rows = document.querySelector('.property-rows');
+        if (rows) rows.classList.toggle('mobile-card-view', mq.matches);
+      }
+      mq.addEventListener('change', syncCardView);
+      syncCardView();
+    })();
+
+    // Simple mode details accordion (mobile card view)
+    document.querySelector('.property-rows').addEventListener('click', function(e) {
+      var toggle = e.target.closest('.card-details-toggle');
+      if (!toggle) return;
+      var entry = toggle.closest('.property-entry');
+      if (!entry) return;
+      var expanded = entry.classList.toggle('details-expanded');
+      toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      var label = toggle.querySelector('.card-details-toggle-label');
+      if (label) label.textContent = expanded ? 'Hide details' : 'Show details';
+    });
   </script>
 </body>
 </html>
