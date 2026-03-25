@@ -187,6 +187,13 @@
       text-decoration: underline;
     }
 
+    .intro-disclaimer {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin: 0.4rem 0 0;
+      font-style: italic;
+    }
+
     .intro-tip {
       font-size: 0.8125rem;
       color: var(--text-muted);
@@ -430,6 +437,15 @@
       gap: 1.25rem;
     }
 
+    .projections-disclaimer {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin: 1rem 0 0;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-default);
+    }
+
     .split-panel .projections-grid {
       grid-template-columns: 1fr;
       gap: 0.75rem;
@@ -472,7 +488,8 @@
 
     .results-card h2,
     .purchase-costs-card h2,
-    .projections-card h2 {
+    .projections-card h2,
+    .highlights-card h2 {
       border-bottom: none;
       margin-bottom: 0.5rem;
       padding-bottom: 0;
@@ -681,8 +698,72 @@
       padding-right: 2.5rem;
     }
 
-    .purchase-costs-card {
+    .costs-highlights-row {
       grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .costs-total-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin: 0 -0.5rem 0.5rem;
+      padding: 0.6rem 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .costs-total-label {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .costs-total-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .highlights-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .highlight-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .highlight-item:last-child {
+      border-bottom: none;
+    }
+
+    .highlight-label {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .highlight-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .highlight-value.positive { color: var(--positive); }
+    .highlight-value.negative { color: var(--negative); }
+
+    @media (max-width: 900px) {
+      .costs-highlights-row {
+        grid-template-columns: 1fr;
+      }
     }
 
 
@@ -2482,6 +2563,7 @@
   <div class="intro-strip">
     <p class="intro-headline">See the real return on your property investment.</p>
     <p class="intro-body">Model cash flow, tax, growth and long-term outcomes, and see how changes impact your results. Edit the example below to get started, or add your own. <a href="about.html" class="intro-about-link">Learn how TrueReturn works →</a></p>
+    <p class="intro-disclaimer">For illustrative purposes only. Not financial advice.</p>
     <p class="intro-tip"><svg class="intro-tip-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7.5V18H9v-2.5l-.7-.5A7 7 0 0 1 12 2z"/><path d="M9 21h6"/><path d="M10 18v1"/><path d="M14 18v1"/></svg> Tip: Duplicate a property to test different scenarios.</p>
   </div>
 
@@ -2655,43 +2737,60 @@
           </div>
         </div>
 
-    <div class="card purchase-costs-card">
-      <h2>Cash Up Front</h2>
-      <p class="snapshot-property-name" id="purchaseCostsPropertyLabel">Property 1</p>
-      <div class="proj-section proj-section--startup">
-        <button class="proj-section-header" aria-expanded="false">
-          <span class="proj-section-title">Cash Up Front</span>
-          <span class="proj-section-highlights">
-            <span class="proj-highlight">
-              <span class="proj-highlight-label">Total Cash Up Front</span>
-              <span class="proj-highlight-value" id="resTotalUpfront">-</span>
-            </span>
-          </span>
-          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="proj-section-body" hidden>
-          <div class="line-item">
-            <span class="line-label">Deposit</span>
-            <span class="line-value" id="resDeposit">-</span>
+    <div class="costs-highlights-row">
+
+      <div class="card purchase-costs-card">
+        <h2>Cash Up Front</h2>
+        <p class="snapshot-property-name" id="purchaseCostsPropertyLabel">Property 1</p>
+        <div class="costs-total-line">
+          <span class="costs-total-label">Total</span>
+          <span class="costs-total-value" id="resTotalUpfront">-</span>
+        </div>
+        <div class="line-item">
+          <span class="line-label">Deposit</span>
+          <span class="line-value" id="resDeposit">-</span>
+        </div>
+        <div class="line-item">
+          <span class="line-label">Stamp Duty <span class="help-tip" data-tip="Based on thresholds for state selected">?</span></span>
+          <span class="line-value" id="resStampDuty">-</span>
+        </div>
+        <div class="line-item">
+          <span class="line-label">Conveyancing <span class="help-tip" data-tip="Based on averages for state selected">?</span></span>
+          <span class="line-value" id="resConveyancing">-</span>
+        </div>
+        <div class="line-item">
+          <span class="line-label">Building &amp; Pest</span>
+          <span class="line-value" id="resBuildingPest">-</span>
+        </div>
+        <div class="line-item">
+          <span class="line-label">Loan Establishment</span>
+          <span class="line-value" id="resLoanEstablishment">-</span>
+        </div>
+      </div>
+
+      <div class="card highlights-card">
+        <h2>Property Highlights</h2>
+        <p class="snapshot-property-name" id="highlightsPropertyLabel">Property 1</p>
+        <div class="highlights-list">
+          <div class="highlight-item">
+            <span class="highlight-label" id="hlWeeklyCostLabel">Weekly cost to hold <span class="help-tip" data-tip="Your out-of-pocket holding cost per week after rent and all expenses. Negative means the property costs you money each week; positive means it pays for itself.">?</span></span>
+            <span class="highlight-value" id="hlWeeklyCost">-</span>
           </div>
-          <div class="line-item">
-            <span class="line-label">Stamp Duty <span class="help-tip" data-tip="Based on thresholds for state selected">?</span></span>
-            <span class="line-value" id="resStampDuty">-</span>
+          <div class="highlight-item">
+            <span class="highlight-label">Cash flow positive from <span class="help-tip" data-tip="The year when projected rental income first exceeds all running expenses, based on your growth rate. 'Now' means the property is already cash flow positive.">?</span></span>
+            <span class="highlight-value" id="hlCashFlowYear">-</span>
           </div>
-          <div class="line-item">
-            <span class="line-label">Conveyancing <span class="help-tip" data-tip="Based on averages for state selected">?</span></span>
-            <span class="line-value" id="resConveyancing">-</span>
+          <div class="highlight-item">
+            <span class="highlight-label">Usable equity at 5 years <span class="help-tip" data-tip="80% of your projected equity after 5 years — the amount most lenders will let you borrow against to fund your next purchase.">?</span></span>
+            <span class="highlight-value" id="hlUsableEquity5">-</span>
           </div>
-          <div class="line-item">
-            <span class="line-label">Building &amp; Pest</span>
-            <span class="line-value" id="resBuildingPest">-</span>
-          </div>
-          <div class="line-item">
-            <span class="line-label">Loan Establishment</span>
-            <span class="line-value" id="resLoanEstablishment">-</span>
+          <div class="highlight-item">
+            <span class="highlight-label">Break-even <span class="help-tip" data-tip="The year when your total profit (capital growth + cumulative cash flow, minus all costs) first turns positive — meaning you're genuinely ahead.">?</span></span>
+            <span class="highlight-value" id="hlBreakEven">-</span>
           </div>
         </div>
       </div>
+
     </div>
 
     <div class="split-panel">
@@ -3273,6 +3372,7 @@
           </div><!-- /period-body 15yr -->
         </div>
       </div>
+      <p class="projections-disclaimer">For illustrative purposes only. Not financial advice.</p>
     </div>
     </div>
 
@@ -3340,6 +3440,8 @@
       if (pcLabel) pcLabel.textContent = name;
       const prLabel = document.getElementById('projectionsPropertyLabel');
       if (prLabel) prLabel.textContent = name;
+      const hlLabel = document.getElementById('highlightsPropertyLabel');
+      if (hlLabel) hlLabel.textContent = name;
     }
 
     // State-based average estimates (annual)
@@ -3809,6 +3911,12 @@
             ['  Building & Pest',            g('resBuildingPest')],
             ['  Loan Establishment',         g('resLoanEstablishment')],
             [],
+            ['PROPERTY HIGHLIGHTS'],
+            ['Weekly cost to hold / surplus', g('hlWeeklyCost')],
+            ['Cash flow positive from',       g('hlCashFlowYear')],
+            ['Usable equity at 5 years',      g('hlUsableEquity5')],
+            ['Break-even',                    g('hlBreakEven')],
+            [],
             ['YEAR ' + _snapshotYear + ' SNAPSHOT — ANNUAL CASH FLOW'],
             ['  Monthly Cash Flow',          g('resMonthlyCashFlow')],
             ['  Annual Cash Flow',           g('resAnnualCashFlow')],
@@ -3955,7 +4063,11 @@
             taxBenefit:      g('resTaxBenefit'),
             p5:  snap('proj5'),
             p10: snap('proj10'),
-            p15: snap('projLife')
+            p15: snap('projLife'),
+            hlWeeklyCost:    g('hlWeeklyCost'),
+            hlCashFlowYear:  g('hlCashFlowYear'),
+            hlUsableEquity5: g('hlUsableEquity5'),
+            hlBreakEven:     g('hlBreakEven')
           });
         });
       } finally {
@@ -4143,6 +4255,12 @@
           + row('Building & Pest', p.buildingPest, true)
           + row('Loan Establishment', p.loanEstablish, true)
         );
+        var highlights = section('Property Highlights',
+          row('Weekly cost/surplus', p.hlWeeklyCost)
+          + row('Cash flow positive from', p.hlCashFlowYear)
+          + row('Usable equity at 5 years', p.hlUsableEquity5)
+          + row('Break-even', p.hlBreakEven)
+        );
         var annualCF = section('Year ' + _snapshotYear + ' Snapshot — Annual Cash Flow',
           row('Monthly Cash Flow', p.monthlyCF)
           + row('Annual Cash Flow', p.annualCF)
@@ -4175,7 +4293,7 @@
         return '<div class="pdf-page">' + headerHtml
           + '<div style="font-size:11pt;font-weight:600;margin-bottom:6pt">' + _esc(p.name) + '</div>'
           + '<div style="display:flex;gap:8pt">'
-          + '<div style="flex:1;min-width:0">' + cashUpFront + annualCF + '</div>'
+          + '<div style="flex:1;min-width:0">' + cashUpFront + highlights + annualCF + '</div>'
           + '<div style="flex:1;min-width:0">' + taxPos + '</div>'
           + '</div>'
           + projHtml
@@ -4196,6 +4314,7 @@
     var _snapshotYear = 1;
 
     function calculate() {
+      const entry = getSelectedEntry();
       const purchasePrice = getVal('purchasePrice');
       const depositPct = getVal('depositPct') / 100;
       const state = getField('state');
@@ -4547,6 +4666,72 @@
           hReturnOnCashEl.className = 'period-headline-value ' + (annualisedReturn >= 0 ? 'positive' : 'negative');
         }
       });
+
+      // --- Property Highlights ---
+
+      // 1. Weekly cost to hold (or surplus)
+      const weeklyHoldingCost = annualCashFlow / 52;
+      const hlWeeklyCostEl = document.getElementById('hlWeeklyCost');
+      const hlWeeklyCostLabelEl = document.getElementById('hlWeeklyCostLabel');
+      if (hlWeeklyCostEl) {
+        const isPositive = weeklyHoldingCost >= 0;
+        hlWeeklyCostEl.textContent = (isPositive ? '+' : '') + formatCurrency(Math.abs(weeklyHoldingCost)) + '/wk';
+        hlWeeklyCostEl.className = 'highlight-value ' + (isPositive ? 'positive' : 'negative');
+        if (hlWeeklyCostLabelEl) hlWeeklyCostLabelEl.textContent = isPositive ? 'Weekly surplus' : 'Weekly cost to hold';
+      }
+
+      // 2. Cash flow positive from Year X
+      var cfPositiveYear = null;
+      if (annualCashFlow >= 0) {
+        cfPositiveYear = 0;
+      } else {
+        for (var cfy = 2; cfy <= 30; cfy++) {
+          var cfGF = Math.pow(1 + expectedGrowth, cfy);
+          var cfFV = purchasePrice * cfGF;
+          var cfRent = weeklyRent * cfGF * 52;
+          var cfMgmt = cfRent * managementFeePct;
+          var cfVac = weeklyRent * cfGF * 2;
+          var cfMaint = cfFV * 0.005;
+          var cfOpEx = cfMgmt + insurance + councilFees + cfVac + cfMaint;
+          var cfNet = cfRent - annualLoanPayment - cfOpEx;
+          if (cfNet >= 0) { cfPositiveYear = cfy; break; }
+        }
+      }
+      var hlCFYearEl = document.getElementById('hlCashFlowYear');
+      if (hlCFYearEl) {
+        hlCFYearEl.textContent = cfPositiveYear === 0 ? 'Now' : cfPositiveYear !== null ? 'Year ' + cfPositiveYear : 'Not within 30 yrs';
+      }
+
+      // 3. Usable equity at 5 years
+      var ue5GF = Math.pow(1 + expectedGrowth, 5);
+      var ue5FV = purchasePrice * ue5GF;
+      var ue5RemainingLoan;
+      if (loanType === 'IO') {
+        ue5RemainingLoan = loanAmount;
+      } else if (interestRate === 0) {
+        ue5RemainingLoan = Math.max(0, loanAmount - (loanAmount / (loanTerm * 12)) * 60);
+      } else {
+        var ue5MonthlyRate = interestRate / 12;
+        var ue5TotalPmts = loanTerm * 12;
+        var ue5PmtsMade = Math.min(60, ue5TotalPmts);
+        ue5RemainingLoan = loanAmount * (Math.pow(1 + ue5MonthlyRate, ue5TotalPmts) - Math.pow(1 + ue5MonthlyRate, ue5PmtsMade)) / (Math.pow(1 + ue5MonthlyRate, ue5TotalPmts) - 1);
+      }
+      if (ue5RemainingLoan < 0) ue5RemainingLoan = 0;
+      var ue5Equity = Math.max(0, ue5FV - ue5RemainingLoan);
+      var ue5Usable = ue5Equity * 0.8;
+      var hlUE5El = document.getElementById('hlUsableEquity5');
+      if (hlUE5El) hlUE5El.textContent = formatCurrency(ue5Usable);
+
+      // 4. Break-even year (first year where calcScenarioProfit > 0)
+      var breakEvenYear = null;
+      if (entry) {
+        for (var bey = 1; bey <= 30; bey++) {
+          var beProfit = calcScenarioProfit(entry, bey, expectedGrowth);
+          if (beProfit > 0) { breakEvenYear = bey; break; }
+        }
+      }
+      var hlBEEl = document.getElementById('hlBreakEven');
+      if (hlBEEl) hlBEEl.textContent = breakEvenYear !== null ? 'Year ' + breakEvenYear : 'Not within 30 yrs';
 
       if (!_xlsxExporting) renderGraphs();
       if (!_xlsxExporting) {

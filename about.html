@@ -210,17 +210,20 @@
     [data-theme="light"] .theme-icon-moon { display: block; }
     [data-theme="light"] .theme-icon-sun { display: none; }
 
-    .open-tool-btn {
+
+    .about-cta-btn {
       background: var(--accent);
       color: #fff;
-      padding: 0.4rem 1rem;
-      border-radius: var(--radius-sm);
+      padding: 0.75rem 2rem;
+      border-radius: var(--radius-md);
       text-decoration: none;
-      font-size: 0.85rem;
+      font-size: 1rem;
       font-weight: 600;
       transition: background var(--transition-base);
+      display: inline-block;
+      margin-top: 0.5rem;
     }
-    .open-tool-btn:hover { background: var(--accent-hover); }
+    .about-cta-btn:hover { background: var(--accent-hover); }
 
     .header-right {
       display: flex;
@@ -244,8 +247,16 @@
       font-size: 1.05rem;
       color: var(--text-secondary);
       line-height: 1.7;
-      margin-bottom: 1rem;
+      margin-bottom: 2rem;
     }
+    .about-disclaimer {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 1.25rem;
+      line-height: 1.5;
+    }
+
     .about-section {
       max-width: 860px;
       margin: 0 auto;
@@ -448,7 +459,6 @@
           <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
           <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
         </button>
-        <a href="index.html" class="open-tool-btn">Open Calculator →</a>
       </div>
     </div>
   </header>
@@ -457,6 +467,8 @@
     <section class="about-hero">
       <h2 class="about-hero__headline">Make smarter property investment decisions</h2>
       <p class="about-hero__body">Free Australian calculator that models the real cost of buying, holding, and selling investment property — stamp duty, cash flow, tax, depreciation, and long-term exit scenarios.</p>
+      <a href="index.html" class="about-cta-btn">Open the Calculator →</a>
+      <p class="about-disclaimer">TrueReturn provides estimates for illustrative purposes only. Figures are based on your inputs and fixed assumptions — actual results will vary. Always consult a licensed financial adviser before making investment decisions.</p>
     </section>
 
     <section class="about-section">
