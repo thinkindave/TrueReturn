@@ -4142,7 +4142,9 @@
       }
 
       // Tax Benefit (annualInterestOnly also used in Cash Flow block below)
-      const marginalTaxRate = parseFloat(document.getElementById('marginalTaxRateSelect').value) || 0.37;
+      const marginalTaxRate = document.body.dataset.mode === 'simple'
+        ? parseFloat(SIMPLE_MODE_TAX)
+        : (parseFloat(document.getElementById('marginalTaxRateSelect').value) || 0.37);
       const annualInterestOnly = loanAmount * interestRate;
       const annualDepreciation = calcDepreciation(propertyAge, purchasePrice);
       window.TrueReturn.marginalTaxRate = marginalTaxRate;
