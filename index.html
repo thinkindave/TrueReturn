@@ -158,6 +158,59 @@
       z-index: 10;
     }
 
+    .intro-strip {
+      background: var(--bg-page);
+      padding: 0.875rem 2rem;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .intro-headline {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 0.25rem;
+    }
+
+    .intro-body {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin: 0;
+      line-height: 1.55;
+    }
+
+    .intro-about-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .intro-about-link:hover {
+      text-decoration: underline;
+    }
+
+    .intro-tip {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin: 0.5rem 0 0;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .intro-tip-icon {
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 480px) {
+      .intro-strip {
+        padding: 0.875rem 1rem;
+      }
+      .intro-about-link {
+        display: block;
+        margin-top: 0.35rem;
+      }
+    }
+
     .header-content {
       display: flex;
       align-items: center;
@@ -2425,6 +2478,12 @@
       </div>
     </div>
   </header>
+
+  <div class="intro-strip">
+    <p class="intro-headline">See the real return on your property investment.</p>
+    <p class="intro-body">Model cash flow, tax, growth and long-term outcomes, and see how changes impact your results. Edit the example below to get started, or add your own. <a href="about.html" class="intro-about-link">Learn how TrueReturn works →</a></p>
+    <p class="intro-tip"><svg class="intro-tip-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7.5V18H9v-2.5l-.7-.5A7 7 0 0 1 12 2z"/><path d="M9 21h6"/><path d="M10 18v1"/><path d="M14 18v1"/></svg> Tip: Duplicate a property to test different scenarios.</p>
+  </div>
 
   <div class="app-layout">
     <nav class="sidebar">
