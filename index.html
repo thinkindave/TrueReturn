@@ -417,6 +417,14 @@
       letter-spacing: -0.01em;
     }
 
+    .results-card h2,
+    .purchase-costs-card h2,
+    .projections-card h2 {
+      border-bottom: none;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0;
+    }
+
     .form-group {
       margin-bottom: 1.375rem;
     }
@@ -620,25 +628,40 @@
       padding-right: 2.5rem;
     }
 
-    .breakdown-header {
-      display: flex;
-      align-items: baseline;
-      gap: 0.75rem;
-      margin-bottom: 0.25rem;
+    .purchase-costs-card {
+      grid-column: 1 / -1;
     }
 
-    .breakdown-header h2 {
-      margin-bottom: 0;
+
+    .snapshot-property-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin: 0 0 1.1rem;
     }
 
-    .breakdown-property-label {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--accent);
-      background: var(--accent-bg);
+    .snapshot-year-select {
+      display: inline-block;
+      width: fit-content;
+      max-width: 14rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.3rem 2.2rem 0.3rem 0.75rem;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--accent-border);
-      border-radius: 999px;
-      padding: 0.15rem 0.6rem;
+      background: var(--accent-bg);
+      color: var(--accent);
+      cursor: pointer;
+      font-family: inherit;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2310B981' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.5rem center;
+    }
+    .snapshot-year-select:focus {
+      outline: none;
+      border-color: var(--accent);
     }
 
     .breakdown-kpi-bar {
@@ -2573,34 +2596,9 @@
           </div>
         </div>
 
-    <div class="split-panel">
-    <div class="card results-card">
-      <div class="breakdown-header">
-        <h2>Year 1 Snapshot</h2>
-        <span class="breakdown-property-label" id="breakdownPropertyLabel">Property 1</span>
-      </div>
-
-      <!-- KPI Bar -->
-      <div class="breakdown-kpi-bar">
-        <div class="breakdown-kpi-tile">
-          <span class="breakdown-kpi-label">Annual Cash Flow <span class="help-tip" data-tip="Most Australian investment properties are negatively geared (cash flow negative), particularly in capital cities. Positive cash flow is more common in regional areas.">?</span></span>
-          <span class="breakdown-kpi-value" id="kpiAnnualCashFlow">–</span>
-        </div>
-        <div class="breakdown-kpi-tile">
-          <span class="breakdown-kpi-label">Gross Yield <span class="help-tip" data-tip="Rent income as a % of property value, before expenses. The Australian average is typically 3–5%, with regional properties often yielding higher than capital cities.">?</span></span>
-          <span class="breakdown-kpi-value" id="kpiGrossYield">–</span>
-        </div>
-        <div class="breakdown-kpi-tile">
-          <span class="breakdown-kpi-label">Net Yield <span class="help-tip" data-tip="Gross yield minus operating expenses (management, insurance, council, vacancy, maintenance) — mortgage costs excluded. A net yield of 3–4% is typical for Australian residential property.">?</span></span>
-          <span class="breakdown-kpi-value" id="kpiNetYield">–</span>
-        </div>
-        <div class="breakdown-kpi-tile">
-          <span class="breakdown-kpi-label">Cash-on-Cash Return <span class="help-tip" data-tip="Annual cash flow (after all costs including mortgage) as a % of your total cash invested upfront. Negatively geared properties will show a negative return here.">?</span></span>
-          <span class="breakdown-kpi-value" id="kpiCashOnCash">–</span>
-        </div>
-      </div>
-
-      <!-- Cash Up Front -->
+    <div class="card purchase-costs-card">
+      <h2>Cash Up Front</h2>
+      <p class="snapshot-property-name" id="purchaseCostsPropertyLabel">Property 1</p>
       <div class="proj-section proj-section--startup">
         <button class="proj-section-header" aria-expanded="false">
           <span class="proj-section-title">Cash Up Front</span>
@@ -2633,6 +2631,49 @@
             <span class="line-label">Loan Establishment</span>
             <span class="line-value" id="resLoanEstablishment">-</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="split-panel">
+    <div class="card results-card">
+      <h2>Year-by-year Snapshot</h2>
+      <p class="snapshot-property-name" id="breakdownPropertyLabel">Property 1</p>
+      <select id="snapshotYearSelect" class="snapshot-year-select">
+        <option value="1" selected>Year 1</option>
+        <option value="2">Year 2</option>
+        <option value="3">Year 3</option>
+        <option value="4">Year 4</option>
+        <option value="5">Year 5</option>
+        <option value="6">Year 6</option>
+        <option value="7">Year 7</option>
+        <option value="8">Year 8</option>
+        <option value="9">Year 9</option>
+        <option value="10">Year 10</option>
+        <option value="11">Year 11</option>
+        <option value="12">Year 12</option>
+        <option value="13">Year 13</option>
+        <option value="14">Year 14</option>
+        <option value="15">Year 15</option>
+      </select>
+
+      <!-- KPI Bar -->
+      <div class="breakdown-kpi-bar">
+        <div class="breakdown-kpi-tile">
+          <span class="breakdown-kpi-label">Annual Cash Flow <span class="help-tip" data-tip="Most Australian investment properties are negatively geared (cash flow negative), particularly in capital cities. Positive cash flow is more common in regional areas.">?</span></span>
+          <span class="breakdown-kpi-value" id="kpiAnnualCashFlow">–</span>
+        </div>
+        <div class="breakdown-kpi-tile">
+          <span class="breakdown-kpi-label">Gross Yield <span class="help-tip" data-tip="Rent income as a % of property value, before expenses. The Australian average is typically 3–5%, with regional properties often yielding higher than capital cities.">?</span></span>
+          <span class="breakdown-kpi-value" id="kpiGrossYield">–</span>
+        </div>
+        <div class="breakdown-kpi-tile">
+          <span class="breakdown-kpi-label">Net Yield <span class="help-tip" data-tip="Gross yield minus operating expenses (management, insurance, council, vacancy, maintenance) — mortgage costs excluded. A net yield of 3–4% is typical for Australian residential property.">?</span></span>
+          <span class="breakdown-kpi-value" id="kpiNetYield">–</span>
+        </div>
+        <div class="breakdown-kpi-tile">
+          <span class="breakdown-kpi-label">Cash-on-Cash Return <span class="help-tip" data-tip="Annual cash flow (after all costs including mortgage) as a % of your total cash invested upfront. Negatively geared properties will show a negative return here.">?</span></span>
+          <span class="breakdown-kpi-value" id="kpiCashOnCash">–</span>
         </div>
       </div>
 
@@ -2763,11 +2804,9 @@
 
     </div>
 
-    <div class="card">
-      <div class="breakdown-header">
-        <h2>Projections</h2>
-        <span class="breakdown-property-label" id="projectionsPropertyLabel">Property 1</span>
-      </div>
+    <div class="card projections-card">
+      <h2>Projections</h2>
+      <p class="snapshot-property-name" id="projectionsPropertyLabel">Property 1</p>
 
       <div class="projections-grid">
         <!-- 5 Year -->
@@ -3238,6 +3277,8 @@
       const name = getEntryLabel(entry);
       const bdLabel = document.getElementById('breakdownPropertyLabel');
       if (bdLabel) bdLabel.textContent = name;
+      const pcLabel = document.getElementById('purchaseCostsPropertyLabel');
+      if (pcLabel) pcLabel.textContent = name;
       const prLabel = document.getElementById('projectionsPropertyLabel');
       if (prLabel) prLabel.textContent = name;
     }
@@ -3709,7 +3750,7 @@
             ['  Building & Pest',            g('resBuildingPest')],
             ['  Loan Establishment',         g('resLoanEstablishment')],
             [],
-            ['ANNUAL CASH FLOW'],
+            ['YEAR ' + _snapshotYear + ' SNAPSHOT — ANNUAL CASH FLOW'],
             ['  Monthly Cash Flow',          g('resMonthlyCashFlow')],
             ['  Annual Cash Flow',           g('resAnnualCashFlow')],
             ['  Annual Rental Income',       g('resCfAnnualRent')],
@@ -3721,7 +3762,7 @@
             ['  Maintenance',                g('resCfMaintenance')],
             ['  Net Annual Cash Flow',       g('resCfNetAnnual')],
             [],
-            ['TAX POSITION'],
+            ['YEAR ' + _snapshotYear + ' SNAPSHOT — TAX POSITION'],
             ['  Annual Rental Income',       g('resTaxRentalIncome')],
             ['  Loan Interest',              g('resTaxLoanInterest')],
             ['  Management Fee',             g('resTaxMgmt')],
@@ -4043,7 +4084,7 @@
           + row('Building & Pest', p.buildingPest, true)
           + row('Loan Establishment', p.loanEstablish, true)
         );
-        var annualCF = section('Annual Cash Flow',
+        var annualCF = section('Year ' + _snapshotYear + ' Snapshot — Annual Cash Flow',
           row('Monthly Cash Flow', p.monthlyCF)
           + row('Annual Cash Flow', p.annualCF)
           + row('Annual Rental Income', p.annualRent, true)
@@ -4055,7 +4096,7 @@
           + row('Maintenance', p.maintenance, true)
           + row('Net Annual Cash Flow', p.netAnnualCF, false, true)
         );
-        var taxPos = section('Tax Position',
+        var taxPos = section('Year ' + _snapshotYear + ' Snapshot — Tax Position',
           row('Annual Rental Income', p.taxRentalIncome)
           + row('Loan Interest', p.taxInterest, true)
           + row('Management Fee', p.taxMgmt, true)
@@ -4093,6 +4134,7 @@
 
     var _autoSaveTimer = null;
     var _xlsxExporting = false;
+    var _snapshotYear = 1;
 
     function calculate() {
       const purchasePrice = getVal('purchasePrice');
@@ -4170,18 +4212,6 @@
       document.getElementById('resLoanEstablishment').textContent = formatCurrency(LOAN_ESTABLISHMENT);
       document.getElementById('resTotalUpfront').textContent = formatCurrency(totalUpfront);
 
-      // Update DOM — Cash Flow header highlights
-      const mCfEl = document.getElementById('resMonthlyCashFlow');
-      if (mCfEl) {
-        mCfEl.textContent = formatCurrency(monthlyCashFlow) + '/mo';
-        mCfEl.className = 'proj-highlight-value proj-highlight-value--hero ' + (monthlyCashFlow >= 0 ? 'positive' : 'negative');
-      }
-      const aCfEl = document.getElementById('resAnnualCashFlow');
-      if (aCfEl) {
-        aCfEl.textContent = formatCurrency(annualCashFlow) + '/yr';
-        aCfEl.className = 'proj-highlight-value proj-highlight-value--hero ' + (annualCashFlow >= 0 ? 'positive' : 'negative');
-      }
-
       // Tax Benefit (annualInterestOnly also used in Cash Flow block below)
       const marginalTaxRate = document.body.dataset.mode === 'simple'
         ? parseFloat(SIMPLE_MODE_TAX)
@@ -4190,6 +4220,52 @@
       const annualDepreciation = calcDepreciation(propertyAge, purchasePrice);
       window.TrueReturn.marginalTaxRate = marginalTaxRate;
       window.TrueReturn.annualDepreciation = annualDepreciation;
+
+      // Snapshot year projections
+      const snapshotYear = _snapshotYear;
+      const snGrowthFactor = Math.pow(1 + expectedGrowth, snapshotYear);
+      const snFutureValue = purchasePrice * snGrowthFactor;
+      const snWeeklyRent = weeklyRent * snGrowthFactor;
+      const snAnnualRent = snWeeklyRent * 52;
+      const snMgmtFee = snAnnualRent * managementFeePct;
+      const snVacancy = snWeeklyRent * 2;
+      const snMaintenance = snFutureValue * 0.005;
+      const snOperatingExpenses = snMgmtFee + insurance + councilFees + snVacancy + snMaintenance;
+      const snTotalExpenses = annualLoanPayment + snOperatingExpenses;
+      const snCashFlow = snAnnualRent - snTotalExpenses;
+      const snMonthlyCashFlow = snCashFlow / 12;
+      const snGrossYield = snFutureValue > 0 ? (snAnnualRent / snFutureValue) * 100 : 0;
+      const snNetYield = snFutureValue > 0 ? ((snAnnualRent - snOperatingExpenses) / snFutureValue) * 100 : 0;
+
+      let snInterestOnly;
+      if (loanType === 'IO') {
+        snInterestOnly = loanAmount * interestRate;
+      } else if (interestRate === 0) {
+        snInterestOnly = 0;
+      } else {
+        const snMonthlyRate = interestRate / 12;
+        const snTotalPayments = loanTerm * 12;
+        const snPaymentsMade = Math.min((snapshotYear - 1) * 12, snTotalPayments);
+        const snRemainingLoan = loanAmount * (Math.pow(1 + snMonthlyRate, snTotalPayments) - Math.pow(1 + snMonthlyRate, snPaymentsMade)) / (Math.pow(1 + snMonthlyRate, snTotalPayments) - 1);
+        snInterestOnly = Math.max(0, snRemainingLoan) * interestRate;
+      }
+
+      const snDeductibleExpenses = snInterestOnly + snMgmtFee + insurance + councilFees + snMaintenance + annualDepreciation;
+      const snNetRentalPosition = snAnnualRent - snDeductibleExpenses;
+      const snTaxBenefit = snNetRentalPosition < 0 ? Math.abs(snNetRentalPosition) * marginalTaxRate : 0;
+
+
+      // Update DOM — Cash Flow header highlights (snapshot year)
+      const mCfEl = document.getElementById('resMonthlyCashFlow');
+      if (mCfEl) {
+        mCfEl.textContent = formatCurrency(snMonthlyCashFlow) + '/mo';
+        mCfEl.className = 'proj-highlight-value proj-highlight-value--hero ' + (snMonthlyCashFlow >= 0 ? 'positive' : 'negative');
+      }
+      const aCfEl = document.getElementById('resAnnualCashFlow');
+      if (aCfEl) {
+        aCfEl.textContent = formatCurrency(snCashFlow) + '/yr';
+        aCfEl.className = 'proj-highlight-value proj-highlight-value--hero ' + (snCashFlow >= 0 ? 'positive' : 'negative');
+      }
 
       // Update DOM — Cash Flow body (annual breakdown)
       const cfRentEl = document.getElementById('resCfAnnualRent');
@@ -4205,48 +4281,45 @@
         const resPrincipalEl = document.getElementById('resPrincipalPortion');
         const loanBreakdownEl = document.getElementById('loanBreakdown');
         const cfNetEl = document.getElementById('resCfNetAnnual');
-        cfRentEl.textContent = formatCurrency(annualRent) + '/yr';
+        cfRentEl.textContent = formatCurrency(snAnnualRent) + '/yr';
         const cfRentNoteEl = document.getElementById('resCfRentNote');
-        if (cfRentNoteEl) cfRentNoteEl.textContent = formatCurrency(weeklyRent) + '/wk · ' + formatCurrency(weeklyRent * 52 / 12) + '/mo';
+        if (cfRentNoteEl) cfRentNoteEl.textContent = formatCurrency(snWeeklyRent) + '/wk · ' + formatCurrency(snWeeklyRent * 52 / 12) + '/mo';
         cfLoanEl.textContent = '-' + formatCurrency(annualLoanPayment) + '/yr';
         // Loan principal/interest sub-notes (P+I only)
-        const annualPrincipal = loanType === 'PI' ? annualLoanPayment - annualInterestOnly : 0;
-        if (resInterestEl) resInterestEl.textContent = 'Interest: ' + formatCurrency(annualInterestOnly);
+        const annualPrincipal = loanType === 'PI' ? annualLoanPayment - snInterestOnly : 0;
+        if (resInterestEl) resInterestEl.textContent = 'Interest: ' + formatCurrency(snInterestOnly);
         if (resPrincipalEl) resPrincipalEl.textContent = 'Principal: ' + formatCurrency(annualPrincipal);
         if (loanBreakdownEl) loanBreakdownEl.style.display = loanType === 'PI' ? 'flex' : 'none';
-        if (cfManagementEl) cfManagementEl.textContent = '-' + formatCurrency(annualManagementFee) + '/yr';
+        if (cfManagementEl) cfManagementEl.textContent = '-' + formatCurrency(snMgmtFee) + '/yr';
         if (cfInsuranceEl) cfInsuranceEl.textContent = '-' + formatCurrency(insurance) + '/yr';
         if (cfCouncilEl) cfCouncilEl.textContent = '-' + formatCurrency(councilFees) + '/yr';
-        if (cfVacancyEl) cfVacancyEl.textContent = '-' + formatCurrency(vacancyAllowance) + '/yr';
-        if (cfMaintenanceEl) cfMaintenanceEl.textContent = '-' + formatCurrency(maintenanceAllowance) + '/yr';
+        if (cfVacancyEl) cfVacancyEl.textContent = '-' + formatCurrency(snVacancy) + '/yr';
+        if (cfMaintenanceEl) cfMaintenanceEl.textContent = '-' + formatCurrency(snMaintenance) + '/yr';
         if (cfNetEl) {
-          cfNetEl.textContent = formatCurrency(annualCashFlow) + '/yr';
-          cfNetEl.className = 'line-value ' + (annualCashFlow >= 0 ? 'positive' : 'negative');
+          cfNetEl.textContent = formatCurrency(snCashFlow) + '/yr';
+          cfNetEl.className = 'line-value ' + (snCashFlow >= 0 ? 'positive' : 'negative');
         }
       }
       const cashflowSection = document.querySelector('.proj-section--cashflow');
-      if (cashflowSection) cashflowSection.classList.toggle('negative', annualCashFlow < 0);
-      const deductibleExpenses = annualInterestOnly + annualManagementFee + insurance + councilFees + maintenanceAllowance + annualDepreciation;
-      const netRentalPosition = annualRent - deductibleExpenses;
-      const taxBenefit = netRentalPosition < 0 ? Math.abs(netRentalPosition) * marginalTaxRate : 0;
+      if (cashflowSection) cashflowSection.classList.toggle('negative', snCashFlow < 0);
       const taxRentalIncomeEl = document.getElementById('resTaxRentalIncome');
-      if (taxRentalIncomeEl) taxRentalIncomeEl.textContent = formatCurrency(annualRent) + '/yr';
+      if (taxRentalIncomeEl) taxRentalIncomeEl.textContent = formatCurrency(snAnnualRent) + '/yr';
       const taxLoanInterestEl = document.getElementById('resTaxLoanInterest');
-      if (taxLoanInterestEl) taxLoanInterestEl.textContent = formatCurrency(annualInterestOnly);
+      if (taxLoanInterestEl) taxLoanInterestEl.textContent = formatCurrency(snInterestOnly);
       const taxMgmtEl = document.getElementById('resTaxMgmt');
-      if (taxMgmtEl) taxMgmtEl.textContent = formatCurrency(annualManagementFee);
+      if (taxMgmtEl) taxMgmtEl.textContent = formatCurrency(snMgmtFee);
       const taxInsuranceEl = document.getElementById('resTaxInsurance');
       if (taxInsuranceEl) taxInsuranceEl.textContent = formatCurrency(insurance);
       const taxCouncilEl = document.getElementById('resTaxCouncil');
       if (taxCouncilEl) taxCouncilEl.textContent = formatCurrency(councilFees);
       const taxMaintenanceEl = document.getElementById('resTaxMaintenance');
-      if (taxMaintenanceEl) taxMaintenanceEl.textContent = formatCurrency(maintenanceAllowance);
+      if (taxMaintenanceEl) taxMaintenanceEl.textContent = formatCurrency(snMaintenance);
       const deductibleEl = document.getElementById('resDeductible');
-      if (deductibleEl) deductibleEl.textContent = formatCurrency(deductibleExpenses) + '/yr';
+      if (deductibleEl) deductibleEl.textContent = formatCurrency(snDeductibleExpenses) + '/yr';
       const nrEl = document.getElementById('resNetRental');
       if (nrEl) {
-        nrEl.textContent = formatCurrency(netRentalPosition) + '/yr';
-        nrEl.className = 'line-value ' + (netRentalPosition >= 0 ? 'positive' : 'negative');
+        nrEl.textContent = formatCurrency(snNetRentalPosition) + '/yr';
+        nrEl.className = 'line-value ' + (snNetRentalPosition >= 0 ? 'positive' : 'negative');
       }
       const deprBracket = propertyAge === 'new' ? 'new' : propertyAge === 'mid' ? 'mid-age' : 'older';
       const deprEl = document.getElementById('resDepreciation');
@@ -4255,8 +4328,8 @@
       if (deprBracketEl) deprBracketEl.textContent = '(' + deprBracket + ')';
       const tbEl = document.getElementById('resTaxBenefit');
       if (tbEl) {
-        tbEl.textContent = taxBenefit > 0 ? formatCurrency(taxBenefit) + '/yr' : '-';
-        tbEl.className = 'proj-highlight-value ' + (taxBenefit > 0 ? 'positive' : '');
+        tbEl.textContent = snTaxBenefit > 0 ? formatCurrency(snTaxBenefit) + '/yr' : '-';
+        tbEl.className = 'proj-highlight-value ' + (snTaxBenefit > 0 ? 'positive' : '');
       }
 
       // Update DOM — Results
@@ -4264,22 +4337,22 @@
       // KPI bar (Breakdown tab)
       const kpiCf = document.getElementById('kpiAnnualCashFlow');
       if (kpiCf) {
-        kpiCf.textContent = formatCurrency(annualCashFlow) + '/yr';
-        kpiCf.className = 'breakdown-kpi-value ' + (annualCashFlow >= 0 ? 'positive' : 'negative');
+        kpiCf.textContent = formatCurrency(snCashFlow) + '/yr';
+        kpiCf.className = 'breakdown-kpi-value ' + (snCashFlow >= 0 ? 'positive' : 'negative');
       }
       const kpiGross = document.getElementById('kpiGrossYield');
       if (kpiGross) {
-        kpiGross.textContent = grossYield.toFixed(2) + '%';
+        kpiGross.textContent = snGrossYield.toFixed(2) + '%';
         kpiGross.className = 'breakdown-kpi-value';
       }
       const kpiNet = document.getElementById('kpiNetYield');
       if (kpiNet) {
-        kpiNet.textContent = netYield.toFixed(2) + '%';
-        kpiNet.className = 'breakdown-kpi-value ' + (netYield >= 0 ? 'positive' : 'negative');
+        kpiNet.textContent = snNetYield.toFixed(2) + '%';
+        kpiNet.className = 'breakdown-kpi-value ' + (snNetYield >= 0 ? 'positive' : 'negative');
       }
       const kpiCoc = document.getElementById('kpiCashOnCash');
       if (kpiCoc) {
-        const cashOnCash = totalUpfront > 0 ? (annualCashFlow / totalUpfront) * 100 : 0;
+        const cashOnCash = totalUpfront > 0 ? (snCashFlow / totalUpfront) * 100 : 0;
         kpiCoc.textContent = cashOnCash.toFixed(2) + '%';
         kpiCoc.className = 'breakdown-kpi-value ' + (cashOnCash >= 0 ? 'positive' : 'negative');
       }
@@ -4792,6 +4865,11 @@
         if (field) field.value = this.value;
       }
       localStorage.setItem('truereturn_taxrate', this.value);
+      calculate();
+    });
+
+    document.getElementById('snapshotYearSelect').addEventListener('change', function() {
+      _snapshotYear = parseInt(this.value, 10);
       calculate();
     });
 
