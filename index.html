@@ -1426,7 +1426,7 @@
   .property-table-labels,
   .property-row {
     display: grid;
-    grid-template-columns: 2rem 1.1fr 1.6fr 1fr 0.85fr 0.85fr 0.7fr 0.7fr 0.85fr 0.7fr 0.85fr 0.7fr 4rem;
+    grid-template-columns: 4.5rem 1.1fr 1.6fr 1fr 0.85fr 0.85fr 0.7fr 0.7fr 0.85fr 0.7fr 0.85fr 0.7fr 4rem;
     gap: 0 0.5rem;
     align-items: center;
   }
@@ -1605,23 +1605,27 @@
   }
 
   .focus-row-btn {
-    display: flex;
-    visibility: hidden;
-    pointer-events: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-muted);
-    padding: 2px;
-    border-radius: 4px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    line-height: 0;
-    transition: color var(--transition-fast);
+    gap: 0.3rem;
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: inherit;
+    line-height: 1;
+    white-space: nowrap;
+    transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
   }
 
   .focus-row-btn:hover {
     color: var(--accent);
+    border-color: var(--accent-border);
   }
 
   .copy-row-btn {
@@ -1659,13 +1663,11 @@
   }
 
   .property-entry:hover .delete-row-btn,
-  .property-entry:hover .focus-row-btn,
   .property-entry:hover .copy-row-btn {
     visibility: visible;
     pointer-events: auto;
   }
 
-  .property-entry.selected .focus-row-btn,
   .property-entry.selected .delete-row-btn,
   .property-entry.selected .copy-row-btn {
     visibility: visible;
@@ -1673,7 +1675,9 @@
   }
 
   .property-entry.selected .focus-row-btn {
+    background: var(--accent-bg);
     color: var(--accent);
+    border-color: var(--accent-border);
   }
 
   .prop-col-result {
@@ -2098,6 +2102,11 @@
 
   #pdfRoot { display: none; }
 
+  /* Hidden globally; shown only inside mobile card view or desktop View button */
+  .card-btn-label { display: none; }
+  .card-details-toggle { display: none; }
+  .prop-col-num .card-btn-label { display: inline; }
+
   /* ── Mobile (max-width: 767px) ── */
   @media (max-width: 767px) {
     .split-panel {
@@ -2113,7 +2122,7 @@
       padding: 0.875rem 1rem;
     }
     .header-about-link {
-      display: none;
+      display: inline;
     }
 
     .period-headlines {
@@ -2211,7 +2220,6 @@
     }
 
     /* Show details toggle — only visible in simple+mobile */
-    .card-details-toggle { display: none; }
     body[data-mode="simple"] .mobile-card-view .card-details-toggle {
       display: flex;
       flex: 0 0 100%;
@@ -2277,8 +2285,7 @@
       width: 100%;
     }
 
-    /* Hide text labels on desktop, show in card view */
-    .card-btn-label { display: none; }
+    /* Show text labels in mobile card view */
     .mobile-card-view .card-btn-label { display: inline; }
 
     /* All 3 action buttons: green, taller, icon + text */
