@@ -16,8 +16,10 @@
   },
 
   "breakdown-cash-up-front": {
-    "stamp-duty":   "Based on thresholds for state selected",
-    "conveyancing": "Based on averages for state selected"
+    "stamp-duty":        "Based on thresholds for state selected",
+    "conveyancing":      "Based on averages for state selected",
+    "building-pest":     "Fixed estimate of $600",
+    "loan-establishment":"Fixed estimate of $800"
   },
 
   "breakdown-annual-cash-flow": {
@@ -35,7 +37,7 @@
     "weekly-rent":          "Rent increases in line with property value growth",
     "sales-costs":          "Estimated at 3% of sale price (agent fees, legal, marketing)",
     "capital-gains-tax":    "Capital Gains Tax estimated at 50% discount × your selected marginal tax rate.",
-    "total-cash-invested":  "Deposit + stamp duty + conveyancing",
+    "total-cash-invested":  "Deposit + stamp duty + conveyancing + building & pest + loan establishment",
     "cumulative-cash-flow": "Total rent income minus expenses over the period",
     "annual-cash-return":   "Equivalent annual return rate — compare against shares or index funds"
   }

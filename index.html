@@ -2613,6 +2613,14 @@
             <span class="line-label">Conveyancing <span class="help-tip" data-tip="Based on averages for state selected">?</span></span>
             <span class="line-value" id="resConveyancing">-</span>
           </div>
+          <div class="line-item">
+            <span class="line-label">Building &amp; Pest</span>
+            <span class="line-value" id="resBuildingPest">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Loan Establishment</span>
+            <span class="line-value" id="resLoanEstablishment">-</span>
+          </div>
         </div>
       </div>
 
@@ -2741,26 +2749,6 @@
         </div>
       </div>
 
-      <!-- Assumptions & Methodology -->
-      <div class="proj-section proj-section--assumptions">
-        <button class="proj-section-header" aria-expanded="false">
-          <span class="proj-section-title">Assumptions &amp; Methodology</span>
-          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="proj-section-body" hidden>
-          <ul class="assumptions-list">
-            <li>Stamp duty calculated using current (2024–25) state thresholds</li>
-            <li>Conveyancing / legal costs: $1,500</li>
-            <li>Building &amp; pest inspection: $600</li>
-            <li>Loan establishment fee: $800</li>
-            <li>CGT: 50% discount applied (asset held &gt;12 months), taxed at your selected marginal rate</li>
-            <li>Rental vacancy: 2 weeks per year</li>
-            <li>Insurance: 0.15% of purchase price p.a.</li>
-            <li>Council rates: 0.1% of purchase price p.a.</li>
-            <li>Maintenance: 0.5% of purchase price p.a.</li>
-          </ul>
-        </div>
-      </div>
     </div>
 
     <div class="card">
@@ -2884,7 +2872,7 @@
                 <span class="line-value" id="proj5BodyCashOut">-</span>
               </div>
               <div class="line-item muted">
-                <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
+                <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing + building &amp; pest + loan establishment">?</span></span>
                 <span class="line-value" id="proj5CashInvested">-</span>
               </div>
               <div class="line-item muted">
@@ -3019,7 +3007,7 @@
                 <span class="line-value" id="proj10BodyCashOut">-</span>
               </div>
               <div class="line-item muted">
-                <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
+                <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing + building &amp; pest + loan establishment">?</span></span>
                 <span class="line-value" id="proj10CashInvested">-</span>
               </div>
               <div class="line-item muted">
@@ -3154,7 +3142,7 @@
                 <span class="line-value" id="projLifeBodyCashOut">-</span>
               </div>
               <div class="line-item muted">
-                <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing">?</span></span>
+                <span class="line-label">Total Cash Invested <span class="help-tip" data-tip="Deposit + stamp duty + conveyancing + building &amp; pest + loan establishment">?</span></span>
                 <span class="line-value" id="projLifeCashInvested">-</span>
               </div>
               <div class="line-item muted">
@@ -3250,6 +3238,8 @@
       ACT: { conveyancing: 1100, insurance: 1300, council: 2100 },
       NT:  { conveyancing: 1000, insurance: 2500, council: 1700 },
     };
+    const BUILDING_PEST      = 600;
+    const LOAN_ESTABLISHMENT = 800;
 
     const SIMPLE_MODE_DEFAULTS = {
       depositPct:     '20',
@@ -3676,6 +3666,8 @@
             ['  Deposit',                    g('resDeposit')],
             ['  Stamp Duty',                 g('resStampDuty')],
             ['  Conveyancing',               g('resConveyancing')],
+            ['  Building & Pest',            g('resBuildingPest')],
+            ['  Loan Establishment',         g('resLoanEstablishment')],
             [],
             ['ANNUAL CASH FLOW'],
             ['  Monthly Cash Flow',          g('resMonthlyCashFlow')],
@@ -3799,6 +3791,8 @@
             deposit:         g('resDeposit'),
             stampDuty:       g('resStampDuty'),
             conveyancing:    g('resConveyancing'),
+            buildingPest:    g('resBuildingPest'),
+            loanEstablish:   g('resLoanEstablishment'),
             monthlyCF:       g('resMonthlyCashFlow'),
             annualCF:        g('resAnnualCashFlow'),
             annualRent:      g('resCfAnnualRent'),
@@ -4006,6 +4000,8 @@
           + row('Deposit', p.deposit, true)
           + row('Stamp Duty', p.stampDuty, true)
           + row('Conveyancing', p.conveyancing, true)
+          + row('Building & Pest', p.buildingPest, true)
+          + row('Loan Establishment', p.loanEstablish, true)
         );
         var annualCF = section('Annual Cash Flow',
           row('Monthly Cash Flow', p.monthlyCF)
@@ -4120,7 +4116,7 @@
         : 0;
 
       // Startup expenses
-      const totalUpfront = deposit + stampDuty + conveyancing;
+      const totalUpfront = deposit + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT;
 
       // Sync rate and term to shared state
       window.TrueReturn.loanTerm = loanTerm;
@@ -4129,6 +4125,8 @@
       document.getElementById('resDeposit').textContent = formatCurrency(deposit);
       document.getElementById('resStampDuty').textContent = formatCurrency(stampDuty);
       document.getElementById('resConveyancing').textContent = formatCurrency(conveyancing);
+      document.getElementById('resBuildingPest').textContent = formatCurrency(BUILDING_PEST);
+      document.getElementById('resLoanEstablishment').textContent = formatCurrency(LOAN_ESTABLISHMENT);
       document.getElementById('resTotalUpfront').textContent = formatCurrency(totalUpfront);
 
       // Update DOM — Cash Flow header highlights
@@ -4288,7 +4286,7 @@
         const salesCosts = salePrice * 0.03;
         const netProceeds = salePrice - salesCosts - remainingLoan;
         const cumulativeDepr = annualDepreciation * years;
-        const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing - cumulativeDepr);
+        const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT - cumulativeDepr);
         const capitalGain = salePrice - costBase;
         const discountedGain = capitalGain > 0 ? capitalGain * 0.50 : 0;
         const cgt = discountedGain > 0 ? discountedGain * marginalTaxRate : 0;
@@ -4403,7 +4401,7 @@
       const stampDuty = Math.round(calcStampDuty(state, purchasePrice));
       const conveyancing = sd.conveyancing;
       const deposit = purchasePrice * depositPct;
-      const totalUpfront = deposit + stampDuty + conveyancing;
+      const totalUpfront = deposit + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT;
 
       let annualLoanPayment;
       if (loanType === 'IO') {
@@ -4435,7 +4433,7 @@
       const salesCosts = futureValue * 0.03;
       const netProceeds = futureValue - salesCosts - remainingLoan;
       const cumulativeDepr = annualDepreciation * years;
-      const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing - cumulativeDepr);
+      const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT - cumulativeDepr);
       const capitalGain = futureValue - costBase;
       const cgt = capitalGain > 0 ? capitalGain * 0.5 * marginalTaxRate : 0;
       const trueCashReturn = netProceeds - cgt;
@@ -4485,7 +4483,7 @@
         const deposit = purchasePrice * depositPct;
         const loanAmount = purchasePrice - deposit;
         const stampDuty = Math.round(calcStampDuty(state, purchasePrice));
-        const totalUpfront = deposit + stampDuty + conveyancing;
+        const totalUpfront = deposit + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT;
 
         let annualLoanPayment;
         if (loanType === 'IO') {
@@ -4544,7 +4542,7 @@
             const netProceeds = salePrice - salesCosts - remainingLoan;
             const cumulativeDepr = annDepr * y;
             const mtr = (window.TrueReturn && window.TrueReturn.marginalTaxRate) || 0.37;
-            const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing - cumulativeDepr);
+            const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT - cumulativeDepr);
             const capitalGain = salePrice - costBase;
             const discountedGain = capitalGain > 0 ? capitalGain * 0.50 : 0;
             const cgt = discountedGain > 0 ? discountedGain * mtr : 0;
