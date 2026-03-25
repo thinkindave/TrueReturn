@@ -528,7 +528,15 @@ function buildChartOptions(metric, isDark) {
             const val = ctx.parsed.y;
             if (val === null || val === undefined) return null;
             const formatted = isCurrency ? formatCurrency(val) : val.toFixed(2) + '%';
-            return ' ' + ctx.dataset.label + ': ' + formatted;
+            const name = ctx.dataset.label || '';
+            const truncated = name.length > 18 ? name.slice(0, 17) + '\u2026' : name;
+            const retArr = ctx.dataset._annualisedReturnData;
+            let suffix = '';
+            if (retArr && ctx.dataIndex < retArr.length) {
+              const ret = retArr[ctx.dataIndex];
+              if (ret !== null && ret !== undefined) suffix = ' / ' + ret.toFixed(2) + '%';
+            }
+            return ' ' + truncated + ': ' + formatted + suffix;
           }
         }
       }
@@ -676,6 +684,70 @@ test('y-axis tick callback uses $ for value metric', () => {
   const tickCb = opts.scales.y.ticks.callback;
   const result = tickCb(250000);
   assert.ok(result.includes('$'));
+});
+
+// ---------------------------------------------------------------------------
+// buildChartOptions — label callback with annual return
+// ---------------------------------------------------------------------------
+
+console.log('\nbuildChartOptions — label callback with annual return');
+
+test('label includes formatCurrency output and / X.XX% suffix when _annualisedReturnData has numeric value', () => {
+  const opts = buildChartOptions('totalProfit', false);
+  const cb = opts.plugins.tooltip.callbacks.label;
+  // Dataset has _annualisedReturnData; dataIndex 2 holds 5.00
+  const ctx = {
+    parsed: { y: 100000 },
+    dataIndex: 2,
+    dataset: { label: 'Prop', _annualisedReturnData: [null, 3.0, 5.0] }
+  };
+  const result = cb(ctx);
+  assert.ok(result.includes(formatCurrency(100000)), 'should include formatted currency value');
+  assert.ok(result.includes('/ 5.00%'), 'should include the annualised return suffix');
+  assert.ok(result.startsWith(' Prop: '), 'should start with " Prop: "');
+});
+
+test('label has no / suffix when _annualisedReturnData value at index is null (year 0 sentinel)', () => {
+  const opts = buildChartOptions('totalProfit', false);
+  const cb = opts.plugins.tooltip.callbacks.label;
+  // Year 0 stored as null — no suffix should appear
+  const ctx = {
+    parsed: { y: 500000 },
+    dataIndex: 0,
+    dataset: { label: 'Prop', _annualisedReturnData: [null, 5.123, 8.75] }
+  };
+  const result = cb(ctx);
+  assert.ok(!result.includes(' / '), 'null return value should produce no / suffix');
+});
+
+test('label has no / suffix when dataset has no _annualisedReturnData (non-totalProfit metric)', () => {
+  const opts = buildChartOptions('value', false);
+  const cb = opts.plugins.tooltip.callbacks.label;
+  // Dataset without the parallel array (non-totalProfit metric)
+  const ctx = {
+    parsed: { y: 750000 },
+    dataIndex: 1,
+    dataset: { label: 'Prop A' }
+  };
+  const result = cb(ctx);
+  assert.ok(!result.includes(' / '), 'missing _annualisedReturnData should produce no / suffix');
+});
+
+test('label truncates property name exceeding 18 chars with Unicode ellipsis', () => {
+  const opts = buildChartOptions('value', false);
+  const cb = opts.plugins.tooltip.callbacks.label;
+  // Name is 22 chars — should be truncated to 17 chars + U+2026
+  const longName = 'A Very Long Property';  // 20 chars
+  const ctx = {
+    parsed: { y: 300000 },
+    dataIndex: 0,
+    dataset: { label: longName }
+  };
+  const result = cb(ctx);
+  assert.ok(result.includes('\u2026'), 'name exceeding 18 chars should be truncated with ellipsis U+2026');
+  assert.ok(!result.includes(longName), 'full long name should not appear in output');
+  // Truncated prefix is first 17 chars: 'A Very Long Prope'
+  assert.ok(result.includes('A Very Long Prope\u2026'), 'truncated name should be 17 chars + ellipsis');
 });
 
 // ---------------------------------------------------------------------------

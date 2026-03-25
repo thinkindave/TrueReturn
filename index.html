@@ -1218,7 +1218,13 @@
     }
 
     .chart-header h2 { margin: 0; }
-    .graphs-chart-card .chart-header { margin-bottom: 0.5rem; }
+    .graphs-chart-card .chart-header { margin-bottom: 0.1rem; }
+
+    .chart-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin: 0 0 0.5rem;
+    }
 
     .chart-empty {
       display: flex;
@@ -3169,7 +3175,10 @@
 
     <div class="graphs-inline-section">
       <div class="card graphs-chart-card">
-        <div class="chart-header"><h2>Total Profit Over Time</h2></div>
+        <div class="chart-header">
+          <h2>Total Profit Over Time</h2>
+        </div>
+        <p class="chart-subtitle">Shows how your total profit may grow over time, factoring in capital growth, cash flow, and loan repayments.</p>
         <div id="graphsLegend1" class="graphs-legend"></div>
         <div class="graphs-chart-container"><canvas id="graphsChart1"></canvas></div>
       </div>
@@ -3329,6 +3338,10 @@
           if (!entry) return;
           const clone = entry.cloneNode(true);
           clone.classList.remove('selected');
+          entry.querySelectorAll('select[data-field]').forEach(function(sel) {
+            const cloneSel = clone.querySelector('[data-field="' + sel.dataset.field + '"]');
+            if (cloneSel) cloneSel.value = sel.value;
+          });
           entry.parentNode.insertBefore(clone, entry.nextSibling);
           updateDeleteButtonState();
           selectEntry(clone);
@@ -4523,10 +4536,12 @@
 
         const maxYear = Math.min(loanTerm, GRAPH_YEARS);
         const data = [];
+        const annualisedReturnData = [];
 
         for (let y = 0; y <= GRAPH_YEARS; y++) {
           if (y > maxYear) {
             data.push(null);
+            if (metric === 'totalProfit') annualisedReturnData.push(null);
             continue;
           }
 
@@ -4558,7 +4573,7 @@
             cumulativeCashFlow += yRent - yExpenses;
           }
 
-          let annualisedReturn = 0;
+          let annualisedReturn = null;
           let totalProfit = 0;
           if (y > 0 && totalUpfront > 0) {
             const salePrice = futureValue;
@@ -4574,14 +4589,18 @@
             const cgt = discountedGain > 0 ? discountedGain * mtr : 0;
             const trueCashReturn = netProceeds - cgt;
             totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow;
-            annualisedReturn = (Math.pow(1 + totalProfit / totalUpfront, 1 / y) - 1) * 100;
+            const returnBase = 1 + totalProfit / totalUpfront;
+            annualisedReturn = returnBase > 0 ? (Math.pow(returnBase, 1 / y) - 1) * 100 : null;
           }
 
           if (metric === 'value') data.push(futureValue);
           else if (metric === 'equity') data.push(equity);
           else if (metric === 'cumulativeCashFlow') data.push(cumulativeCashFlow);
           else if (metric === 'annualisedReturn') data.push(y === 0 ? null : annualisedReturn);
-          else if (metric === 'totalProfit') data.push(y === 0 ? null : totalProfit);
+          else if (metric === 'totalProfit') {
+            data.push(y === 0 ? null : totalProfit);
+            annualisedReturnData.push((y === 0 || totalUpfront <= 0) ? null : annualisedReturn);
+          }
           else data.push(futureValue);
         }
 
@@ -4592,6 +4611,7 @@
         datasets.push({
           label,
           data,
+          _annualisedReturnData: metric === 'totalProfit' ? annualisedReturnData : undefined,
           borderColor: color,
           backgroundColor: color + '22',
           borderWidth: 2,
@@ -4631,7 +4651,15 @@
                 const val = ctx.parsed.y;
                 if (val === null || val === undefined) return null;
                 const formatted = isCurrency ? formatCurrency(val) : val.toFixed(2) + '%';
-                return ' ' + ctx.dataset.label + ': ' + formatted;
+                const name = ctx.dataset.label || '';
+                const truncated = name.length > 18 ? name.slice(0, 17) + '\u2026' : name;
+                const retArr = ctx.dataset._annualisedReturnData;
+                let suffix = '';
+                if (retArr && ctx.dataIndex < retArr.length) {
+                  const ret = retArr[ctx.dataIndex];
+                  if (ret !== null && ret !== undefined) suffix = ' / ' + ret.toFixed(2) + '%';
+                }
+                return ' ' + truncated + ': ' + formatted + suffix;
               }
             }
           }
