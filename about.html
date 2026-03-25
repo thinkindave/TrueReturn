@@ -244,20 +244,8 @@
       font-size: 1.05rem;
       color: var(--text-secondary);
       line-height: 1.7;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
     }
-    .about-cta-btn {
-      background: var(--accent);
-      color: #fff;
-      padding: 0.75rem 2rem;
-      border-radius: var(--radius-md);
-      text-decoration: none;
-      font-size: 1rem;
-      font-weight: 600;
-      transition: background var(--transition-base);
-    }
-    .about-cta-btn:hover { background: var(--accent-hover); }
-
     .about-section {
       max-width: 860px;
       margin: 0 auto;
@@ -280,6 +268,7 @@
       grid-template-columns: repeat(2, 1fr);
       gap: 1rem;
     }
+    .about-tiles--stacked { grid-template-columns: 1fr; }
     .about-tile {
       background: var(--bg-elevated);
       border: 1px solid var(--border-default);
@@ -401,6 +390,34 @@
       margin: 0;
     }
 
+    .tile-detail {
+      margin-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .tile-detail summary {
+      padding: 0.75rem 0 0;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .tile-detail summary::-webkit-details-marker { display: none; }
+    .tile-detail summary::before {
+      content: "▸";
+      font-size: 0.75rem;
+      transition: transform 150ms ease;
+    }
+    .tile-detail[open] summary::before {
+      transform: rotate(90deg);
+    }
+    .tile-detail .about-assumptions {
+      padding: 0.75rem 0 0.25rem;
+    }
+
     .about-footer {
       text-align: center;
       padding: 2rem;
@@ -440,18 +457,26 @@
     <section class="about-hero">
       <h2 class="about-hero__headline">Make smarter property investment decisions</h2>
       <p class="about-hero__body">Free Australian calculator that models the real cost of buying, holding, and selling investment property — stamp duty, cash flow, tax, depreciation, and long-term exit scenarios.</p>
-      <a href="index.html" class="about-cta-btn">Open the Calculator →</a>
     </section>
 
     <section class="about-section">
       <h3 class="about-section__title">What it calculates</h3>
-      <div class="about-tiles">
+      <div class="about-tiles about-tiles--stacked">
         <div class="about-tile">
           <span class="about-tile__icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </span>
           <strong>Upfront Costs</strong>
           <p>Stamp duty, conveyancing, inspection, and establishment fees</p>
+          <details class="tile-detail">
+            <summary>How it's calculated</summary>
+            <ul class="about-assumptions">
+              <li>Stamp duty — calculated using 2024–25 published thresholds for your selected state</li>
+              <li>Conveyancing / legal — fixed $1,500</li>
+              <li>Building &amp; pest inspection — fixed $600</li>
+              <li>Loan establishment fee — fixed $800</li>
+            </ul>
+          </details>
         </div>
         <div class="about-tile">
           <span class="about-tile__icon">
@@ -459,6 +484,18 @@
           </span>
           <strong>Annual Cash Flow</strong>
           <p>Rental income minus all running expenses, monthly and annually</p>
+          <details class="tile-detail">
+            <summary>How it's calculated</summary>
+            <ul class="about-assumptions">
+              <li>Rental income — weekly rent × 52 weeks</li>
+              <li>Management fee — your entered % of annual rent</li>
+              <li>Vacancy allowance — 2 weeks rent per year</li>
+              <li>Insurance — 0.15% of purchase price p.a.</li>
+              <li>Council rates — 0.1% of purchase price p.a.</li>
+              <li>Maintenance — 0.5% of purchase price p.a.</li>
+              <li>Loan repayment — calculated from your loan amount, rate, type, and term</li>
+            </ul>
+          </details>
         </div>
         <div class="about-tile">
           <span class="about-tile__icon">
@@ -466,6 +503,15 @@
           </span>
           <strong>Tax Position</strong>
           <p>Negative gearing benefit and building depreciation estimate</p>
+          <details class="tile-detail">
+            <summary>How it's calculated</summary>
+            <ul class="about-assumptions">
+              <li>Deductible expenses include: loan interest, management fee, insurance, council rates, maintenance, and depreciation</li>
+              <li>Depreciation estimate: 1.75% (new / &lt;5 yrs), 1.25% (mid / 5–20 yrs), 0.75% (older / &gt;20 yrs) of 75% of purchase price p.a.</li>
+              <li>If deductible expenses exceed rental income (negative gearing), the loss × your marginal tax rate = estimated tax benefit</li>
+              <li>CGT on sale: 50% discount for assets held &gt;12 months, applied at your marginal rate</li>
+            </ul>
+          </details>
         </div>
         <div class="about-tile">
           <span class="about-tile__icon">
@@ -473,6 +519,17 @@
           </span>
           <strong>Exit Projections</strong>
           <p>5yr, 10yr, and 15yr scenarios with equity, profit, CGT, and cash return</p>
+          <details class="tile-detail">
+            <summary>How it's calculated</summary>
+            <ul class="about-assumptions">
+              <li>Property value — purchase price compounded at your growth rate</li>
+              <li>Equity — projected value minus remaining loan balance</li>
+              <li>Usable equity — 80% of total equity (standard bank lending limit)</li>
+              <li>Sales costs — 3% of sale price (agent fees, legal, marketing)</li>
+              <li>Net profit — sale proceeds minus loan payout, sales costs, CGT, and total cash invested</li>
+              <li>Annual cash return — annualised total profit expressed as a CAGR %</li>
+            </ul>
+          </details>
         </div>
       </div>
     </section>
@@ -579,24 +636,6 @@
           </div>
         </details>
       </div>
-    </section>
-
-    <section class="about-section">
-      <h3 class="about-section__title">Assumptions &amp; Methodology</h3>
-      <p class="about-section__intro">The following fixed assumptions are used in all calculations. Consult a financial adviser or quantity surveyor for figures specific to your situation.</p>
-      <ul class="about-assumptions">
-        <li>Stamp duty calculated using current (2024–25) state thresholds</li>
-        <li>Conveyancing / legal costs: $1,500</li>
-        <li>Building &amp; pest inspection: $600</li>
-        <li>Loan establishment fee: $800</li>
-        <li>CGT: 50% discount applied (asset held &gt;12 months), taxed at your selected marginal rate</li>
-        <li>Rental vacancy: 2 weeks per year</li>
-        <li>Insurance: 0.15% of purchase price p.a.</li>
-        <li>Council rates: 0.1% of purchase price p.a.</li>
-        <li>Maintenance: 0.5% of purchase price p.a.</li>
-        <li>Depreciation: 1.75% (new/&lt;5y), 1.25% (mid/5–20y), 0.75% (old/&gt;20y) of 75% of purchase price p.a.</li>
-        <li>Sales costs: 3% of sale price (agent fees, legal, marketing)</li>
-      </ul>
     </section>
 
     <section class="about-section">
