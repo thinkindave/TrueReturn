@@ -2544,6 +2544,7 @@
                   <span class="card-details-toggle-label">Show details</span>
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
+                <input type="hidden" data-field="marginalTaxRate" value="0.37">
                 <div class="prop-col prop-col-delete">
                   <button class="copy-row-btn" title="Duplicate property">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -2699,7 +2700,7 @@
         </button>
         <div class="proj-section-body" hidden>
           <div class="tax-rate-row advanced-only">
-            <span class="tax-rate-label">Your Marginal Tax Rate</span>
+            <span class="tax-rate-label">Marginal Tax Rate</span>
             <select id="marginalTaxRateSelect" class="tax-rate-select">
               <option value="0">0% (up to $18,200)</option>
               <option value="0.19">19% ($18,201 – $45,000)</option>
@@ -3250,12 +3251,16 @@
       managementFee:  '8',
       expectedGrowth: '6',
       propertyAge:    'mid',
+      marginalTaxRate: '0.37',
     };
     const SIMPLE_MODE_TAX = '0.37';
 
     function selectEntry(entry) {
       document.querySelectorAll('.property-entry').forEach(e => e.classList.remove('selected'));
       entry.classList.add('selected');
+      var taxField = entry.querySelector('[data-field="marginalTaxRate"]');
+      var taxSelect = document.getElementById('marginalTaxRateSelect');
+      if (taxField && taxSelect) taxSelect.value = taxField.value || SIMPLE_MODE_TAX;
       updateSectionLabels(entry);
       calculate();
     }
@@ -3288,6 +3293,14 @@
       document.getElementById('modeSimpleBtn').setAttribute('aria-pressed', mode === 'simple' ? 'true' : 'false');
       document.getElementById('modeAdvancedBtn').setAttribute('aria-pressed', mode === 'advanced' ? 'true' : 'false');
 
+      if (mode === 'advanced') {
+        var entry = getSelectedEntry();
+        if (entry) {
+          var taxField = entry.querySelector('[data-field="marginalTaxRate"]');
+          var taxSelect = document.getElementById('marginalTaxRateSelect');
+          if (taxField && taxSelect) taxSelect.value = taxField.value || SIMPLE_MODE_TAX;
+        }
+      }
       calculate();
     }
 
@@ -3537,7 +3550,7 @@
         taxRate: document.getElementById('marginalTaxRateSelect').value,
         properties: entries.map(function(entry) {
           var obj = {};
-          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge'].forEach(function(f) {
+          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate'].forEach(function(f) {
             var el = entry.querySelector('[data-field="' + f + '"]');
             obj[f] = el ? el.value : '';
           });
@@ -3551,13 +3564,20 @@
       var rows = document.querySelector('.property-rows');
       var template = rows.querySelector('.property-entry');
       if (!template) return;
-      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge'];
+      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate'];
+      var fallbackTaxRate = state.taxRate || '0.37';
       var newEntries = state.properties.slice(0, 8).map(function(prop) {
         var clone = template.cloneNode(true);
         clone.classList.remove('selected');
         fields.forEach(function(f) {
           var el = clone.querySelector('[data-field="' + f + '"]');
-          if (el && prop[f] !== undefined) el.value = prop[f];
+          if (el) {
+            if (prop[f] !== undefined) {
+              el.value = prop[f];
+            } else if (f === 'marginalTaxRate') {
+              el.value = fallbackTaxRate;
+            }
+          }
         });
         var loanTypeEl = clone.querySelector('[data-field="loanType"]');
         var loanTermGroup = clone.querySelector('.loan-term-group');
@@ -4144,7 +4164,7 @@
       // Tax Benefit (annualInterestOnly also used in Cash Flow block below)
       const marginalTaxRate = document.body.dataset.mode === 'simple'
         ? parseFloat(SIMPLE_MODE_TAX)
-        : (parseFloat(document.getElementById('marginalTaxRateSelect').value) || 0.37);
+        : (getVal('marginalTaxRate') || 0.37);
       const annualInterestOnly = loanAmount * interestRate;
       const annualDepreciation = calcDepreciation(propertyAge, purchasePrice);
       window.TrueReturn.marginalTaxRate = marginalTaxRate;
@@ -4429,7 +4449,9 @@
         if (remainingLoan < 0) remainingLoan = 0;
       }
 
-      const marginalTaxRate = (window.TrueReturn && window.TrueReturn.marginalTaxRate) || 0.37;
+      const marginalTaxRate = document.body.dataset.mode === 'simple'
+        ? parseFloat(SIMPLE_MODE_TAX)
+        : (ev('marginalTaxRate') || 0.37);
       const annualDepreciation = (window.TrueReturn && window.TrueReturn.annualDepreciation) || 0;
       const futureValue = purchasePrice * Math.pow(1 + growthRate, years);
       const salesCosts = futureValue * 0.03;
@@ -4543,7 +4565,9 @@
             const salesCosts = salePrice * 0.03;
             const netProceeds = salePrice - salesCosts - remainingLoan;
             const cumulativeDepr = annDepr * y;
-            const mtr = (window.TrueReturn && window.TrueReturn.marginalTaxRate) || 0.37;
+            const mtr = document.body.dataset.mode === 'simple'
+              ? parseFloat(SIMPLE_MODE_TAX)
+              : (ev('marginalTaxRate') || 0.37);
             const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT - cumulativeDepr);
             const capitalGain = salePrice - costBase;
             const discountedGain = capitalGain > 0 ? capitalGain * 0.50 : 0;
@@ -4720,6 +4744,11 @@
 
     // Save on change
     document.getElementById('marginalTaxRateSelect').addEventListener('change', function() {
+      var entry = getSelectedEntry();
+      if (entry) {
+        var field = entry.querySelector('[data-field="marginalTaxRate"]');
+        if (field) field.value = this.value;
+      }
       localStorage.setItem('truereturn_taxrate', this.value);
       calculate();
     });
