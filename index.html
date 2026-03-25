@@ -643,7 +643,7 @@
 
     .breakdown-kpi-bar {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 0.5rem;
       margin-top: 0.75rem;
       margin-bottom: 1rem;
@@ -2576,23 +2576,27 @@
     <div class="split-panel">
     <div class="card results-card">
       <div class="breakdown-header">
-        <h2>Breakdown</h2>
+        <h2>Year 1 Snapshot</h2>
         <span class="breakdown-property-label" id="breakdownPropertyLabel">Property 1</span>
       </div>
 
       <!-- KPI Bar -->
       <div class="breakdown-kpi-bar">
         <div class="breakdown-kpi-tile">
-          <span class="breakdown-kpi-label">Annual Cash Flow</span>
+          <span class="breakdown-kpi-label">Annual Cash Flow <span class="help-tip" data-tip="Most Australian investment properties are negatively geared (cash flow negative), particularly in capital cities. Positive cash flow is more common in regional areas.">?</span></span>
           <span class="breakdown-kpi-value" id="kpiAnnualCashFlow">–</span>
         </div>
         <div class="breakdown-kpi-tile">
-          <span class="breakdown-kpi-label">Gross Yield</span>
+          <span class="breakdown-kpi-label">Gross Yield <span class="help-tip" data-tip="Rent income as a % of property value, before expenses. The Australian average is typically 3–5%, with regional properties often yielding higher than capital cities.">?</span></span>
           <span class="breakdown-kpi-value" id="kpiGrossYield">–</span>
         </div>
         <div class="breakdown-kpi-tile">
-          <span class="breakdown-kpi-label">Net Yield</span>
+          <span class="breakdown-kpi-label">Net Yield <span class="help-tip" data-tip="Gross yield minus operating expenses (management, insurance, council, vacancy, maintenance) — mortgage costs excluded. A net yield of 3–4% is typical for Australian residential property.">?</span></span>
           <span class="breakdown-kpi-value" id="kpiNetYield">–</span>
+        </div>
+        <div class="breakdown-kpi-tile">
+          <span class="breakdown-kpi-label">Cash-on-Cash Return <span class="help-tip" data-tip="Annual cash flow (after all costs including mortgage) as a % of your total cash invested upfront. Negatively geared properties will show a negative return here.">?</span></span>
+          <span class="breakdown-kpi-value" id="kpiCashOnCash">–</span>
         </div>
       </div>
 
@@ -4139,16 +4143,17 @@
       const maintenanceAllowance = purchasePrice * 0.005;
 
       // Annual expenses
-      const totalExpenses = annualLoanPayment + annualManagementFee + insurance + councilFees + vacancyAllowance + maintenanceAllowance;
+      const operatingExpenses = annualManagementFee + insurance + councilFees + vacancyAllowance + maintenanceAllowance;
+      const totalExpenses = annualLoanPayment + operatingExpenses;
 
       // Cash flow (interest-only basis)
       const annualCashFlow = annualRent - totalExpenses;
       const monthlyCashFlow = annualCashFlow / 12;
 
-      // Yields
+      // Yields (net yield excludes financing costs — mortgage is a borrower choice, not a property cost)
       const grossYield = purchasePrice > 0 ? (annualRent / purchasePrice) * 100 : 0;
       const netYield = purchasePrice > 0
-        ? ((annualRent - totalExpenses) / purchasePrice) * 100
+        ? ((annualRent - operatingExpenses) / purchasePrice) * 100
         : 0;
 
       // Startup expenses
@@ -4271,6 +4276,12 @@
       if (kpiNet) {
         kpiNet.textContent = netYield.toFixed(2) + '%';
         kpiNet.className = 'breakdown-kpi-value ' + (netYield >= 0 ? 'positive' : 'negative');
+      }
+      const kpiCoc = document.getElementById('kpiCashOnCash');
+      if (kpiCoc) {
+        const cashOnCash = totalUpfront > 0 ? (annualCashFlow / totalUpfront) * 100 : 0;
+        kpiCoc.textContent = cashOnCash.toFixed(2) + '%';
+        kpiCoc.className = 'breakdown-kpi-value ' + (cashOnCash >= 0 ? 'positive' : 'negative');
       }
       // Projections
       [{years: 5, prefix: 'proj5'}, {years: 10, prefix: 'proj10'}, {years: 15, prefix: 'projLife'}].forEach(({years, prefix}) => {
