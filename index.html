@@ -1432,7 +1432,7 @@
   .property-table-labels,
   .property-row {
     display: grid;
-    grid-template-columns: 4.5rem 1.1fr 1.6fr 1fr 0.85fr 0.85fr 0.7fr 0.7fr 0.85fr 0.7fr 0.85fr 0.7fr 4rem;
+    grid-template-columns: 4.5rem 1.1fr 1.2fr 0.8fr 0.65fr 0.85fr 0.7fr 0.85fr 0.65fr 0.7fr 0.65fr 0.9fr 4rem;
     gap: 0 0.5rem;
     align-items: center;
   }
@@ -1516,6 +1516,7 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    padding-left: 0.4rem;
   }
 
   .prop-col-label--result {
@@ -3252,6 +3253,8 @@
     const LOAN_ESTABLISHMENT = 800;
 
     const SIMPLE_MODE_DEFAULTS = {
+      purchasePrice:  '650000',
+      weeklyRent:     '550',
       depositPct:     '20',
       loanType:       'PI',
       loanTerm:       '30',
