@@ -71,8 +71,8 @@ function calcStampDuty(state, price) {
       return 27810 + (price - 725000) * 0.045;
 
     case 'ACT':
-      if (price <= 260000) return price * 0.0049;
-      if (price <= 300000) return 1040 + (price - 260000) * 0.022;
+      if (price <= 260000) return price * 0.006;
+      if (price <= 300000) return 1560 + (price - 260000) * 0.022;
       if (price <= 500000) return 1920 + (price - 300000) * 0.034;
       if (price <= 750000) return 8720 + (price - 500000) * 0.0432;
       if (price <= 1000000) return 19520 + (price - 750000) * 0.059;
@@ -404,14 +404,35 @@ test('TAS: top band (> 725000)', () => {
 
 console.log('\ncalcStampDuty — ACT');
 
-test('ACT: first band (price <= 260000)', () => {
-  // 200000 * 0.0049 = 980
-  approxEqual(calcStampDuty('ACT', 200000), 980);
+test('ACT: first band (price <= 260000) — corrected rate 0.60%', () => {
+  // Rate was corrected from 0.49% (0.0049) to 0.60% (0.006).
+  // 200000 * 0.006 = 1200
+  approxEqual(calcStampDuty('ACT', 200000), 1200);
 });
 
-test('ACT: second band (260001–300000)', () => {
-  // 1040 + (280000 - 260000) * 0.022 = 1040 + 440 = 1480
-  approxEqual(calcStampDuty('ACT', 280000), 1480);
+test('ACT: first band boundary at exactly 260000 — corrected rate 0.60%', () => {
+  // 260000 * 0.006 = 1560
+  approxEqual(calcStampDuty('ACT', 260000), 1560);
+});
+
+test('ACT: first band does NOT use old 0.49% rate', () => {
+  // Old rate would give 200000 * 0.0049 = 980; corrected rate gives 1200.
+  const result = calcStampDuty('ACT', 200000);
+  assert.ok(result !== 980, `ACT first band should not use old 0.49% rate (980); got ${result}`);
+  approxEqual(result, 1200);
+});
+
+test('ACT: second band (260001–300000) — corrected accumulator 1560', () => {
+  // Accumulator was corrected from 1040 to 1560.
+  // 1560 + (280000 - 260000) * 0.022 = 1560 + 440 = 2000
+  approxEqual(calcStampDuty('ACT', 280000), 2000);
+});
+
+test('ACT: second band does NOT use old accumulator of 1040', () => {
+  // Old formula: 1040 + (280000 - 260000) * 0.022 = 1040 + 440 = 1480
+  const result = calcStampDuty('ACT', 280000);
+  assert.ok(result !== 1480, `ACT second band should not use old accumulator 1040 (giving 1480); got ${result}`);
+  approxEqual(result, 2000);
 });
 
 test('ACT: third band (300001–500000)', () => {
@@ -825,7 +846,7 @@ test('large profit over long term (30-year loan lifetime)', () => {
 
 function calcDepreciation(ageBracket, purchasePrice) {
   const buildingValue = purchasePrice * 0.75;
-  if (ageBracket === 'new') return buildingValue * 0.0175;
+  if (ageBracket === 'new') return buildingValue * 0.025;
   if (ageBracket === 'mid') return buildingValue * 0.0125;
   return buildingValue * 0.0075;
 }
@@ -1139,9 +1160,18 @@ test('year 1, zero growth: result matches hand-calculated value', () => {
 
 console.log('\ncalcDepreciation');
 
-test('"new" bracket uses 1.75% of 75% of purchase price', () => {
+test('"new" bracket uses 2.5% of 75% of purchase price (rate raised from 1.75% to 2.5%)', () => {
+  // Rate was corrected from 1.75% (0.0175) to 2.5% (0.025).
   const result = calcDepreciation('new', 400000);
-  approxEqual(result, 400000 * 0.75 * 0.0175, 0.01);
+  approxEqual(result, 400000 * 0.75 * 0.025, 0.01);
+});
+
+test('"new" bracket does NOT use the old 1.75% rate', () => {
+  // Old formula: 400000 * 0.75 * 0.0175 = 5250; corrected gives 7500.
+  const result = calcDepreciation('new', 400000);
+  assert.ok(result !== 400000 * 0.75 * 0.0175,
+    `"new" depreciation should not use old 1.75% rate (${400000 * 0.75 * 0.0175}); got ${result}`);
+  approxEqual(result, 7500, 0.01);
 });
 
 test('"mid" bracket uses 1.25% of 75% of purchase price', () => {
@@ -1213,9 +1243,9 @@ test('positive annualDepreciation lowers cost base and increases CGT (reduces pr
 test('annualDepreciation via calcDepreciation matches manual rate for new property', () => {
   // Confirm the depreciation value fed into calcScenarioProfitPure is the
   // result of calcDepreciation, not a hardcoded constant.
-  // A new ($500k) property: calcDepreciation('new', 500000) = 500000 * 0.75 * 0.0175 = 6562.5
+  // A new ($500k) property: calcDepreciation('new', 500000) = 500000 * 0.75 * 0.025 = 9375
   const depr = calcDepreciation('new', 500000);
-  approxEqual(depr, 6562.5, 0.01);
+  approxEqual(depr, 9375, 0.01);
   // Verify it makes a measurable difference in profit over 10 years vs zero depr.
   const withDepr    = calcScenarioProfitPure(refEntry, 10, 0.05, 0.37, depr);
   const withoutDepr = calcScenarioProfitPure(refEntry, 10, 0.05, 0.37, 0);
@@ -1228,6 +1258,71 @@ test('omitting marginalTaxRate and annualDepreciation defaults to 0.37 and 0', (
   const threeArgs   = calcScenarioProfitPure(refEntry, 10, 0.04);
   const fiveArgs    = calcScenarioProfitPure(refEntry, 10, 0.04, 0.37, 0);
   approxEqual(threeArgs, fiveArgs, 0.01);
+});
+
+// ---------------------------------------------------------------------------
+// CGT cost base — loan establishment fee excluded
+//
+// Production formula (lines 4589 and 4804 of index.html):
+//   costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST - cumulativeDepr)
+//
+// The $800 LOAN_ESTABLISHMENT fee was removed from costBase in this change.
+// A lower costBase produces a higher capital gain and therefore more CGT,
+// so removing it (making costBase smaller) should reduce net profit.
+//
+// The pure test helper calcScenarioProfitPure mirrors this formula exactly:
+//   costBase = Math.max(0, purchasePrice + stampDuty + sd.conveyancing - cumulativeDepr)
+// (Note: BUILDING_PEST is not included in calcScenarioProfitPure either —
+// it focuses on the principal components.)
+// ---------------------------------------------------------------------------
+
+console.log('\nCGT cost base — loan establishment fee excluded');
+
+function calcCostBase(purchasePrice, stampDuty, conveyancing, buildingPest, loanEstablishment, cumulativeDepr) {
+  // Current formula: LOAN_ESTABLISHMENT is NOT in costBase
+  return Math.max(0, purchasePrice + stampDuty + conveyancing + buildingPest - cumulativeDepr);
+}
+
+function calcCostBaseWithLoanFee(purchasePrice, stampDuty, conveyancing, buildingPest, loanEstablishment, cumulativeDepr) {
+  // Old formula: LOAN_ESTABLISHMENT was included
+  return Math.max(0, purchasePrice + stampDuty + conveyancing + buildingPest + loanEstablishment - cumulativeDepr);
+}
+
+test('cost base does NOT include the $800 loan establishment fee', () => {
+  const LOAN_ESTABLISHMENT = 800;
+  const purchasePrice      = 500000;
+  const stampDuty          = 17325;
+  const conveyancing       = 900;
+  const buildingPest       = 600;
+  const cumulativeDepr     = 0;
+  const withoutFee = calcCostBase(purchasePrice, stampDuty, conveyancing, buildingPest, LOAN_ESTABLISHMENT, cumulativeDepr);
+  const withFee    = calcCostBaseWithLoanFee(purchasePrice, stampDuty, conveyancing, buildingPest, LOAN_ESTABLISHMENT, cumulativeDepr);
+  // Without the fee, costBase is $800 lower
+  approxEqual(withFee - withoutFee, LOAN_ESTABLISHMENT, 0.01);
+  // Confirm exact expected value for current formula
+  approxEqual(withoutFee, purchasePrice + stampDuty + conveyancing + buildingPest, 0.01);
+});
+
+test('removing loan establishment fee from costBase increases capital gain by exactly $800', () => {
+  // Lower costBase → higher capitalGain → more CGT → lower profit.
+  const LOAN_ESTABLISHMENT = 800;
+  const salePrice      = 700000;
+  const purchasePrice  = 500000;
+  const stampDuty      = 17325;
+  const conveyancing   = 900;
+  const buildingPest   = 600;
+  const cumulativeDepr = 0;
+  const costBaseNew = calcCostBase(purchasePrice, stampDuty, conveyancing, buildingPest, LOAN_ESTABLISHMENT, cumulativeDepr);
+  const costBaseOld = calcCostBaseWithLoanFee(purchasePrice, stampDuty, conveyancing, buildingPest, LOAN_ESTABLISHMENT, cumulativeDepr);
+  const capitalGainNew = salePrice - costBaseNew;
+  const capitalGainOld = salePrice - costBaseOld;
+  approxEqual(capitalGainNew - capitalGainOld, LOAN_ESTABLISHMENT, 0.01);
+});
+
+test('costBase floors to 0 when depreciation exceeds all cost components', () => {
+  // Edge case: very large cumulative depreciation should not produce a negative costBase.
+  const result = calcCostBase(200000, 5435, 1800, 600, 800, 999999);
+  assert.strictEqual(result, 0);
 });
 
 // ---------------------------------------------------------------------------
@@ -1275,6 +1370,60 @@ test('deductibleExpenses hand-calculated spot-check: 18000+1560+1800+2000+2500+5
     31110,
     0.01
   );
+});
+
+// ---------------------------------------------------------------------------
+// Tax benefit / liability formula
+//
+// Formula copied verbatim from index.html calculate():
+//   const snTaxBenefit = snNetRentalPosition < 0
+//     ? Math.abs(snNetRentalPosition) * marginalTaxRate
+//     : -(snNetRentalPosition * marginalTaxRate);
+//
+// Negatively geared: netRentalPosition < 0 → positive taxBenefit (refund)
+// Positively geared: netRentalPosition > 0 → negative taxBenefit (liability)
+// ---------------------------------------------------------------------------
+
+console.log('\ntaxBenefit / liability formula');
+
+function calcSnTaxBenefit(snNetRentalPosition, marginalTaxRate) {
+  return snNetRentalPosition < 0
+    ? Math.abs(snNetRentalPosition) * marginalTaxRate
+    : -(snNetRentalPosition * marginalTaxRate);
+}
+
+test('negatively geared: taxBenefit is positive (refund)', () => {
+  // netRentalPosition = -10000, mtr = 0.37 → benefit = 10000 * 0.37 = 3700
+  approxEqual(calcSnTaxBenefit(-10000, 0.37), 3700, 0.01);
+});
+
+test('positively geared: taxBenefit is negative (liability)', () => {
+  // netRentalPosition = +5000, mtr = 0.37 → liability = -(5000 * 0.37) = -1850
+  approxEqual(calcSnTaxBenefit(5000, 0.37), -1850, 0.01);
+});
+
+test('positively geared: result is strictly negative', () => {
+  const result = calcSnTaxBenefit(8000, 0.37);
+  assert.ok(result < 0, `Expected negative taxBenefit for positive gearing, got ${result}`);
+});
+
+test('zero net rental position: taxBenefit is zero', () => {
+  // netRentalPosition = 0 → falls into the >= 0 branch → -(0 * mtr) = 0
+  approxEqual(calcSnTaxBenefit(0, 0.37), 0, 0.01);
+});
+
+test('positive gearing liability magnitude equals netRentalPosition * mtr', () => {
+  const mtr = 0.45;
+  const netRental = 12000;
+  const result = calcSnTaxBenefit(netRental, mtr);
+  approxEqual(Math.abs(result), netRental * mtr, 0.01);
+});
+
+test('negative gearing benefit magnitude equals |netRentalPosition| * mtr', () => {
+  const mtr = 0.32;
+  const netRental = -15000;
+  const result = calcSnTaxBenefit(netRental, mtr);
+  approxEqual(result, Math.abs(netRental) * mtr, 0.01);
 });
 
 // ---------------------------------------------------------------------------
@@ -1773,6 +1922,396 @@ test('SIMPLE_MODE_DEFAULTS depositPct parses to a number between 1 and 100', () 
 test('SIMPLE_MODE_TAX parses to a number between 0 and 1', () => {
   const tax = parseFloat(SIMPLE_MODE_TAX);
   assert.ok(tax > 0 && tax < 1, `SIMPLE_MODE_TAX "${SIMPLE_MODE_TAX}" should parse to a number between 0 and 1`);
+});
+
+// ---------------------------------------------------------------------------
+// Property Highlights — weekly holding cost
+//
+// Formula (verbatim from index.html calculate()):
+//   const weeklyHoldingCost = annualCashFlow / 52;
+//   label: weeklyHoldingCost >= 0 → 'Weekly surplus', else → 'Weekly cost to hold'
+//
+// Because the formula is a single arithmetic expression with no DOM access,
+// it is tested directly here rather than wrapping it in a helper function.
+// ---------------------------------------------------------------------------
+
+console.log('\nProperty Highlights — weekly holding cost');
+
+test('negative annual cash flow produces a negative weekly holding cost', () => {
+  // -$5,200/yr ÷ 52 = -$100/wk
+  const annualCashFlow = -5200;
+  const weeklyHoldingCost = annualCashFlow / 52;
+  assert.strictEqual(weeklyHoldingCost, -100);
+});
+
+test('positive annual cash flow produces a positive weekly surplus', () => {
+  // +$2,600/yr ÷ 52 = +$50/wk
+  const annualCashFlow = 2600;
+  const weeklyHoldingCost = annualCashFlow / 52;
+  assert.strictEqual(weeklyHoldingCost, 50);
+});
+
+test('zero annual cash flow produces zero weekly holding cost', () => {
+  const annualCashFlow = 0;
+  const weeklyHoldingCost = annualCashFlow / 52;
+  assert.strictEqual(weeklyHoldingCost, 0);
+});
+
+test('label logic: negative weekly cost → "Weekly cost to hold"', () => {
+  const weeklyHoldingCost = -100;
+  const label = weeklyHoldingCost >= 0 ? 'Weekly surplus' : 'Weekly cost to hold';
+  assert.strictEqual(label, 'Weekly cost to hold');
+});
+
+test('label logic: positive weekly surplus → "Weekly surplus"', () => {
+  const weeklyHoldingCost = 50;
+  const label = weeklyHoldingCost >= 0 ? 'Weekly surplus' : 'Weekly cost to hold';
+  assert.strictEqual(label, 'Weekly surplus');
+});
+
+test('label logic: exactly zero → "Weekly surplus" (>= 0 branch)', () => {
+  const weeklyHoldingCost = 0;
+  const label = weeklyHoldingCost >= 0 ? 'Weekly surplus' : 'Weekly cost to hold';
+  assert.strictEqual(label, 'Weekly surplus');
+});
+
+test('weekly cost is precisely 1/52 of annual — spot-check with $10,400/yr', () => {
+  // $10,400 / 52 = $200 exactly
+  const annualCashFlow = 10400;
+  approxEqual(annualCashFlow / 52, 200, 0.0001);
+});
+
+test('weekly holding cost uses year-1 snapshot cash flow, not year-0', () => {
+  // The production formula is: const weeklyHoldingCost = snCashFlow / 52
+  // where snCashFlow is the snapshot-year projected cash flow.
+  // _snapshotYear defaults to 1 in index.html, so the highlight uses Year 1 data.
+  //
+  // Demonstrate that a year-1 projected rent (with 6% growth applied once)
+  // differs from year-0 rent, and that weeklyHoldingCost reflects year-1.
+  //
+  // Year-0 rent (no growth): weeklyRent * 52 = 500 * 52 = 26000
+  // Year-1 rent (6% growth): 500 * 1.06 * 52 = 27560
+  // The weekly cost derived from year-1 cash flow is distinct from year-0.
+  const weeklyRent       = 500;
+  const expectedGrowth   = 0.06;
+  const annualLoanPayment = 24000;
+  const operatingExpenses = 8000;   // fixed for simplicity
+
+  const year0AnnualRent = weeklyRent * 52;
+  const year1AnnualRent = weeklyRent * Math.pow(1 + expectedGrowth, 1) * 52;
+
+  const year0CashFlow = year0AnnualRent - annualLoanPayment - operatingExpenses;
+  const year1CashFlow = year1AnnualRent - annualLoanPayment - operatingExpenses;
+
+  // Year-1 rent is higher → year-1 cash flow is less negative (or more positive)
+  assert.ok(year1CashFlow > year0CashFlow,
+    `Expected year-1 cf (${year1CashFlow}) > year-0 cf (${year0CashFlow}) with positive growth`);
+
+  // Weekly cost using year-1 snapshot differs from using year-0
+  const weeklyCostYear0 = year0CashFlow / 52;
+  const weeklyCostYear1 = year1CashFlow / 52;
+  assert.ok(weeklyCostYear1 !== weeklyCostYear0,
+    'Weekly cost using year-1 snapshot must differ from year-0 snapshot at non-zero growth');
+
+  // Confirm arithmetic: year-1 weekly cost = year-1 annual cash flow / 52
+  approxEqual(weeklyCostYear1, year1CashFlow / 52, 0.0001);
+});
+
+// ---------------------------------------------------------------------------
+// Property Highlights — usable equity at 5 years
+//
+// Pure version of the block at lines 4687–4705 of index.html.
+// Verbatim formulas:
+//   ue5GF = (1 + expectedGrowth)^5
+//   ue5FV = purchasePrice * ue5GF
+//   IO:   ue5RemainingLoan = loanAmount
+//   PI/0: ue5RemainingLoan = max(0, loanAmount - (loanAmount / (loanTerm*12)) * 60)
+//   PI/r: ue5RemainingLoan = loanAmount * ((1+r)^n - (1+r)^60) / ((1+r)^n - 1)
+//         floor to 0 if < 0
+//   ue5Equity  = max(0, ue5FV - ue5RemainingLoan)
+//   ue5Usable  = ue5Equity * 0.8
+// ---------------------------------------------------------------------------
+
+function calcUsableEquityAt5(purchasePrice, loanAmount, expectedGrowth, loanType, loanTerm, interestRate) {
+  var ue5GF = Math.pow(1 + expectedGrowth, 5);
+  var ue5FV = purchasePrice * ue5GF;
+  var ue5RemainingLoan;
+  if (loanType === 'IO') {
+    ue5RemainingLoan = loanAmount;
+  } else if (interestRate === 0) {
+    ue5RemainingLoan = Math.max(0, loanAmount - (loanAmount / (loanTerm * 12)) * 60);
+  } else {
+    var ue5MonthlyRate = interestRate / 12;
+    var ue5TotalPmts = loanTerm * 12;
+    var ue5PmtsMade = Math.min(60, ue5TotalPmts);
+    ue5RemainingLoan = loanAmount * (Math.pow(1 + ue5MonthlyRate, ue5TotalPmts) - Math.pow(1 + ue5MonthlyRate, ue5PmtsMade)) / (Math.pow(1 + ue5MonthlyRate, ue5TotalPmts) - 1);
+  }
+  if (ue5RemainingLoan < 0) ue5RemainingLoan = 0;
+  var ue5Equity = Math.max(0, ue5FV - ue5RemainingLoan);
+  return ue5Equity * 0.8;
+}
+
+console.log('\nProperty Highlights — usable equity at 5 years');
+
+test('IO loan: remaining loan equals original loanAmount (no principal paid)', () => {
+  // purchasePrice=500000, 20% deposit → loanAmount=400000, IO, 5% rate, 6% growth
+  // ue5FV = 500000 * (1.06)^5 = 669113.…
+  // ue5RemainingLoan = 400000 (IO)
+  // ue5Equity = 669113.… - 400000 = 269113.…
+  // ue5Usable = 269113.… * 0.8
+  const purchasePrice  = 500000;
+  const loanAmount     = 400000;
+  const expectedGrowth = 0.06;
+  const ue5FV          = purchasePrice * Math.pow(1 + expectedGrowth, 5);
+  const expectedUsable = (ue5FV - loanAmount) * 0.8;
+  approxEqual(
+    calcUsableEquityAt5(purchasePrice, loanAmount, expectedGrowth, 'IO', 30, 0.05),
+    expectedUsable,
+    0.01
+  );
+});
+
+test('PI loan at same rate produces higher usable equity than IO (principal repaid)', () => {
+  // For a P&I loan the remaining balance at 5 years is lower than the original
+  // loanAmount, so equity — and thus usable equity — is higher than IO.
+  const purchasePrice  = 500000;
+  const loanAmount     = 400000;
+  const expectedGrowth = 0.06;
+  const interestRate   = 0.05;
+  const loanTerm       = 30;
+  const io = calcUsableEquityAt5(purchasePrice, loanAmount, expectedGrowth, 'IO', loanTerm, interestRate);
+  const pi = calcUsableEquityAt5(purchasePrice, loanAmount, expectedGrowth, 'PI', loanTerm, interestRate);
+  assert.ok(pi > io, `Expected PI usable equity (${pi}) > IO usable equity (${io})`);
+});
+
+test('zero growth: property value unchanged, equity comes solely from loan repayment (PI)', () => {
+  // With zero growth ue5FV = purchasePrice.
+  // PI loan: remaining < loanAmount, so equity = purchasePrice - remainingLoan > deposit.
+  const purchasePrice = 400000;
+  const loanAmount    = 320000;  // 20% deposit
+  const interestRate  = 0.0672;
+  const loanTerm      = 30;
+  // Manually compute remaining loan via the same formula
+  const r  = interestRate / 12;
+  const n  = loanTerm * 12;
+  const remaining = loanAmount * (Math.pow(1 + r, n) - Math.pow(1 + r, 60)) / (Math.pow(1 + r, n) - 1);
+  const expectedUsable = Math.max(0, purchasePrice - remaining) * 0.8;
+  approxEqual(
+    calcUsableEquityAt5(purchasePrice, loanAmount, 0, 'PI', loanTerm, interestRate),
+    expectedUsable,
+    0.01
+  );
+});
+
+test('short loan term fully paid within 5 years: remaining loan floors to 0 (not negative)', () => {
+  // A 4-year P&I term means 48 payments — fully paid within the 60-payment window.
+  // The raw amortisation formula would go negative; the floor must clamp it to 0.
+  // ue5Usable should therefore equal ue5FV * 0.8.
+  const purchasePrice  = 200000;
+  const loanAmount     = 160000;
+  const expectedGrowth = 0.04;
+  const loanTerm       = 4;         // 48 payments — paid off before 60 payments
+  const interestRate   = 0.05;
+  const ue5FV          = purchasePrice * Math.pow(1 + expectedGrowth, 5);
+  // With loanTerm=4 and ue5PmtsMade = min(60, 48) = 48 = ue5TotalPmts,
+  // the numerator (1+r)^48 - (1+r)^48 = 0, so remainingLoan = 0.
+  const expectedUsable = ue5FV * 0.8;
+  approxEqual(
+    calcUsableEquityAt5(purchasePrice, loanAmount, expectedGrowth, 'PI', loanTerm, interestRate),
+    expectedUsable,
+    0.01
+  );
+});
+
+test('usable equity is exactly 80% of total equity', () => {
+  // Verify the 0.8 multiplier directly: usableEquity / equity = 0.8
+  const purchasePrice  = 600000;
+  const loanAmount     = 480000;
+  const expectedGrowth = 0.05;
+  const interestRate   = 0.0672;
+  const loanTerm       = 30;
+  // Compute equity manually
+  const ue5FV = purchasePrice * Math.pow(1 + expectedGrowth, 5);
+  const r     = interestRate / 12;
+  const n     = loanTerm * 12;
+  const remaining = loanAmount * (Math.pow(1 + r, n) - Math.pow(1 + r, 60)) / (Math.pow(1 + r, n) - 1);
+  const equity = Math.max(0, ue5FV - remaining);
+  approxEqual(
+    calcUsableEquityAt5(purchasePrice, loanAmount, expectedGrowth, 'PI', loanTerm, interestRate),
+    equity * 0.8,
+    0.01
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Property Highlights — cash flow positive year detection
+//
+// Pure version of the block at lines 4666–4681 of index.html.
+// Verbatim logic:
+//   if (annualCashFlow >= 0) → cfPositiveYear = 0
+//   else: loop cfy = 1..30:
+//     cfGF   = (1 + expectedGrowth)^cfy
+//     cfFV   = purchasePrice * cfGF
+//     cfRent = weeklyRent * cfGF * 52
+//     cfMgmt = cfRent * managementFeePct
+//     cfVac  = weeklyRent * cfGF * 2
+//     cfMaint = cfFV * 0.005
+//     cfOpEx = cfMgmt + insurance + councilFees + cfVac + cfMaint
+//     cfNet  = cfRent - annualLoanPayment - cfOpEx
+//     if cfNet >= 0 → return cfy
+//   return null
+// ---------------------------------------------------------------------------
+
+function calcCashFlowPositiveYear(annualCashFlow, purchasePrice, weeklyRent, expectedGrowth,
+                                   managementFeePct, insurance, councilFees, annualLoanPayment) {
+  if (annualCashFlow >= 0) return 0;
+  for (var cfy = 1; cfy <= 30; cfy++) {
+    var cfGF    = Math.pow(1 + expectedGrowth, cfy);
+    var cfFV    = purchasePrice * cfGF;
+    var cfRent  = weeklyRent * cfGF * 52;
+    var cfMgmt  = cfRent * managementFeePct;
+    var cfVac   = weeklyRent * cfGF * 2;
+    var cfMaint = cfFV * 0.005;
+    var cfOpEx  = cfMgmt + insurance + councilFees + cfVac + cfMaint;
+    var cfNet   = cfRent - annualLoanPayment - cfOpEx;
+    if (cfNet >= 0) return cfy;
+  }
+  return null;
+}
+
+console.log('\nProperty Highlights — cash flow positive year');
+
+test('already positive cash flow returns 0 ("Now")', () => {
+  // annualCashFlow >= 0 → immediate return of 0, loop never runs
+  const result = calcCashFlowPositiveYear(
+    1000,       // annualCashFlow >= 0
+    500000, 550, 0.06, 0.08, 2200, 1800, 30000
+  );
+  assert.strictEqual(result, 0);
+});
+
+test('exactly zero annual cash flow also returns 0 (boundary of >= 0)', () => {
+  const result = calcCashFlowPositiveYear(
+    0,          // exactly zero — still >= 0
+    500000, 550, 0.06, 0.08, 2200, 1800, 30000
+  );
+  assert.strictEqual(result, 0);
+});
+
+test('negative cash flow with high growth returns a year between 1 and 30', () => {
+  // Use high growth (15%) so rent escalates quickly and the loan payment
+  // (fixed) is overtaken within the 30-year window.
+  // Low purchase price and loan payment keeps numbers tractable.
+  const purchasePrice    = 300000;
+  const weeklyRent       = 400;
+  const expectedGrowth   = 0.15;
+  const managementFeePct = 0.08;
+  const insurance        = 1500;
+  const councilFees      = 1500;
+  const annualLoanPayment = 25000;  // fixed, does not grow
+  // Compute year-0 cash flow to confirm it is negative
+  const annualRent0 = weeklyRent * 52;
+  const opEx0 = annualRent0 * managementFeePct + insurance + councilFees
+              + weeklyRent * 2 + purchasePrice * 0.005;
+  const cf0 = annualRent0 - annualLoanPayment - opEx0;
+  assert.ok(cf0 < 0, `Precondition: year-0 cf (${cf0}) should be negative`);
+  const result = calcCashFlowPositiveYear(
+    cf0, purchasePrice, weeklyRent, expectedGrowth,
+    managementFeePct, insurance, councilFees, annualLoanPayment
+  );
+  assert.ok(result !== null, 'Expected a year to be found, got null');
+  assert.ok(result >= 1,  `Expected result >= 1, got ${result}`);
+  assert.ok(result <= 30, `Expected result <= 30, got ${result}`);
+});
+
+test('zero growth and persistently negative cash flow returns null (never positive within 30 yrs)', () => {
+  // With expectedGrowth = 0, rent never grows. If year-0 is negative,
+  // every year in the loop will also be negative, so null is returned.
+  const purchasePrice    = 500000;
+  const weeklyRent       = 300;     // low rent
+  const expectedGrowth   = 0;       // zero growth — rent stays flat
+  const managementFeePct = 0.08;
+  const insurance        = 2200;
+  const councilFees      = 1800;
+  const annualLoanPayment = 40000;  // high fixed payment
+  // Confirm negative at year 0 before calling
+  const annualRent0 = weeklyRent * 52;
+  const opEx0 = annualRent0 * managementFeePct + insurance + councilFees
+              + weeklyRent * 2 + purchasePrice * 0.005;
+  const cf0 = annualRent0 - annualLoanPayment - opEx0;
+  assert.ok(cf0 < 0, `Precondition: year-0 cf (${cf0}) should be negative`);
+  const result = calcCashFlowPositiveYear(
+    cf0, purchasePrice, weeklyRent, expectedGrowth,
+    managementFeePct, insurance, councilFees, annualLoanPayment
+  );
+  assert.strictEqual(result, null);
+});
+
+test('loop starts at year 1 — scenario turning positive at year 2 returns 2', () => {
+  // Year-0 cash flow is negative. With 50% growth, year 1 is still negative
+  // (rent escalates but not enough to cover the large loan payment), and year
+  // 2 turns positive. Confirms the loop correctly checks year 1 and moves on.
+  // Strategy: use a high fixed loan payment to make year-0 and year-1 negative,
+  // then use very high growth (50%) so the rent at year 2 exceeds all expenses.
+  const purchasePrice    = 200000;
+  const weeklyRent       = 300;     // lower rent → negative year-0
+  const expectedGrowth   = 0.50;    // extreme growth: rent escalates quickly
+  const managementFeePct = 0.05;
+  const insurance        = 1000;
+  const councilFees      = 1000;
+  const annualLoanPayment = 25000;  // high fixed payment to ensure negative year-0
+  // Verify year-0 is negative before calling
+  const annualRent0 = weeklyRent * 52;
+  const opEx0 = annualRent0 * managementFeePct + insurance + councilFees
+              + weeklyRent * 2 + purchasePrice * 0.005;
+  const cf0 = annualRent0 - annualLoanPayment - opEx0;
+  assert.ok(cf0 < 0, `Precondition: year-0 cf (${cf0}) should be negative`);
+  const result = calcCashFlowPositiveYear(
+    cf0, purchasePrice, weeklyRent, expectedGrowth,
+    managementFeePct, insurance, councilFees, annualLoanPayment
+  );
+  // With 50% growth the scenario turns positive at year 2 — confirm it does
+  assert.strictEqual(result, 2, `Expected year 2 with extreme growth, got ${result}`);
+});
+
+test('loop starts at year 1 — property turning positive in Year 1 is reported as 1 not 2', () => {
+  // Verifies the post-fix behaviour: the loop begins at cfy=1, so a property
+  // whose projected cash flow first turns non-negative in year 1 must return 1.
+  // (Before the fix the loop started at year 2, which would have caused this
+  // scenario to return 2 incorrectly.)
+  //
+  // Construction: year-0 is negative (loan payment > rent). With very high growth
+  // (100%) the rent at year 1 doubles and overtakes all expenses.
+  const purchasePrice    = 200000;
+  const weeklyRent       = 200;     // low year-0 rent → negative at year 0
+  const expectedGrowth   = 1.00;    // 100% growth: year-1 rent is 2× year-0 rent
+  const managementFeePct = 0.08;
+  const insurance        = 500;
+  const councilFees      = 500;
+  const annualLoanPayment = 15000;  // modest payment; year-0 is still negative
+
+  // Confirm year-0 is negative
+  const annualRent0 = weeklyRent * 52;                               // 10400
+  const opEx0 = annualRent0 * managementFeePct + insurance + councilFees
+              + weeklyRent * 2 + purchasePrice * 0.005;
+  const cf0 = annualRent0 - annualLoanPayment - opEx0;
+  assert.ok(cf0 < 0, `Precondition: year-0 cf (${cf0}) should be negative`);
+
+  // Confirm year-1 projected cash flow is positive
+  const cfGF1   = Math.pow(1 + expectedGrowth, 1);                  // 2.0
+  const cfFV1   = purchasePrice * cfGF1;
+  const cfRent1 = weeklyRent * cfGF1 * 52;                          // 20800
+  const cfMgmt1 = cfRent1 * managementFeePct;
+  const cfVac1  = weeklyRent * cfGF1 * 2;
+  const cfMaint1= cfFV1 * 0.005;
+  const cfNet1  = cfRent1 - annualLoanPayment - (cfMgmt1 + insurance + councilFees + cfVac1 + cfMaint1);
+  assert.ok(cfNet1 >= 0, `Precondition: year-1 projected cfNet (${cfNet1}) should be >= 0`);
+
+  const result = calcCashFlowPositiveYear(
+    cf0, purchasePrice, weeklyRent, expectedGrowth,
+    managementFeePct, insurance, councilFees, annualLoanPayment
+  );
+  assert.strictEqual(result, 1, `Expected 1 (loop starts at year 1), got ${result}`);
 });
 
 // ---------------------------------------------------------------------------

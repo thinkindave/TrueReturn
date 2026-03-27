@@ -3736,8 +3736,8 @@
           return 27810 + (price - 725000) * 0.045;
 
         case 'ACT':
-          if (price <= 260000) return price * 0.0049;
-          if (price <= 300000) return 1040 + (price - 260000) * 0.022;
+          if (price <= 260000) return price * 0.006;
+          if (price <= 300000) return 1560 + (price - 260000) * 0.022;
           if (price <= 500000) return 1920 + (price - 300000) * 0.034;
           if (price <= 750000) return 8720 + (price - 500000) * 0.0432;
           if (price <= 1000000) return 19520 + (price - 750000) * 0.059;
@@ -3760,7 +3760,7 @@
 
     function calcDepreciation(ageBracket, purchasePrice) {
       const buildingValue = purchasePrice * 0.75;
-      if (ageBracket === 'new') return buildingValue * 0.0175;
+      if (ageBracket === 'new') return buildingValue * 0.025;
       if (ageBracket === 'mid') return buildingValue * 0.0125;
       return buildingValue * 0.0075;
     }
@@ -4430,7 +4430,7 @@
 
       const snDeductibleExpenses = snInterestOnly + snMgmtFee + insurance + councilFees + snMaintenance + annualDepreciation;
       const snNetRentalPosition = snAnnualRent - snDeductibleExpenses;
-      const snTaxBenefit = snNetRentalPosition < 0 ? Math.abs(snNetRentalPosition) * marginalTaxRate : 0;
+      const snTaxBenefit = snNetRentalPosition < 0 ? Math.abs(snNetRentalPosition) * marginalTaxRate : -(snNetRentalPosition * marginalTaxRate);
 
 
       // Update DOM — Cash Flow header highlights (snapshot year)
@@ -4506,8 +4506,8 @@
       if (deprBracketEl) deprBracketEl.textContent = '(' + deprBracket + ')';
       const tbEl = document.getElementById('resTaxBenefit');
       if (tbEl) {
-        tbEl.textContent = snTaxBenefit > 0 ? formatCurrency(snTaxBenefit) + '/yr' : '-';
-        tbEl.className = 'proj-highlight-value ' + (snTaxBenefit > 0 ? 'positive' : '');
+        tbEl.textContent = snTaxBenefit !== 0 ? (snTaxBenefit < 0 ? '-' : '') + formatCurrency(Math.abs(snTaxBenefit)) + '/yr' : '-';
+        tbEl.className = 'proj-highlight-value ' + (snTaxBenefit > 0 ? 'positive' : snTaxBenefit < 0 ? 'negative' : '');
       }
 
       // Update DOM — Results
@@ -4586,7 +4586,7 @@
         const salesCosts = salePrice * 0.03;
         const netProceeds = salePrice - salesCosts - remainingLoan;
         const cumulativeDepr = annualDepreciation * years;
-        const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT - cumulativeDepr);
+        const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST - cumulativeDepr);
         const capitalGain = salePrice - costBase;
         const discountedGain = capitalGain > 0 ? capitalGain * 0.50 : 0;
         const cgt = discountedGain > 0 ? discountedGain * marginalTaxRate : 0;
@@ -4670,7 +4670,7 @@
       // --- Property Highlights ---
 
       // 1. Weekly cost to hold (or surplus)
-      const weeklyHoldingCost = annualCashFlow / 52;
+      const weeklyHoldingCost = snCashFlow / 52;
       const hlWeeklyCostEl = document.getElementById('hlWeeklyCost');
       const hlWeeklyCostLabelEl = document.getElementById('hlWeeklyCostLabel');
       if (hlWeeklyCostEl) {
@@ -4685,7 +4685,7 @@
       if (annualCashFlow >= 0) {
         cfPositiveYear = 0;
       } else {
-        for (var cfy = 2; cfy <= 30; cfy++) {
+        for (var cfy = 1; cfy <= 30; cfy++) {
           var cfGF = Math.pow(1 + expectedGrowth, cfy);
           var cfFV = purchasePrice * cfGF;
           var cfRent = weeklyRent * cfGF * 52;
@@ -4801,7 +4801,7 @@
       const salesCosts = futureValue * 0.03;
       const netProceeds = futureValue - salesCosts - remainingLoan;
       const cumulativeDepr = annualDepreciation * years;
-      const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT - cumulativeDepr);
+      const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST - cumulativeDepr);
       const capitalGain = futureValue - costBase;
       const cgt = capitalGain > 0 ? capitalGain * 0.5 * marginalTaxRate : 0;
       const trueCashReturn = netProceeds - cgt;
@@ -4914,7 +4914,7 @@
             const mtr = document.body.dataset.mode === 'simple'
               ? parseFloat(SIMPLE_MODE_TAX)
               : (ev('marginalTaxRate') || 0.37);
-            const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT - cumulativeDepr);
+            const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST - cumulativeDepr);
             const capitalGain = salePrice - costBase;
             const discountedGain = capitalGain > 0 ? capitalGain * 0.50 : 0;
             const cgt = discountedGain > 0 ? discountedGain * mtr : 0;
