@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(claude logout:*)",
+      "WebSearch",
+      "WebFetch(domain:www.canstar.com.au)",
+      "WebFetch(domain:lendingloop.com.au)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh auth status:*)",
+      "Bash(brew install:*)",
+      "Bash(/opt/homebrew/bin/gh auth status:*)",
+      "Bash(/opt/homebrew/bin/gh repo create:*)",
+      "Bash(/opt/homebrew/bin/gh api:*)",
+      "Bash(git -C /Users/thinkindave/TrueReturn status)",
+      "Bash(git -C /Users/thinkindave/TrueReturn diff)",
+      "Bash(git -C /Users/thinkindave/TrueReturn log --oneline -5)",
+      "Bash(git push:*)",
+      "Bash(git -C /Users/thinkindave/TrueReturn add index.html)",
+      "Bash(git -C /Users/thinkindave/TrueReturn commit -m \"$\\(cat <<''EOF''\nAdd projections, 3-column layout, and updated defaults\n\n- Switch to 3-column top row \\(Property Details, Breakdown, Results\\)\n  with full-width Projections section below\n- Add 5yr and 10yr projections: property value, capital growth,\n  remaining loan, equity, estimated rent and cash flow\n- Rent and expenses projected based on expected annual growth\n- P&I loan balance reduces over time in equity calculation\n- Add Cash Flow sub-sections within projections\n- Update defaults to QLD property: $295k, 5.89% P&I, 6.6% mgmt, $420/wk\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git -C /Users/thinkindave/TrueReturn push)",
+      "Bash(git -C /Users/thinkindave/TrueReturn commit -m \"$\\(cat <<''EOF''\nAdd yield notes, principal paid down, and projection refinements\n\n- Add explanatory notes under Gross Yield and Net Yield results\n- Add Principal Paid Down line to 5yr and 10yr projections\n- Add disclaimer note under Expected Annual Growth input\n- Make Remaining Loan same size as other projection rows\n- Remove sticky positioning from Results section\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(node --check:*)",
+      "Bash(python3:*)",
+      "Bash(open:*)",
+      "Bash(source:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(gh pr:*)",
+      "Bash(chmod:*)"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "_instructions": "Edit the tip text values below, then give this file back to Claude to apply the changes. Do not rename or remove keys.",
+
+  "property-columns": {
+    "name":           "Label for this property — used in charts and comparisons",
+    "purchase-price": "The agreed contract price, excluding stamp duty and acquisition costs",
+    "deposit":        "Percentage of purchase price paid upfront. The remainder is borrowed.",
+    "type":           "P&I = Principal & Interest. IO = Interest Only (no principal repaid).",
+    "term":           "Years over which the mortgage is repaid (P&I loans only)",
+    "state":          "Used to calculate stamp duty and other costs using state averages",
+    "rate":           "Annual interest rate on your mortgage",
+    "mgmt":           "Property manager's fee as a percentage of gross weekly rent",
+    "rent":           "Current market rent for the property",
+    "growth":         "Expected annual capital growth rate. The long-run Australian average is ~7%.",
+    "age":            "Used to estimate annual depreciation on building structure and fixtures"
+  },
+
+  "breakdown-cash-up-front": {
+    "stamp-duty":        "Based on thresholds for state selected",
+    "conveyancing":      "Based on averages for state selected",
+    "building-pest":     "Fixed estimate of $600",
+    "loan-establishment":"Fixed estimate of $800"
+  },
+
+  "breakdown-annual-cash-flow": {
+    "insurance":    "Based on averages for state selected",
+    "vacancy":      "Assumed 2 weeks per year",
+    "maintenance":  "Estimated at 0.5% of property value"
+  },
+
+  "breakdown-tax-benefit": {
+    "net-rental-position": "Annual rent minus deductible expenses. If negative, the loss can offset your taxable income (negative gearing)."
+  },
+
+  "projections": {
+    "usable-equity":        "80% of total equity — the maximum most banks will lend against",
+    "weekly-rent":          "Rent increases in line with property value growth",
+    "sales-costs":          "Estimated at 3% of sale price (agent fees, legal, marketing)",
+    "capital-gains-tax":    "Capital Gains Tax estimated at 50% discount × your selected marginal tax rate.",
+    "total-cash-invested":  "Deposit + stamp duty + conveyancing + building & pest + loan establishment",
+    "cumulative-cash-flow": "Total rent income minus expenses over the period",
+    "annual-cash-return":   "Equivalent annual return rate — compare against shares or index funds"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "allowedTools": ["Bash", "Read", "Edit", "Write", "Glob", "Grep"],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/thinkindave/TrueReturn/.claude/hooks/auto-approve-trello.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
