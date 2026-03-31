@@ -1717,8 +1717,8 @@ var _snapshotYear = 1;
         return '<div class="pdf-page">' + headerHtml
           + '<div style="font-size:11pt;font-weight:600;margin-bottom:6pt">' + _esc(p.name) + '</div>'
           + '<div style="display:flex;gap:8pt">'
-          + '<div style="flex:1;min-width:0">' + cashUpFront + highlights + annualCF + '</div>'
-          + '<div style="flex:1;min-width:0">' + taxPos + '</div>'
+          + '<div style="flex:1;min-width:0">' + cashUpFront + annualCF + '</div>'
+          + '<div style="flex:1;min-width:0">' + highlights + taxPos + '</div>'
           + '</div>'
           + projHtml
           + chartHtml
