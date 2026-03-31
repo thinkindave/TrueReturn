@@ -8,6 +8,11 @@
   to    = "/about.html"
   status = 301
 
+[[redirects]]
+  from  = "/privacy"
+  to    = "/privacy.html"
+  status = 301
+
 # ─── Security headers (all pages) ────────────────────────────────────────────
 
 [[headers]]
