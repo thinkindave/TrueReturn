@@ -13,6 +13,11 @@
   to    = "/privacy.html"
   status = 301
 
+[[redirects]]
+  from  = "/contact"
+  to    = "/contact.html"
+  status = 301
+
 # ─── Security headers (all pages) ────────────────────────────────────────────
 
 [[headers]]

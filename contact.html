@@ -19,7 +19,7 @@
     /* latin */
     @font-face { font-family: 'Inter'; font-style: normal; font-weight: 400 800; font-display: swap; src: url('fonts/inter-v20-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
   </style>
-  <title>Privacy Policy — TrueReturn</title>
+  <title>Contact — TrueReturn</title>
   <style>
     :root {
       /* Raw palette — primary (green) */
@@ -246,53 +246,12 @@
       padding: 3rem 2rem;
       border-top: 1px solid var(--border-default);
     }
-    .about-section__title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-    }
 
-    .about-tiles--stacked {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
     .about-tile {
       background: var(--bg-elevated);
       border: 1px solid var(--border-default);
       border-radius: var(--radius-md);
       padding: 1.5rem;
-    }
-    .about-tile strong {
-      display: block;
-      margin-bottom: 0.6rem;
-      font-size: 0.95rem;
-    }
-    .about-tile p {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-      line-height: 1.6;
-      margin: 0 0 0.75rem;
-    }
-    .about-tile p:last-child {
-      margin-bottom: 0;
-    }
-    .about-tile ul {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-      line-height: 1.6;
-      margin: 0.5rem 0 0 1.25rem;
-      padding: 0;
-    }
-    .about-tile ul li {
-      margin-bottom: 0.3rem;
-    }
-    .about-tile a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-    .about-tile a:hover {
-      text-decoration: underline;
     }
 
     .about-footer {
@@ -305,6 +264,143 @@
     .about-footer a {
       color: var(--accent);
       text-decoration: none;
+    }
+
+    /* Contact form */
+    .contact-wrapper {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+
+    .contact-form {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+    }
+
+    .contact-field {
+      margin-bottom: 1.25rem;
+    }
+
+    .contact-field:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .contact-label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+    }
+
+    .contact-label-optional {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-left: 0.35rem;
+    }
+
+    .contact-input,
+    .contact-textarea {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.625rem 0.75rem;
+      transition: border-color var(--transition-base), box-shadow var(--transition-base);
+      outline: none;
+    }
+
+    .contact-textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .contact-input::placeholder,
+    .contact-textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .contact-input:focus,
+    .contact-textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    .contact-submit {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.75rem 2rem;
+      margin-top: 1.5rem;
+      cursor: pointer;
+      transition: background var(--transition-base);
+    }
+
+    .contact-submit:hover {
+      background: var(--accent-hover);
+    }
+
+    .contact-submit:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    .contact-honeypot {
+      display: none;
+    }
+
+    .contact-direct {
+      text-align: center;
+      margin-top: 1.25rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .contact-direct a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .contact-direct a:hover {
+      text-decoration: underline;
+    }
+
+    .contact-success {
+      display: none;
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      color: var(--accent);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .contact-success-link {
+      display: inline-block;
+      margin-top: 0.75rem;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .contact-success-link:hover {
+      text-decoration: underline;
     }
 
     .header-about-link {
@@ -385,7 +481,7 @@
         <nav class="header-nav" id="header-nav">
           <a href="index.html" class="header-about-link">Home</a>
           <a href="about.html" class="header-about-link">About</a>
-          <a href="contact.html" class="header-about-link">Contact</a>
+          <a href="privacy.html" class="header-about-link">Privacy</a>
         </nav>
         <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
           <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -397,98 +493,53 @@
 
   <main>
     <section class="about-hero">
-      <h2 class="about-hero__headline">Privacy Policy</h2>
-      <p class="about-hero__body">Last updated: 31 March 2026</p>
+      <h2 class="about-hero__headline">Get in Touch</h2>
+      <p class="about-hero__body">Found a bug, have a question, or just want to say hi? We'd love to hear from you.</p>
     </section>
 
-    <section class="about-section">
-      <div class="about-tiles--stacked">
-
-        <div class="about-tile">
-          <strong>Overview</strong>
-          <p>TrueReturn is a client-side web application. All calculations happen in your browser. No data you enter is ever transmitted to or stored on any server.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>What data we collect</strong>
-          <p>TrueReturn does not collect, transmit, or store any personal information through the calculator itself. The only exception is the contact form — see below.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>Contact form</strong>
-          <p>If you choose to use the contact form, your submission (which may include your name, email address, and message) is processed and stored by Netlify, our hosting provider. This data is used solely to respond to your enquiry.</p>
-          <p>Name and email address are optional — you may submit anonymously. You can request deletion of your submission at any time by emailing <a href="mailto:privacy@truereturn.au">privacy@truereturn.au</a>.</p>
-          <p>Netlify's privacy policy is available at <a href="https://www.netlify.com/privacy/" target="_blank" rel="noopener noreferrer">netlify.com/privacy</a>.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>How your data is stored</strong>
-          <p>When you use TrueReturn, the property details and settings you enter are saved to your browser's local storage — a storage mechanism built into your browser that keeps data on your device only. This allows your work to persist between sessions without any server involvement.</p>
-          <p>Key points:</p>
-          <ul>
-            <li>Your data never leaves your device</li>
-            <li>It remains in local storage until you clear your browser data or use the in-app reset function</li>
-            <li>Different browsers and devices have separate local storage — your data does not sync across devices</li>
-          </ul>
-        </div>
-
-        <div class="about-tile">
-          <strong>Save &amp; Share links</strong>
-          <p>TrueReturn includes a Save &amp; Share feature that encodes your property data into a URL. If you copy and share that link with another person, they will be able to see the property details contained within it. Only share these links with people you trust.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>Exports</strong>
-          <p>PDF and XLSX exports are generated entirely within your browser. Export files are never uploaded or transmitted anywhere — they are downloaded directly to your device.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>Third-party resources</strong>
-          <p>TrueReturn loads two JavaScript libraries — Chart.js and SheetJS (XLSX) — from a third-party content delivery network (jsDelivr, at cdn.jsdelivr.net). When your browser fetches these files, jsDelivr's servers will receive your IP address as part of a standard HTTP request. No personal data is included in these requests. All other resources, including fonts, are served directly from truereturn.au.</p>
-          <p>We have no control over jsDelivr's data practices. You can review their privacy policy at <a href="https://www.jsdelivr.com/privacy-policy-jsdelivr-net" target="_blank" rel="noopener noreferrer">jsdelivr.com/privacy-policy-jsdelivr-net</a>.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>Cookies</strong>
-          <p>TrueReturn does not use cookies.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>Analytics and tracking</strong>
-          <p>TrueReturn does not use any analytics platform, tracking pixel, session recording tool, or advertising technology. No information about your usage is collected or shared with third parties.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>Your responsibility</strong>
-          <p>TrueReturn provides input fields for you to enter property and financial information. You are solely responsible for what you choose to enter and for any decisions made based on the tool's output. Do not enter sensitive personal or financial information you would not want visible in your browser's local storage or in a shareable URL.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>General information only</strong>
-          <p>This tool provides general information only and does not constitute financial advice. You should consider your own circumstances and seek professional advice before making any financial or investment decisions.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>Governing law</strong>
-          <p>TrueReturn is operated from Australia. To the extent applicable, this privacy policy is governed by the Privacy Act 1988 (Cth) and the Australian Privacy Principles.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>Contact</strong>
-          <p>If you have any questions about this privacy policy, please contact us at <a href="mailto:privacy@truereturn.au">privacy@truereturn.au</a>.</p>
-        </div>
-
-        <div class="about-tile">
-          <strong>Changes to this policy</strong>
-          <p>We may update this policy from time to time. The "Last updated" date at the top of this page will reflect any changes. Continued use of the tool after any changes constitutes acceptance of the updated policy.</p>
-        </div>
-
+    <div class="contact-wrapper">
+      <div class="contact-success" id="contactSuccess" role="alert">
+        Thanks for reaching out — we'll get back to you shortly.
+        <a href="/contact" class="contact-success-link">Send another message →</a>
       </div>
-    </section>
+
+      <form class="contact-form" name="contact" method="POST" action="/contact?success=true" data-netlify="true" data-netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="contact">
+
+        <div class="contact-honeypot" aria-hidden="true">
+          <label>Don't fill this out: <input name="bot-field" autocomplete="off"></label>
+        </div>
+
+        <div class="contact-field">
+          <label class="contact-label" for="contact-name">
+            Name
+            <span class="contact-label-optional">(optional)</span>
+          </label>
+          <input class="contact-input" type="text" id="contact-name" name="name" placeholder="Your name" autocomplete="name">
+        </div>
+
+        <div class="contact-field">
+          <label class="contact-label" for="contact-email">
+            Email
+            <span class="contact-label-optional">(optional)</span>
+          </label>
+          <input class="contact-input" type="email" id="contact-email" name="email" placeholder="your@email.com" autocomplete="email">
+        </div>
+
+        <div class="contact-field">
+          <label class="contact-label" for="contact-message">Message</label>
+          <textarea class="contact-textarea" id="contact-message" name="message" placeholder="What's on your mind?" rows="5" required></textarea>
+        </div>
+
+        <button type="submit" class="contact-submit">Send Message</button>
+      </form>
+
+      <p class="contact-direct">Prefer email? Reach us directly at <a href="mailto:hello@truereturn.au">hello@truereturn.au</a></p>
+    </div>
   </main>
 
   <footer class="about-footer">
-    <p>Built for Australian property investors &nbsp;·&nbsp; Not financial advice &nbsp;·&nbsp; <a href="about.html">About</a> &nbsp;·&nbsp; <a href="contact.html">Contact</a> &nbsp;·&nbsp; <a href="index.html">Open Calculator →</a></p>
+    <p>Built for Australian property investors &nbsp;·&nbsp; Not financial advice &nbsp;·&nbsp; <a href="about.html">About</a> &nbsp;·&nbsp; <a href="privacy.html">Privacy Policy</a> &nbsp;·&nbsp; <a href="index.html">Open Calculator →</a></p>
   </footer>
 
   <script>
@@ -531,6 +582,11 @@
         }
       });
     })();
+
+    if (window.location.search.indexOf('success=true') !== -1) {
+      document.querySelector('.contact-form').style.display = 'none';
+      document.getElementById('contactSuccess').style.display = 'block';
+    }
   </script>
 </body>
 </html>

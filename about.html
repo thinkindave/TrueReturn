@@ -458,6 +458,69 @@
       .about-tiles { grid-template-columns: 1fr; }
       .about-steps { grid-template-columns: 1fr; }
     }
+
+    .header-about-link {
+      font-size: 0.8rem;
+      color: var(--accent);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+    .header-about-link:hover { color: var(--accent-hover); }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-nav-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .header-nav-toggle:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-bg);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    @media (max-width: 540px) {
+      .header-nav-toggle {
+        display: flex;
+      }
+      .header-nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border-default);
+        border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+        padding: 0.5rem 0;
+        z-index: 100;
+      }
+      .header-nav.is-open {
+        display: flex;
+      }
+      .header-nav .header-about-link {
+        padding: 0.65rem 1.25rem;
+        font-size: 0.875rem;
+        border-radius: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -468,6 +531,14 @@
         <p>The full investment picture</p>
       </div>
       <div class="header-right">
+        <button class="header-nav-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="header-nav">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="4" x2="16" y2="4"/><line x1="2" y1="9" x2="16" y2="9"/><line x1="2" y1="14" x2="16" y2="14"/></svg>
+        </button>
+        <nav class="header-nav" id="header-nav">
+          <a href="index.html" class="header-about-link">Home</a>
+          <a href="privacy.html" class="header-about-link">Privacy</a>
+          <a href="contact.html" class="header-about-link">Contact</a>
+        </nav>
         <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
           <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
           <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
@@ -691,7 +762,7 @@
   </main>
 
   <footer class="about-footer">
-    <p>Built for Australian property investors &nbsp;·&nbsp; Not financial advice &nbsp;·&nbsp; <a href="privacy.html">Privacy Policy</a> &nbsp;·&nbsp; <a href="index.html">Open Calculator →</a></p>
+    <p>Built for Australian property investors &nbsp;·&nbsp; Not financial advice &nbsp;·&nbsp; <a href="privacy.html">Privacy Policy</a> &nbsp;·&nbsp; <a href="contact.html">Contact</a> &nbsp;·&nbsp; <a href="index.html">Open Calculator →</a></p>
   </footer>
 
   <script>
@@ -707,6 +778,33 @@
       });
     }
     initTheme();
+
+    (function initHamburger() {
+      const toggle = document.querySelector('.header-nav-toggle');
+      const nav = document.querySelector('.header-nav');
+      if (!toggle || !nav) return;
+      toggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const opening = !nav.classList.contains('is-open');
+        nav.classList.toggle('is-open', opening);
+        toggle.setAttribute('aria-expanded', String(opening));
+        toggle.setAttribute('aria-label', opening ? 'Close navigation menu' : 'Open navigation menu');
+      });
+      nav.addEventListener('click', function(e) {
+        if (e.target.matches('a')) {
+          nav.classList.remove('is-open');
+          toggle.setAttribute('aria-expanded', 'false');
+          toggle.setAttribute('aria-label', 'Open navigation menu');
+        }
+      });
+      document.addEventListener('click', function(e) {
+        if (!nav.contains(e.target) && !toggle.contains(e.target)) {
+          nav.classList.remove('is-open');
+          toggle.setAttribute('aria-expanded', 'false');
+          toggle.setAttribute('aria-label', 'Open navigation menu');
+        }
+      });
+    })();
   </script>
 </body>
 </html>
