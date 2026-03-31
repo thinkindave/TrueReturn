@@ -18,6 +18,11 @@
   to    = "/contact.html"
   status = 301
 
+[[redirects]]
+  from  = "/thank-you"
+  to    = "/thank-you.html"
+  status = 301
+
 # ─── Security headers (all pages) ────────────────────────────────────────────
 
 [[headers]]

@@ -498,12 +498,7 @@
     </section>
 
     <div class="contact-wrapper">
-      <div class="contact-success" id="contactSuccess" role="alert">
-        Thanks for reaching out — we'll get back to you shortly.
-        <a href="/contact" class="contact-success-link">Send another message →</a>
-      </div>
-
-      <form class="contact-form" name="contact" method="POST" action="/contact.html?success=true" data-netlify="true" data-netlify-honeypot="bot-field">
+      <form class="contact-form" name="contact" method="POST" action="/thank-you" data-netlify="true" data-netlify-honeypot="bot-field">
         <input type="hidden" name="form-name" value="contact">
 
         <div class="contact-honeypot" aria-hidden="true">
@@ -583,10 +578,6 @@
       });
     })();
 
-    if (window.location.search.indexOf('success=true') !== -1) {
-      document.querySelector('.contact-form').style.display = 'none';
-      document.getElementById('contactSuccess').style.display = 'block';
-    }
-  </script>
+</script>
 </body>
 </html>
