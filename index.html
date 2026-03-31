@@ -4303,7 +4303,7 @@
         var projHtml = projTable(p.p5, p.p10, p.p15);
         var chartHtml = p.chartSvg
           ? '<div class="pdf-section" style="page-break-inside:avoid;break-inside:avoid;margin-top:16pt"><div style="font-size:8.5pt;font-weight:600;margin-bottom:6pt;color:#10B981;border-bottom:1px solid #ddd;padding-bottom:2pt">Profit Over Time</div>'
-            + '<div style="padding:0 16pt">' + p.chartSvg + '</div></div>'
+            + '<div style="padding:0 16pt"><div style="width:90%">' + p.chartSvg + '</div></div></div>'
           : '';
         return '<div class="pdf-page">' + headerHtml
           + '<div style="font-size:11pt;font-weight:600;margin-bottom:6pt">' + _esc(p.name) + '</div>'
