@@ -165,6 +165,24 @@ function fyStartYear(iso) {
   return d.getUTCMonth() >= 6 ? d.getUTCFullYear() : d.getUTCFullYear() - 1;
 }
 
+// ── Regime router (spec §3) ──────────────────────────────────────────────
+// Two independent grandfathering dimensions:
+//   NG  — by contract date (Budget night) or new-build exemption.
+//   CGT — by sale date relative to 1 July 2027; new builds / affordable
+//         housing get a best-of choice instead of forced dual-era.
+function routeRegimes({ contractDate, dwellingType, saleDate }) {
+  const ng = (contractDate <= BUDGET_NIGHT_ISO || dwellingType === 'newBuild')
+    ? 'FULL' : 'QUARANTINE_FROM_2027';
+  let cgt;
+  if (!saleDate || saleDate < BOUNDARY_ISO) {
+    cgt = 'OLD';
+  } else {
+    cgt = (dwellingType === 'newBuild' || dwellingType === 'affordableHousing')
+      ? 'BEST_OF' : 'DUAL_ERA';
+  }
+  return { ng, cgt };
+}
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -172,5 +190,6 @@ if (typeof module !== 'undefined' && module.exports) {
     formatCurrency, calcStampDuty, calcDepreciation, legacySaleOutcome,
     BUDGET_NIGHT_ISO, BOUNDARY_ISO, DEEMED_DATE_ISO,
     daysBetween, yearFrac, cpiFactor, fyStartYear,
+    routeRegimes,
   };
 }

@@ -85,4 +85,51 @@ test('reform boundary constants', () => {
   assert.strictEqual(E.DEEMED_DATE_ISO, '2027-06-30');
 });
 
+// ── Regime router (spec §3) ──────────────────────────────────────────────
+console.log('\nrouteRegimes');
+
+test('pre-Budget-night established, sold pre-boundary: FULL / OLD', () => {
+  assert.deepStrictEqual(
+    E.routeRegimes({ contractDate: '2020-07-01', dwellingType: 'established', saleDate: '2026-03-01' }),
+    { ng: 'FULL', cgt: 'OLD' });
+});
+
+test('grandfathered NG but dual-era CGT (the key mixed case)', () => {
+  assert.deepStrictEqual(
+    E.routeRegimes({ contractDate: '2020-07-01', dwellingType: 'established', saleDate: '2029-07-01' }),
+    { ng: 'FULL', cgt: 'DUAL_ERA' });
+});
+
+test('post-Budget-night established: quarantine + dual-era', () => {
+  assert.deepStrictEqual(
+    E.routeRegimes({ contractDate: '2026-08-01', dwellingType: 'established', saleDate: '2031-08-01' }),
+    { ng: 'QUARANTINE_FROM_2027', cgt: 'DUAL_ERA' });
+});
+
+test('new build: NG exempt, best-of CGT', () => {
+  assert.deepStrictEqual(
+    E.routeRegimes({ contractDate: '2026-10-01', dwellingType: 'newBuild', saleDate: '2032-10-01' }),
+    { ng: 'FULL', cgt: 'BEST_OF' });
+});
+
+test('affordable housing: best-of CGT but NOT NG-exempt', () => {
+  assert.deepStrictEqual(
+    E.routeRegimes({ contractDate: '2026-10-01', dwellingType: 'affordableHousing', saleDate: '2032-10-01' }),
+    { ng: 'QUARANTINE_FROM_2027', cgt: 'BEST_OF' });
+});
+
+test('Budget-night boundary: 12 May grandfathered, 13 May not', () => {
+  assert.strictEqual(E.routeRegimes({ contractDate: '2026-05-12', dwellingType: 'established', saleDate: '2030-01-01' }).ng, 'FULL');
+  assert.strictEqual(E.routeRegimes({ contractDate: '2026-05-13', dwellingType: 'established', saleDate: '2030-01-01' }).ng, 'QUARANTINE_FROM_2027');
+});
+
+test('sale boundary: 30 June 2027 OLD, 1 July 2027 DUAL_ERA', () => {
+  assert.strictEqual(E.routeRegimes({ contractDate: '2026-08-01', dwellingType: 'established', saleDate: '2027-06-30' }).cgt, 'OLD');
+  assert.strictEqual(E.routeRegimes({ contractDate: '2026-08-01', dwellingType: 'established', saleDate: '2027-07-01' }).cgt, 'DUAL_ERA');
+});
+
+test('no sale date routes CGT to OLD (no CGT event yet)', () => {
+  assert.strictEqual(E.routeRegimes({ contractDate: '2026-08-01', dwellingType: 'established' }).cgt, 'OLD');
+});
+
 summary();
