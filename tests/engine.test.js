@@ -132,4 +132,75 @@ test('no sale date routes CGT to OLD (no CGT event yet)', () => {
   assert.strictEqual(E.routeRegimes({ contractDate: '2026-08-01', dwellingType: 'established' }).cgt, 'OLD');
 });
 
+// ── Old-regime CGT, spec-correct (T1) ────────────────────────────────────
+console.log('\ncalcOldRegimeCGT');
+
+test('T1: selling costs in cost base, Div 43 reduces it, 50% discount', () => {
+  const r = E.calcOldRegimeCGT({
+    salePrice: 660000, sellingCosts: 14000, acquisitionCosts: 520000,
+    div43Claimed: 10000, marginalRate: 0.39,
+  });
+  approxEqual(r.costBase, 524000, 0.001);
+  approxEqual(r.grossGain, 136000, 0.001);
+  approxEqual(r.taxableGain, 68000, 0.001);
+  approxEqual(r.tax, 26520, 0.001);
+});
+
+test('no gain, no tax', () => {
+  const r = E.calcOldRegimeCGT({
+    salePrice: 500000, sellingCosts: 10000, acquisitionCosts: 600000, marginalRate: 0.39,
+  });
+  assert.strictEqual(r.tax, 0);
+});
+
+test('held under 12 months: no discount', () => {
+  const r = E.calcOldRegimeCGT({
+    salePrice: 660000, sellingCosts: 14000, acquisitionCosts: 520000,
+    div43Claimed: 10000, marginalRate: 0.39, heldOver12Months: false,
+  });
+  approxEqual(r.taxableGain, 136000, 0.001);
+  approxEqual(r.tax, 53040, 0.001);
+});
+
+test('affordable housing 60% discount via discountPct', () => {
+  const r = E.calcOldRegimeCGT({
+    salePrice: 950000, sellingCosts: 20000, acquisitionCosts: 700000,
+    marginalRate: 0.39, discountPct: 0.6,
+  });
+  approxEqual(r.taxableGain, 92000, 0.001);
+  approxEqual(r.tax, 35880, 0.001);
+});
+
+test('quarantine pool offsets gross gain; excess is stranded (spec §4.5)', () => {
+  const r = E.calcOldRegimeCGT({
+    salePrice: 720000, sellingCosts: 0, acquisitionCosts: 700000,
+    marginalRate: 0.39, quarantinePool: 49000,
+  });
+  approxEqual(r.poolUsed, 20000, 0.001);
+  approxEqual(r.strandedPool, 29000, 0.001);
+  assert.strictEqual(r.tax, 0);
+  // anti-double-benefit (spec §4.4): pool must never enter the cost base
+  approxEqual(r.costBase, 700000, 0.001);
+});
+
+// ── Deemed-value interpolation (spec §5.4) ───────────────────────────────
+console.log('\ninterpolateDeemedValue');
+
+test('linear interpolation by days between purchase and sale', () => {
+  // 2020-07-01 → 2027-06-30 is 2555 days; → 2029-07-01 is 3287 days.
+  const v = E.interpolateDeemedValue({
+    purchasePrice: 600000, purchaseDate: '2020-07-01',
+    salePrice: 900000, saleDate: '2029-07-01',
+  });
+  approxEqual(v, 600000 + 300000 * (2555 / 3287), 0.01);
+});
+
+test('clamps to sale price when purchase is after the deemed date', () => {
+  const v = E.interpolateDeemedValue({
+    purchasePrice: 700000, purchaseDate: '2028-01-01',
+    salePrice: 900000, saleDate: '2030-01-01',
+  });
+  assert.strictEqual(v, 700000);
+});
+
 summary();

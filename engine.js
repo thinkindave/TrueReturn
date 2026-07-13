@@ -183,6 +183,59 @@ function routeRegimes({ contractDate, dwellingType, saleDate }) {
   return { ng, cgt };
 }
 
+// ── Offsets ordering (spec §5.7 + §4.5) ──────────────────────────────────
+// Capital losses, then the quarantine pool, applied against gross gains —
+// pre/discount component first, then post/indexed component. Losses and
+// pool never offset a component that is already a loss.
+function applyOffsets({ preGross, postGross, capitalLosses = 0, quarantinePool = 0 }) {
+  let pre = preGross, post = postGross;
+  let lossesUsed = 0, poolUsed = 0;
+  for (const kind of ['losses', 'pool']) {
+    let avail = kind === 'losses' ? capitalLosses : quarantinePool;
+    const usePre = Math.min(Math.max(pre, 0), avail);
+    pre -= usePre; avail -= usePre;
+    const usePost = Math.min(Math.max(post, 0), avail);
+    post -= usePost; avail -= usePost;
+    if (kind === 'losses') lossesUsed = capitalLosses - avail;
+    else poolUsed = quarantinePool - avail;
+  }
+  return {
+    preAfter: pre, postAfter: post, lossesUsed, poolUsed,
+    strandedPool: quarantinePool - poolUsed,
+    capitalLossesRemaining: capitalLosses - lossesUsed,
+  };
+}
+
+// ── Old-regime CGT, spec-correct (spec §5.2 / §6 / T1) ───────────────────
+// Unlike legacySaleOutcome, selling costs are a cost-base element (element
+// 2) and only Div 43 capital works reduce the cost base. Used for pre-2027
+// sales, the BEST_OF Option A path, and the dual-era pre-component's rules.
+function calcOldRegimeCGT({ salePrice, sellingCosts, acquisitionCosts,
+                            div43Claimed = 0, capitalLosses = 0, quarantinePool = 0,
+                            marginalRate, heldOver12Months = true, discountPct = 0.5 }) {
+  const costBase = acquisitionCosts + sellingCosts - div43Claimed;
+  const grossGain = salePrice - costBase;
+  const o = applyOffsets({ preGross: grossGain, postGross: 0, capitalLosses, quarantinePool });
+  const gainAfterOffsets = Math.max(0, o.preAfter);
+  const taxableGain = heldOver12Months ? gainAfterOffsets * (1 - discountPct) : gainAfterOffsets;
+  return {
+    costBase, grossGain, gainAfterOffsets, taxableGain,
+    tax: taxableGain * marginalRate,
+    poolUsed: o.poolUsed, strandedPool: o.strandedPool,
+    capitalLossesRemaining: o.capitalLossesRemaining,
+  };
+}
+
+// ── Deemed-value default (spec §5.4) ─────────────────────────────────────
+// Linear time interpolation between purchase price and sale price. Flagged
+// as estimate-sensitive by callers; users can override with a real value.
+function interpolateDeemedValue({ purchasePrice, purchaseDate, salePrice, saleDate }) {
+  const total = daysBetween(purchaseDate, saleDate);
+  const toDeemed = daysBetween(purchaseDate, DEEMED_DATE_ISO);
+  if (total <= 0 || toDeemed <= 0) return purchasePrice;
+  return purchasePrice + (salePrice - purchasePrice) * Math.min(1, toDeemed / total);
+}
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -191,5 +244,6 @@ if (typeof module !== 'undefined' && module.exports) {
     BUDGET_NIGHT_ISO, BOUNDARY_ISO, DEEMED_DATE_ISO,
     daysBetween, yearFrac, cpiFactor, fyStartYear,
     routeRegimes,
+    applyOffsets, calcOldRegimeCGT, interpolateDeemedValue,
   };
 }
