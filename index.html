@@ -4589,14 +4589,11 @@
 
         // Cash Out Position
         const salePrice = futureValue;
-        const salesCosts = salePrice * 0.03;
-        const netProceeds = salePrice - salesCosts - remainingLoan;
-        const cumulativeDepr = annualDepreciation * years;
-        const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST - cumulativeDepr);
-        const capitalGain = salePrice - costBase;
-        const discountedGain = capitalGain > 0 ? capitalGain * 0.50 : 0;
-        const cgt = discountedGain > 0 ? discountedGain * marginalTaxRate : 0;
-        const trueCashReturn = netProceeds - cgt;
+        const { salesCosts, netProceeds, cgt, trueCashReturn } = legacySaleOutcome({
+          purchasePrice, stampDuty, conveyancing, buildingPest: BUILDING_PEST,
+          cumulativeDepr: annualDepreciation * years,
+          futureValue, remainingLoan, marginalTaxRate,
+        });
 
         document.getElementById(`${prefix}Sale`).textContent = formatCurrency(salePrice);
         document.getElementById(`${prefix}SaleCosts`).textContent = formatCurrency(salesCosts);
@@ -4804,13 +4801,11 @@
         : (ev('marginalTaxRate') || 0.37);
       const annualDepreciation = (window.TrueReturn && window.TrueReturn.annualDepreciation) || 0;
       const futureValue = purchasePrice * Math.pow(1 + growthRate, years);
-      const salesCosts = futureValue * 0.03;
-      const netProceeds = futureValue - salesCosts - remainingLoan;
-      const cumulativeDepr = annualDepreciation * years;
-      const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST - cumulativeDepr);
-      const capitalGain = futureValue - costBase;
-      const cgt = capitalGain > 0 ? capitalGain * 0.5 * marginalTaxRate : 0;
-      const trueCashReturn = netProceeds - cgt;
+      const { trueCashReturn } = legacySaleOutcome({
+        purchasePrice, stampDuty, conveyancing, buildingPest: BUILDING_PEST,
+        cumulativeDepr: annualDepreciation * years,
+        futureValue, remainingLoan, marginalTaxRate,
+      });
 
       let cumulativeCashFlow = 0;
       for (let y = 1; y <= years; y++) {
@@ -4913,18 +4908,14 @@
           let annualisedReturn = null;
           let totalProfit = 0;
           if (y > 0 && totalUpfront > 0) {
-            const salePrice = futureValue;
-            const salesCosts = salePrice * 0.03;
-            const netProceeds = salePrice - salesCosts - remainingLoan;
-            const cumulativeDepr = annDepr * y;
             const mtr = document.body.dataset.mode === 'simple'
               ? parseFloat(SIMPLE_MODE_TAX)
               : (ev('marginalTaxRate') || 0.37);
-            const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST - cumulativeDepr);
-            const capitalGain = salePrice - costBase;
-            const discountedGain = capitalGain > 0 ? capitalGain * 0.50 : 0;
-            const cgt = discountedGain > 0 ? discountedGain * mtr : 0;
-            const trueCashReturn = netProceeds - cgt;
+            const { trueCashReturn } = legacySaleOutcome({
+              purchasePrice, stampDuty, conveyancing, buildingPest: BUILDING_PEST,
+              cumulativeDepr: annDepr * y,
+              futureValue, remainingLoan, marginalTaxRate: mtr,
+            });
             totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow;
             const returnBase = 1 + totalProfit / totalUpfront;
             annualisedReturn = returnBase > 0 ? (Math.pow(returnBase, 1 / y) - 1) * 100 : null;

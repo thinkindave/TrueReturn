@@ -109,10 +109,27 @@
       return buildingValue * 0.0075;
     }
 
+// ── Legacy sale outcome ──────────────────────────────────────────────────
+// Bit-identical consolidation of the three inline CGT blocks that lived in
+// index.html (projections, calcScenarioProfit, compare table). Preserves
+// current live behaviour, including selling costs NOT being in the cost
+// base. Spec-correct old-regime law lives in calcOldRegimeCGT.
+function legacySaleOutcome({ purchasePrice, stampDuty, conveyancing,
+                             buildingPest, cumulativeDepr, futureValue,
+                             remainingLoan, marginalTaxRate }) {
+  const salesCosts = futureValue * 0.03;
+  const netProceeds = futureValue - salesCosts - remainingLoan;
+  const costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + buildingPest - cumulativeDepr);
+  const capitalGain = futureValue - costBase;
+  const cgt = capitalGain > 0 ? capitalGain * 0.5 * marginalTaxRate : 0;
+  return { salesCosts, netProceeds, costBase, capitalGain, cgt,
+           trueCashReturn: netProceeds - cgt };
+}
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     stateDefaults, BUILDING_PEST, LOAN_ESTABLISHMENT,
-    formatCurrency, calcStampDuty, calcDepreciation,
+    formatCurrency, calcStampDuty, calcDepreciation, legacySaleOutcome,
   };
 }
