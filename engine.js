@@ -126,10 +126,51 @@ function legacySaleOutcome({ purchasePrice, stampDuty, conveyancing,
            trueCashReturn: netProceeds - cgt };
 }
 
+// ── 2026–27 reform: date & indexation helpers ───────────────────────────
+// Dates are ISO 'YYYY-MM-DD' strings throughout (lexicographic comparison
+// is chronologically correct for that format).
+// Budget night is 7:30pm AEST 12 May 2026; inputs are date-only, so a
+// contract dated exactly 2026-05-12 is treated as grandfathered (the UI
+// surfaces the straddle/evening caveat).
+const BUDGET_NIGHT_ISO = '2026-05-12';
+const BOUNDARY_ISO = '2027-07-01';
+const DEEMED_DATE_ISO = '2027-06-30';
+
+function isoToUTC(iso) { return new Date(iso + 'T00:00:00Z'); }
+
+function daysBetween(isoFrom, isoTo) {
+  return Math.round((isoToUTC(isoTo) - isoToUTC(isoFrom)) / 86400000);
+}
+
+// Anniversary-aware year fraction: whole years between anniversaries plus
+// remaining days / 365.25, so exact anniversaries give exact integers
+// (spec T2 requires indexation of exactly 1.025^2 for a 2-year hold).
+function yearFrac(isoFrom, isoTo) {
+  const from = isoToUTC(isoFrom), to = isoToUTC(isoTo);
+  if (to <= from) return 0;
+  let years = to.getUTCFullYear() - from.getUTCFullYear();
+  let anniv = new Date(Date.UTC(from.getUTCFullYear() + years, from.getUTCMonth(), from.getUTCDate()));
+  if (anniv > to) {
+    years -= 1;
+    anniv = new Date(Date.UTC(from.getUTCFullYear() + years, from.getUTCMonth(), from.getUTCDate()));
+  }
+  return years + (to - anniv) / 86400000 / 365.25;
+}
+
+function cpiFactor(rate, years) { return Math.pow(1 + rate, years); }
+
+// AU income year: 1 July–30 June. Returns the calendar year the FY starts in.
+function fyStartYear(iso) {
+  const d = isoToUTC(iso);
+  return d.getUTCMonth() >= 6 ? d.getUTCFullYear() : d.getUTCFullYear() - 1;
+}
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     stateDefaults, BUILDING_PEST, LOAN_ESTABLISHMENT,
     formatCurrency, calcStampDuty, calcDepreciation, legacySaleOutcome,
+    BUDGET_NIGHT_ISO, BOUNDARY_ISO, DEEMED_DATE_ISO,
+    daysBetween, yearFrac, cpiFactor, fyStartYear,
   };
 }

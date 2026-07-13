@@ -50,4 +50,39 @@ test('G3: St Leonards scenario (spec §6) under current engine math', () => {
   approxEqual(r.trueCashReturn, 200110.68);
 });
 
+// ── Date & indexation helpers ────────────────────────────────────────────
+console.log('\ndate & indexation helpers');
+
+test('daysBetween counts calendar days', () => {
+  assert.strictEqual(E.daysBetween('2027-01-01', '2027-06-01'), 151);
+});
+
+test('yearFrac is exact on anniversaries', () => {
+  assert.strictEqual(E.yearFrac('2027-07-01', '2029-07-01'), 2);
+});
+
+test('yearFrac: whole years plus remainder days/365.25', () => {
+  approxEqual(E.yearFrac('2027-07-01', '2031-08-01'), 4 + 31 / 365.25, 1e-9);
+  approxEqual(E.yearFrac('2027-07-01', '2032-10-01'), 5 + 92 / 365.25, 1e-9);
+});
+
+test('yearFrac is 0 for reversed or equal dates', () => {
+  assert.strictEqual(E.yearFrac('2029-07-01', '2027-07-01'), 0);
+});
+
+test('cpiFactor compounds', () => {
+  approxEqual(E.cpiFactor(0.025, 2), 1.050625, 1e-9);
+});
+
+test('fyStartYear maps dates to AU income years', () => {
+  assert.strictEqual(E.fyStartYear('2027-06-30'), 2026);
+  assert.strictEqual(E.fyStartYear('2027-07-01'), 2027);
+});
+
+test('reform boundary constants', () => {
+  assert.strictEqual(E.BUDGET_NIGHT_ISO, '2026-05-12');
+  assert.strictEqual(E.BOUNDARY_ISO, '2027-07-01');
+  assert.strictEqual(E.DEEMED_DATE_ISO, '2027-06-30');
+});
+
 summary();
