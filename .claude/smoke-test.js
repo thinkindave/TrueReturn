@@ -72,17 +72,28 @@ requiredFields.forEach(f => {
 });
 if (!fieldsFailed) ok('All required data-field attributes present (' + requiredFields.length + ')');
 
-// 5. Script execution order: stateDefaults before initPropertySelection()
-const sdIdx = html.indexOf('const stateDefaults');
+// 5. Script execution order: engine.js (which declares stateDefaults) loaded
+//    before the inline app script, and before initPropertySelection() runs.
+const ENGINE_PATH = path.join(__dirname, '../engine.js');
+const engineJs = fs.readFileSync(ENGINE_PATH, 'utf8');
+const engineTagMatches = html.match(/<script src="engine\.js"><\/script>/g);
+const engineTagIdx = html.indexOf('<script src="engine.js"></script>');
+const appScriptIdx = html.indexOf('window.TrueReturn');
 const initIdx = html.indexOf('initPropertySelection();');
-if (sdIdx === -1) {
-  fail('stateDefaults not found');
+if (!engineJs.includes('const stateDefaults')) {
+  fail('stateDefaults not found in engine.js');
+} else if (!engineTagMatches || engineTagMatches.length !== 1) {
+  fail('index.html must contain exactly one <script src="engine.js"></script> tag, found ' + (engineTagMatches ? engineTagMatches.length : 0));
+} else if (appScriptIdx === -1) {
+  fail('window.TrueReturn not found in index.html');
+} else if (engineTagIdx >= appScriptIdx) {
+  fail('CRITICAL: engine.js <script> tag must appear before the inline app script');
 } else if (initIdx === -1) {
   fail('initPropertySelection() call not found');
-} else if (initIdx < sdIdx) {
-  fail('CRITICAL: initPropertySelection() called before stateDefaults is defined');
+} else if (initIdx < engineTagIdx) {
+  fail('CRITICAL: initPropertySelection() called before engine.js is loaded');
 } else {
-  ok('Script execution order correct');
+  ok('Script execution order correct (engine.js before app script)');
 }
 
 // 6. No inline event handlers
