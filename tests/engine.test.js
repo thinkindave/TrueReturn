@@ -444,4 +444,88 @@ test('affordable housing uses the 60% discount in Option A', () => {
   assert.strictEqual(r.winner, 'A');
 });
 
+// ── Comparison mode (spec §7, T6) ────────────────────────────────────────
+console.log('\ncompareSaleTiming');
+
+const t6Inputs = {
+  contractDate: '2020-07-01', dwellingType: 'established',
+  acquisitionCosts: 600000,
+  valuationDate: '2027-01-01', currentValueEstimate: 780000,
+  growthAssumption: 0.04, marginalRate: 0.39, sellingCostsPct: 0.02,
+  annualNetRental: -8000, loanBalance: 0, cpiRate: 0.025,
+  saleDate1: '2027-06-01', saleDate2: '2030-06-01',
+};
+
+test('T6a: scenario 1 uses the old regime on the whole gain', () => {
+  const r = E.compareSaleTiming(t6Inputs);
+  assert.strictEqual(r.scenario1.cgtRegime, 'OLD');
+  approxEqual(r.scenario1.salePrice, 792750.35, 5);
+  approxEqual(r.scenario1.cgt, 34494.59, 5);
+  approxEqual(r.scenario1.totalWealth, 740383, 60);
+});
+
+test('T6b: scenario 2 splits at the deemed value; post taxed at max(39%,30%)', () => {
+  const r = E.compareSaleTiming(t6Inputs);
+  assert.strictEqual(r.scenario2.cgtRegime, 'DUAL_ERA');
+  approxEqual(r.scenario2.salePrice, 891734.4, 5);
+  approxEqual(r.scenario2.deemedValue, 795222.9, 5);
+  assert.strictEqual(r.scenario2.detail.minTaxBound, false);   // 39% > 30%
+  approxEqual(r.scenario2.cgt, 45589.9, 10);
+  approxEqual(r.scenario2.totalWealth, 811652, 60);
+});
+
+test('T6c: a breakeven growth rate exists and is reported', () => {
+  const r = E.compareSaleTiming(t6Inputs);
+  assert.ok(r.breakevenGrowth !== null);
+  assert.ok(r.breakevenGrowth > 0 && r.breakevenGrowth < 0.04,
+    `breakeven ${r.breakevenGrowth} should sit below the 4% assumption`);
+  // at the breakeven rate the two scenarios' wealth converges
+  const at = E.compareSaleTiming({ ...t6Inputs, growthAssumption: r.breakevenGrowth });
+  approxEqual(at.scenario1.totalWealth, at.scenario2.totalWealth, 50);
+});
+
+test('T6d: grandfathered NG keeps refunding in both scenarios', () => {
+  const r = E.compareSaleTiming(t6Inputs);
+  assert.ok(r.scenario1.holding.ngRefunds > 0);
+  assert.ok(r.scenario2.holding.ngRefunds > 0);
+  assert.strictEqual(r.scenario2.holding.poolAtSale, 0);
+});
+
+test('tax delta isolates the regime change at constant growth', () => {
+  const r = E.compareSaleTiming(t6Inputs);
+  approxEqual(r.taxDelta, -7820.5, 30);   // dual-era minus old-law on the SAME sale
+});
+
+test('sensitivity: ±10% deemed value moves scenario 2, higher deemed → higher wealth', () => {
+  const r = E.compareSaleTiming(t6Inputs);
+  assert.ok(r.sensitivity.high.totalWealth > r.sensitivity.low.totalWealth);
+  assert.ok(r.sensitivity.low.totalWealth < r.scenario2.totalWealth);
+});
+
+test('quarantined property: pool accrues in scenario 2 and hits the gain at sale', () => {
+  const r = E.compareSaleTiming({
+    ...t6Inputs, contractDate: '2026-08-01',
+  });
+  // Only the FY2026-27 slice (1 Jan → 30 Jun 2027, 181 days) still refunds;
+  // every income year starting on/after 1 July 2027 quarantines instead.
+  approxEqual(r.scenario2.holding.ngRefunds, 8000 * (181 / 365.25) * 0.39, 5);
+  assert.ok(r.scenario2.holding.poolAtSale > 0);
+  assert.ok(r.scenario2.detail.poolUsed + r.scenario2.detail.strandedPool
+            === r.scenario2.holding.poolAtSale);
+});
+
+test('framing flags are attached (never-sell rule, spec §7)', () => {
+  const r = E.compareSaleTiming(t6Inputs);
+  assert.strictEqual(r.flags.taxComponentOnly, true);
+  assert.strictEqual(r.scenario2.flags.deemedValueIsEstimate, true);
+});
+
+test('no breakeven in range reports null, not a nonsense number', () => {
+  // A $300k/yr rental loss over the 3 extra holding years (~-$549k after
+  // NG relief) dwarfs any extra growth achievable at ≤15% p.a. (~+$430k
+  // gross at the 15% cap), so selling early wins at every rate in range.
+  const r = E.compareSaleTiming({ ...t6Inputs, annualNetRental: -300000 });
+  assert.strictEqual(r.breakevenGrowth, null);
+});
+
 summary();

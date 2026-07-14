@@ -379,6 +379,133 @@ function calcNewBuildOptimizer({ acquisitionCosts, salePrice, saleDate,
   };
 }
 
+// ── Sale-timing comparison (spec §7 — HERO FEATURE) ──────────────────────
+// Runs the same holding under a pre-boundary and a post-boundary sale and
+// returns both after-tax outcomes, the regime-only tax delta, the breakeven
+// growth rate, and ±10% deemed-value sensitivity. Outputs model the TAX
+// COMPONENT of a sale-timing decision only (flags.taxComponentOnly) — the
+// engine must never emit "you should sell" semantics; that constraint is
+// enforced in UI copy but flagged from here.
+function runSaleScenario(inputs, saleDate, deemedValueOverride) {
+  const { contractDate, dwellingType, acquisitionCosts, valuationDate,
+          currentValueEstimate, growthAssumption, marginalRate,
+          sellingCostsPct, annualNetRental, loanBalance, cpiRate,
+          capitalLosses = 0, div43Claimed = 0 } = inputs;
+
+  const route = routeRegimes({ contractDate, dwellingType, saleDate });
+  const growthYears = yearFrac(valuationDate, saleDate);
+  const salePrice = currentValueEstimate * Math.pow(1 + growthAssumption, growthYears);
+  const sellingCosts = salePrice * sellingCostsPct;
+
+  // Holding cash flows valuation → sale, with NG treatment per routing.
+  const annualResults = proRateAnnualResults(valuationDate, saleDate, annualNetRental);
+  const sched = buildQuarantineSchedule({ annualResults, ngRegime: route.ng, marginalRate });
+  const preTaxCashflow = annualResults.reduce((s, r) => s + r.netResult, 0);
+  const holding = {
+    preTaxCashflow,
+    ngRefunds: sched.totalRefunds,
+    taxOnProfits: sched.totalTaxOnProfit,
+    poolAtSale: sched.poolAtSale,
+    netCashflow: preTaxCashflow + sched.totalRefunds - sched.totalTaxOnProfit,
+  };
+
+  // CGT per regime. Comparison mode projects the deemed value with the same
+  // growth assumption that drives the sale price (consistent model), rather
+  // than §5.4's purchase↔sale linear interpolation (used when only purchase
+  // and sale prices are known).
+  let cgt, detail, deemedValue = null, flags = {};
+  if (route.cgt === 'OLD') {
+    detail = calcOldRegimeCGT({
+      salePrice, sellingCosts, acquisitionCosts, div43Claimed,
+      capitalLosses, quarantinePool: sched.poolAtSale, marginalRate,
+    });
+    cgt = detail.tax;
+  } else {
+    deemedValue = deemedValueOverride !== undefined
+      ? deemedValueOverride
+      : currentValueEstimate * Math.pow(1 + growthAssumption, yearFrac(valuationDate, DEEMED_DATE_ISO));
+    flags.deemedValueIsEstimate = deemedValueOverride === undefined;
+    const dual = calcDualEraCGT({
+      deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre: div43Claimed,
+      salePrice, saleDate, sellingCosts, cpiRate, marginalRate,
+      capitalLosses, quarantinePool: sched.poolAtSale,
+      deemedValueIsEstimate: flags.deemedValueIsEstimate === true,
+    });
+    if (route.cgt === 'BEST_OF') {
+      const opt = calcNewBuildOptimizer({
+        acquisitionCosts, salePrice, saleDate, sellingCosts, deemedValue,
+        div43ClaimedPre: div43Claimed, cpiRate, marginalRate,
+        capitalLosses, quarantinePool: sched.poolAtSale,
+        discountPct: dwellingType === 'affordableHousing' ? 0.6 : 0.5,
+      });
+      detail = opt;
+      cgt = opt.winner === 'A' ? opt.optionA.tax : opt.optionB.totalCGT;
+      flags.newBuildDefinitionPending = true;
+    } else {
+      detail = dual;
+      cgt = dual.totalCGT;
+    }
+  }
+
+  const netProceeds = salePrice - sellingCosts - cgt - loanBalance;
+  return {
+    saleDate, cgtRegime: route.cgt, ngRegime: route.ng,
+    salePrice, sellingCosts, cgt, deemedValue, detail, holding,
+    netProceeds,
+    totalWealth: netProceeds + holding.netCashflow,
+    flags,
+  };
+}
+
+function compareSaleTiming(inputs) {
+  const s1 = runSaleScenario(inputs, inputs.saleDate1);
+  const s2 = runSaleScenario(inputs, inputs.saleDate2);
+
+  // Regime-only tax delta: scenario 2's sale re-priced under old law,
+  // holding growth constant (spec §7 output 2).
+  const s2OldLaw = calcOldRegimeCGT({
+    salePrice: s2.salePrice, sellingCosts: s2.sellingCosts,
+    acquisitionCosts: inputs.acquisitionCosts,
+    div43Claimed: inputs.div43Claimed || 0,
+    capitalLosses: inputs.capitalLosses || 0,
+    quarantinePool: s2.holding.poolAtSale,
+    marginalRate: inputs.marginalRate,
+  });
+  const taxDelta = s2.cgt - s2OldLaw.tax;
+
+  // Breakeven growth (spec §7 output 3): rate where holding past the
+  // boundary equals selling before it, on total wealth. Bisection over
+  // 0–15%; null when no crossing exists in range.
+  const wealthGap = g => {
+    const t = { ...inputs, growthAssumption: g };
+    return runSaleScenario(t, inputs.saleDate2).totalWealth
+         - runSaleScenario(t, inputs.saleDate1).totalWealth;
+  };
+  let breakevenGrowth = null;
+  let lo = 0, hi = 0.15, fLo = wealthGap(lo), fHi = wealthGap(hi);
+  if (fLo === 0) breakevenGrowth = 0;
+  else if (fLo * fHi < 0) {
+    for (let i = 0; i < 60; i++) {
+      const mid = (lo + hi) / 2;
+      const fMid = wealthGap(mid);
+      if (fLo * fMid <= 0) { hi = mid; fHi = fMid; } else { lo = mid; fLo = fMid; }
+    }
+    breakevenGrowth = (lo + hi) / 2;
+  }
+
+  // Deemed-value sensitivity (spec §7 output 4): scenario 2 at ±10%.
+  const base = s2.deemedValue;
+  const sensitivity = base === null ? null : {
+    low: runSaleScenario(inputs, inputs.saleDate2, base * 0.9),
+    high: runSaleScenario(inputs, inputs.saleDate2, base * 1.1),
+  };
+
+  return {
+    scenario1: s1, scenario2: s2, taxDelta, breakevenGrowth, sensitivity,
+    flags: { taxComponentOnly: true },
+  };
+}
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -391,5 +518,6 @@ if (typeof module !== 'undefined' && module.exports) {
     calcDualEraCGT, calcTimeApportionedCGT,
     buildQuarantineSchedule, proRateAnnualResults,
     calcNewBuildOptimizer,
+    runSaleScenario, compareSaleTiming,
   };
 }
