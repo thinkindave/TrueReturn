@@ -281,6 +281,18 @@ test('pre-component Div 43 reduces old cost base (spec §5.2)', () => {
   approxEqual(r.preGross, 210000, 0.001);
 });
 
+test('§5.3: no CPI indexation when the reacquired asset is held under 12 months', () => {
+  // Sale 2027-12-01: only ~5 months after the 1 July 2027 deemed reacquisition.
+  const r = E.calcDualEraCGT({
+    deemedValue: 800000, oldCostBase: 600000,
+    salePrice: 830000, saleDate: '2027-12-01', sellingCosts: 10000,
+    cpiRate: 0.025, marginalRate: 0.39,
+  });
+  approxEqual(r.indexedCostBase, 810000, 0.001);   // 800000 + 10000, NO uplift
+  approxEqual(r.postGross, 20000, 0.001);
+  approxEqual(r.taxOnPost, 7800, 0.001);
+});
+
 // ── timeApportion placeholder (spec §5.5 — PENDING law) ──────────────────
 console.log('\ncalcTimeApportionedCGT');
 
@@ -444,6 +456,19 @@ test('affordable housing uses the 60% discount in Option A', () => {
   assert.strictEqual(r.winner, 'A');
 });
 
+test('low growth + high inflation: Option B (indexation) wins', () => {
+  // Sale price barely above cost; 5% CPI indexes the deemed base past the
+  // sale price so the post component is a loss, leaving only the small
+  // pre-component — cheaper than discounting the whole nominal gain.
+  const r = E.calcNewBuildOptimizer({
+    acquisitionCosts: 700000, salePrice: 800000, saleDate: '2032-10-01',
+    sellingCosts: 20000, deemedValue: 715000, cpiRate: 0.05, marginalRate: 0.39,
+  });
+  approxEqual(r.optionA.tax, 15600, 0.01);         // (800000−720000)×0.5×0.39
+  approxEqual(r.optionB.totalCGT, 2925, 0.01);     // pre 15000→7500→2925; post is a loss
+  assert.strictEqual(r.winner, 'B');
+});
+
 // ── Comparison mode (spec §7, T6) ────────────────────────────────────────
 console.log('\ncompareSaleTiming');
 
@@ -526,6 +551,18 @@ test('no breakeven in range reports null, not a nonsense number', () => {
   // gross at the 15% cap), so selling early wins at every rate in range.
   const r = E.compareSaleTiming({ ...t6Inputs, annualNetRental: -300000 });
   assert.strictEqual(r.breakevenGrowth, null);
+});
+
+// ── Disclaimers (spec §10) ───────────────────────────────────────────────
+console.log('\nDISCLAIMERS');
+
+test('engine exposes the §10 disclaimers for UI consumption', () => {
+  const keys = Object.keys(E.DISCLAIMERS);
+  for (const k of ['generalInfo', 'minTaxSimplified', 'newBuildPending',
+                   'deemedValueEstimate', 'apportionPending', 'cpiAssumption']) {
+    assert.ok(keys.includes(k), `missing disclaimer: ${k}`);
+    assert.ok(E.DISCLAIMERS[k].length > 20, `disclaimer ${k} too short to be real copy`);
+  }
 });
 
 summary();

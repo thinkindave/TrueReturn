@@ -253,9 +253,13 @@ function calcDualEraCGT({ deemedValue, oldCostBase, div43ClaimedPre = 0,
   const preGross = deemedValue - (oldCostBase - div43ClaimedPre);
 
   const yrs = yearFrac(BOUNDARY_ISO, saleDate);
-  const indexedElement1 = (deemedValue - div43ClaimedPost) * cpiFactor(cpiRate, yrs);
+  // §5.3: indexation requires the reacquired asset be held ≥ 12 months.
+  const indexationApplies = yrs >= 1;
+  const indexedElement1 = (deemedValue - div43ClaimedPost)
+    * (indexationApplies ? cpiFactor(cpiRate, yrs) : 1);
   const indexedExpenditure = postExpenditures.reduce((sum, e) =>
-    sum + e.amount * (e.indexable === false ? 1 : cpiFactor(cpiRate, yearFrac(e.date, saleDate))), 0);
+    sum + e.amount * (indexationApplies && e.indexable !== false
+      ? cpiFactor(cpiRate, yearFrac(e.date, saleDate)) : 1), 0);
   const indexedCostBase = indexedElement1 + indexedExpenditure + sellingCosts;
   const postGross = salePrice - indexedCostBase;
 
@@ -425,12 +429,6 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
       ? deemedValueOverride
       : currentValueEstimate * Math.pow(1 + growthAssumption, yearFrac(valuationDate, DEEMED_DATE_ISO));
     flags.deemedValueIsEstimate = deemedValueOverride === undefined;
-    const dual = calcDualEraCGT({
-      deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre: div43Claimed,
-      salePrice, saleDate, sellingCosts, cpiRate, marginalRate,
-      capitalLosses, quarantinePool: sched.poolAtSale,
-      deemedValueIsEstimate: flags.deemedValueIsEstimate === true,
-    });
     if (route.cgt === 'BEST_OF') {
       const opt = calcNewBuildOptimizer({
         acquisitionCosts, salePrice, saleDate, sellingCosts, deemedValue,
@@ -442,6 +440,12 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
       cgt = opt.winner === 'A' ? opt.optionA.tax : opt.optionB.totalCGT;
       flags.newBuildDefinitionPending = true;
     } else {
+      const dual = calcDualEraCGT({
+        deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre: div43Claimed,
+        salePrice, saleDate, sellingCosts, cpiRate, marginalRate,
+        capitalLosses, quarantinePool: sched.poolAtSale,
+        deemedValueIsEstimate: flags.deemedValueIsEstimate === true,
+      });
       detail = dual;
       cgt = dual.totalCGT;
     }
@@ -488,7 +492,7 @@ function compareSaleTiming(inputs) {
     for (let i = 0; i < 60; i++) {
       const mid = (lo + hi) / 2;
       const fMid = wealthGap(mid);
-      if (fLo * fMid <= 0) { hi = mid; fHi = fMid; } else { lo = mid; fLo = fMid; }
+      if (fLo * fMid <= 0) { hi = mid; } else { lo = mid; fLo = fMid; }
     }
     breakevenGrowth = (lo + hi) / 2;
   }
@@ -506,6 +510,16 @@ function compareSaleTiming(inputs) {
   };
 }
 
+// ── Required disclaimers (spec §10) — single source for Phase 2 UI ───────
+const DISCLAIMERS = {
+  generalInfo: 'General information only, not tax or financial advice. Models the Treasury Laws Amendment (Tax Reform No. 1) Act 2026.',
+  minTaxSimplified: 'Simplified minimum-tax calculation; interactions with your other income and deductions can change this.',
+  newBuildPending: 'The legal definition of a new residential dwelling is still pending a ministerial instrument.',
+  deemedValueEstimate: 'The 30 June 2027 value is an estimate; your actual outcome depends on the real market value at that date.',
+  apportionPending: 'The official apportioning method has not yet been legislated; the time-based split shown is a placeholder.',
+  cpiAssumption: 'Future cost-base indexation uses a projected CPI assumption, not actual CPI.',
+};
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -519,5 +533,6 @@ if (typeof module !== 'undefined' && module.exports) {
     buildQuarantineSchedule, proRateAnnualResults,
     calcNewBuildOptimizer,
     runSaleScenario, compareSaleTiming,
+    DISCLAIMERS,
   };
 }
