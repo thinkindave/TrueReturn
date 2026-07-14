@@ -296,4 +296,81 @@ test('whole-holding gain split by time; both eras taxed per their rules', () => 
   assert.strictEqual(r.flags.apportionMethodPending, true);
 });
 
+// ── Quarantine schedule (spec §4) ────────────────────────────────────────
+console.log('\nbuildQuarantineSchedule');
+
+const t3Years = [
+  { fyStartISO: '2026-07-01', netResult: -11000 },
+  { fyStartISO: '2027-07-01', netResult: -12000 },
+  { fyStartISO: '2028-07-01', netResult: -12000 },
+  { fyStartISO: '2029-07-01', netResult: -12000 },
+  { fyStartISO: '2030-07-01', netResult: -12000 },
+  { fyStartISO: '2031-07-01', netResult: -1000 },
+];
+
+test('T3 (NG side): FY2026-27 deductible, later losses pooled, no refunds', () => {
+  const r = E.buildQuarantineSchedule({
+    annualResults: t3Years, ngRegime: 'QUARANTINE_FROM_2027', marginalRate: 0.39,
+  });
+  approxEqual(r.rows[0].refund, 4290, 0.001);          // 11000 × 39%
+  assert.strictEqual(r.rows[0].quarantined, 0);
+  for (const row of r.rows.slice(1)) {
+    assert.strictEqual(row.refund, 0);
+  }
+  approxEqual(r.poolAtSale, 49000, 0.001);
+  approxEqual(r.totalRefunds, 4290, 0.001);
+});
+
+test('grandfathered: every loss refunds at MTR, pool stays empty', () => {
+  const r = E.buildQuarantineSchedule({
+    annualResults: t3Years, ngRegime: 'FULL', marginalRate: 0.39,
+  });
+  approxEqual(r.totalRefunds, 60000 * 0.39, 0.001);
+  assert.strictEqual(r.poolAtSale, 0);
+});
+
+test('rental profit years absorb the pool before being taxed (spec §4.3a)', () => {
+  const r = E.buildQuarantineSchedule({
+    annualResults: [
+      { fyStartISO: '2027-07-01', netResult: -12000 },
+      { fyStartISO: '2028-07-01', netResult: 5000 },
+    ],
+    ngRegime: 'QUARANTINE_FROM_2027', marginalRate: 0.39,
+  });
+  approxEqual(r.poolAtSale, 7000, 0.001);
+  assert.strictEqual(r.rows[1].taxOnProfit, 0);        // 5000 fully absorbed
+});
+
+test('profit beyond the pool is taxed normally', () => {
+  const r = E.buildQuarantineSchedule({
+    annualResults: [
+      { fyStartISO: '2027-07-01', netResult: -3000 },
+      { fyStartISO: '2028-07-01', netResult: 5000 },
+    ],
+    ngRegime: 'QUARANTINE_FROM_2027', marginalRate: 0.39,
+  });
+  assert.strictEqual(r.poolAtSale, 0);
+  approxEqual(r.rows[1].taxOnProfit, 2000 * 0.39, 0.001);
+});
+
+console.log('\nproRateAnnualResults');
+
+test('pro-rates a constant annual amount across income years by days', () => {
+  const rows = E.proRateAnnualResults('2027-01-01', '2027-06-01', -8000);
+  assert.strictEqual(rows.length, 1);
+  assert.strictEqual(rows[0].fyStartISO, '2026-07-01');
+  approxEqual(rows[0].netResult, -8000 * 151 / 365.25, 0.01);
+});
+
+test('spans multiple income years', () => {
+  const rows = E.proRateAnnualResults('2027-01-01', '2030-06-01', -8000);
+  assert.strictEqual(rows.length, 4);                   // FY26, 27, 28, 29
+  assert.strictEqual(rows[1].fyStartISO, '2027-07-01');
+  approxEqual(rows[1].netResult, -8000 * 366 / 365.25, 0.05);   // FY2027-28 incl. 29 Feb 2028
+  // Day-count pro-rating (1247/365.25 yrs) differs from the anniversary
+  // yearFrac (3.41342 yrs) by a few days' worth — allow that slack.
+  const total = rows.reduce((s, r) => s + r.netResult, 0);
+  approxEqual(total, -8000 * E.yearFrac('2027-01-01', '2030-06-01'), 10);
+});
+
 summary();

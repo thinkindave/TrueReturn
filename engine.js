@@ -301,6 +301,55 @@ function calcTimeApportionedCGT({ acquisitionCosts, salePrice, sellingCosts,
   };
 }
 
+// ── NG quarantine schedule (spec §4) ─────────────────────────────────────
+// Losses in income years starting on/after 1 July 2027 (when quarantine
+// applies) generate no refund and accrue to a nominal-dollar pool. Rental
+// profit years absorb the pool before being taxed (§4.3a). The pool is
+// consumed at sale via applyOffsets — never via the cost base (§4.4).
+function buildQuarantineSchedule({ annualResults, ngRegime, marginalRate }) {
+  let pool = 0, totalRefunds = 0, totalTaxOnProfit = 0;
+  const rows = annualResults.map(r => {
+    const inQuarantineEra = ngRegime === 'QUARANTINE_FROM_2027' && r.fyStartISO >= BOUNDARY_ISO;
+    let refund = 0, quarantined = 0, taxOnProfit = 0;
+    if (r.netResult < 0) {
+      if (inQuarantineEra) {
+        quarantined = -r.netResult;
+        pool += quarantined;
+      } else {
+        refund = -r.netResult * marginalRate;
+      }
+    } else if (r.netResult > 0) {
+      const absorbed = Math.min(pool, r.netResult);
+      pool -= absorbed;
+      taxOnProfit = (r.netResult - absorbed) * marginalRate;
+    }
+    totalRefunds += refund;
+    totalTaxOnProfit += taxOnProfit;
+    return { ...r, refund, quarantined, taxOnProfit };
+  });
+  return { rows, poolAtSale: pool, totalRefunds, totalTaxOnProfit };
+}
+
+// Splits a constant annual net rental amount across AU income years between
+// two dates, pro-rated by days (day count / 365.25 per year of amount).
+function proRateAnnualResults(isoFrom, isoTo, annualAmount) {
+  const rows = [];
+  let fy = fyStartYear(isoFrom);
+  const lastFy = fyStartYear(isoTo);
+  while (fy <= lastFy) {
+    const fyStart = fy + '-07-01';
+    const fyEnd = (fy + 1) + '-07-01';
+    const from = isoFrom > fyStart ? isoFrom : fyStart;
+    const to = isoTo < fyEnd ? isoTo : fyEnd;
+    const days = daysBetween(from, to);
+    if (days > 0) {
+      rows.push({ fyStartISO: fyStart, netResult: annualAmount * days / 365.25 });
+    }
+    fy += 1;
+  }
+  return rows;
+}
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -311,5 +360,6 @@ if (typeof module !== 'undefined' && module.exports) {
     routeRegimes,
     applyOffsets, calcOldRegimeCGT, interpolateDeemedValue,
     calcDualEraCGT, calcTimeApportionedCGT,
+    buildQuarantineSchedule, proRateAnnualResults,
   };
 }
