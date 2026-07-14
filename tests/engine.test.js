@@ -203,4 +203,97 @@ test('clamps to sale price when purchase is after the deemed date', () => {
   assert.strictEqual(v, 700000);
 });
 
+// ── applyOffsets ordering (spec §5.7 / §4.5) ─────────────────────────────
+console.log('\napplyOffsets');
+
+test('pool hits pre gross first, then post', () => {
+  const o = E.applyOffsets({ preGross: 10000, postGross: 46648, quarantinePool: 49000 });
+  approxEqual(o.preAfter, 0, 0.001);
+  approxEqual(o.postAfter, 7648, 0.001);
+  approxEqual(o.poolUsed, 49000, 0.001);
+  approxEqual(o.strandedPool, 0, 0.001);
+});
+
+test('pool never offsets a component in loss; excess strands', () => {
+  const o = E.applyOffsets({ preGross: 10000, postGross: -83352, quarantinePool: 49000 });
+  approxEqual(o.preAfter, 0, 0.001);
+  approxEqual(o.postAfter, -83352, 0.001);
+  approxEqual(o.poolUsed, 10000, 0.001);
+  approxEqual(o.strandedPool, 39000, 0.001);
+});
+
+test('capital losses apply before the pool, same pre-then-post order', () => {
+  const o = E.applyOffsets({ preGross: 100000, postGross: 50000, capitalLosses: 120000, quarantinePool: 10000 });
+  approxEqual(o.preAfter, 0, 0.001);
+  approxEqual(o.postAfter, 20000, 0.001);   // 120k losses: 100k pre + 20k post; pool: 10k post
+  approxEqual(o.lossesUsed, 120000, 0.001);
+  approxEqual(o.poolUsed, 10000, 0.001);
+});
+
+// ── Dual-era CGT (spec §5, T2/T2b) ───────────────────────────────────────
+console.log('\ncalcDualEraCGT');
+
+test('T2: grandfathered NG, dual-era CGT', () => {
+  const r = E.calcDualEraCGT({
+    deemedValue: 800000, oldCostBase: 600000,
+    salePrice: 900000, saleDate: '2029-07-01', sellingCosts: 20000,
+    cpiRate: 0.025, marginalRate: 0.39,
+  });
+  approxEqual(r.preGross, 200000, 0.001);
+  approxEqual(r.taxOnPre, 39000, 0.001);
+  approxEqual(r.indexedCostBase, 860500, 0.01);   // 800000×1.025² + 20000
+  approxEqual(r.postGross, 39500, 0.01);
+  approxEqual(r.taxOnPost, 15405, 0.01);
+  approxEqual(r.totalCGT, 54405, 0.01);
+  assert.strictEqual(r.minTaxBound, false);
+});
+
+test('T2b: 21% marginal rate — the 30% floor binds on the post-component', () => {
+  const r = E.calcDualEraCGT({
+    deemedValue: 800000, oldCostBase: 600000,
+    salePrice: 900000, saleDate: '2029-07-01', sellingCosts: 20000,
+    cpiRate: 0.025, marginalRate: 0.21,
+  });
+  approxEqual(r.taxOnPre, 21000, 0.001);
+  approxEqual(r.taxOnPost, 11850, 0.01);          // 39500 × 30%
+  assert.strictEqual(r.minTaxBound, true);
+});
+
+test('post-2027 expenditure indexed from date incurred; ownership costs never indexed', () => {
+  const r = E.calcDualEraCGT({
+    deemedValue: 800000, oldCostBase: 600000,
+    salePrice: 900000, saleDate: '2029-07-01', sellingCosts: 20000,
+    cpiRate: 0.025, marginalRate: 0.39,
+    postExpenditures: [
+      { amount: 10000, date: '2028-07-01' },                  // indexed 1 yr
+      { amount: 5000, date: '2028-07-01', indexable: false }, // element 3
+    ],
+  });
+  approxEqual(r.indexedCostBase, 860500 + 10000 * 1.025 + 5000, 0.01);
+});
+
+test('pre-component Div 43 reduces old cost base (spec §5.2)', () => {
+  const r = E.calcDualEraCGT({
+    deemedValue: 800000, oldCostBase: 600000, div43ClaimedPre: 10000,
+    salePrice: 900000, saleDate: '2029-07-01', sellingCosts: 20000,
+    cpiRate: 0.025, marginalRate: 0.39,
+  });
+  approxEqual(r.preGross, 210000, 0.001);
+});
+
+// ── timeApportion placeholder (spec §5.5 — PENDING law) ──────────────────
+console.log('\ncalcTimeApportionedCGT');
+
+test('whole-holding gain split by time; both eras taxed per their rules', () => {
+  // 2020-07-01 → 2029-07-01 = 9 yrs; 7 pre-boundary, 2 post.
+  const r = E.calcTimeApportionedCGT({
+    acquisitionCosts: 600000, salePrice: 900000, sellingCosts: 20000,
+    purchaseDate: '2020-07-01', saleDate: '2029-07-01', marginalRate: 0.39,
+  });
+  approxEqual(r.preShareGain, 280000 * 7 / 9, 0.01);
+  approxEqual(r.taxOnPre, (280000 * 7 / 9) * 0.5 * 0.39, 0.01);
+  approxEqual(r.taxOnPost, (280000 * 2 / 9) * 0.39, 0.01);
+  assert.strictEqual(r.flags.apportionMethodPending, true);
+});
+
 summary();

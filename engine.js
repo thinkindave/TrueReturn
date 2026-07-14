@@ -236,6 +236,71 @@ function interpolateDeemedValue({ purchasePrice, purchaseDate, salePrice, saleDa
   return purchasePrice + (salePrice - purchasePrice) * Math.min(1, toDeemed / total);
 }
 
+// ── Dual-era CGT (spec §5) ───────────────────────────────────────────────
+// Pre-component: old law on the deemed 30 June 2027 value (50% discount).
+// Post-component: CPI-indexed cost base from the deemed value, taxed at
+// max(marginalRate, minTaxFloor) — the §5.6 simplification of the statutory
+// minimum-tax gap calc. minTaxFloor excludes Medicare levy by default
+// (unsettled in guidance; configurable). Div 43 claimed post-1 July 2027
+// reduces element 1 before indexation (flagged ASSUMPTION in spec §5.3).
+function calcDualEraCGT({ deemedValue, oldCostBase, div43ClaimedPre = 0,
+                          salePrice, saleDate, sellingCosts,
+                          postExpenditures = [], div43ClaimedPost = 0,
+                          cpiRate = 0.025, marginalRate,
+                          capitalLosses = 0, quarantinePool = 0,
+                          minTaxFloor = 0.30, heldOver12MonthsAt2027 = true,
+                          discountPct = 0.5, deemedValueIsEstimate = false }) {
+  const preGross = deemedValue - (oldCostBase - div43ClaimedPre);
+
+  const yrs = yearFrac(BOUNDARY_ISO, saleDate);
+  const indexedElement1 = (deemedValue - div43ClaimedPost) * cpiFactor(cpiRate, yrs);
+  const indexedExpenditure = postExpenditures.reduce((sum, e) =>
+    sum + e.amount * (e.indexable === false ? 1 : cpiFactor(cpiRate, yearFrac(e.date, saleDate))), 0);
+  const indexedCostBase = indexedElement1 + indexedExpenditure + sellingCosts;
+  const postGross = salePrice - indexedCostBase;
+
+  const o = applyOffsets({ preGross, postGross, capitalLosses, quarantinePool });
+
+  const taxablePre = heldOver12MonthsAt2027
+    ? Math.max(0, o.preAfter) * (1 - discountPct)
+    : Math.max(0, o.preAfter);
+  const taxOnPre = taxablePre * marginalRate;
+  const postRate = Math.max(marginalRate, minTaxFloor);
+  const taxOnPost = Math.max(0, o.postAfter) * postRate;
+
+  return {
+    preGross, preAfterOffsets: o.preAfter, taxablePre, taxOnPre,
+    indexedCostBase, postGross, postAfterOffsets: o.postAfter,
+    taxOnPost, totalCGT: taxOnPre + taxOnPost,
+    minTaxBound: minTaxFloor > marginalRate && Math.max(0, o.postAfter) > 0,
+    poolUsed: o.poolUsed, strandedPool: o.strandedPool,
+    capitalLossesRemaining: o.capitalLossesRemaining,
+    flags: { deemedValueIsEstimate, minTaxSimplified: true },
+  };
+}
+
+// ── Time-apportionment alternative (spec §5.5 — method NOT yet legislated).
+// Straight time-based split of the whole-of-holding gain, behind a flag.
+// Placeholder only until the ministerial instrument is made.
+function calcTimeApportionedCGT({ acquisitionCosts, salePrice, sellingCosts,
+                                  purchaseDate, saleDate, div43Claimed = 0,
+                                  marginalRate, minTaxFloor = 0.30, discountPct = 0.5 }) {
+  const costBase = acquisitionCosts + sellingCosts - div43Claimed;
+  const wholeGain = salePrice - costBase;
+  const totalYears = yearFrac(purchaseDate, saleDate);
+  const preYears = Math.min(yearFrac(purchaseDate, BOUNDARY_ISO), totalYears);
+  const preShare = totalYears > 0 ? preYears / totalYears : 1;
+  const preShareGain = wholeGain * preShare;
+  const postShareGain = wholeGain - preShareGain;
+  const taxOnPre = Math.max(0, preShareGain) * (1 - discountPct) * marginalRate;
+  const taxOnPost = Math.max(0, postShareGain) * Math.max(marginalRate, minTaxFloor);
+  return {
+    wholeGain, preShareGain, postShareGain, taxOnPre, taxOnPost,
+    totalCGT: taxOnPre + taxOnPost,
+    flags: { apportionMethodPending: true },
+  };
+}
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -245,5 +310,6 @@ if (typeof module !== 'undefined' && module.exports) {
     daysBetween, yearFrac, cpiFactor, fyStartYear,
     routeRegimes,
     applyOffsets, calcOldRegimeCGT, interpolateDeemedValue,
+    calcDualEraCGT, calcTimeApportionedCGT,
   };
 }
