@@ -350,6 +350,35 @@ function proRateAnnualResults(isoFrom, isoTo, annualAmount) {
   return rows;
 }
 
+// ── New-build / affordable-housing optimizer (spec §7b) ──────────────────
+// At disposal the taxpayer chooses: (A) whole-gain old treatment — deemed
+// sale/reacquisition and minimum tax do not apply at all — or (B) the
+// dual-era regime. Engine computes both and reports the cheaper. Engine
+// capability only; no dedicated UI in v1.
+function calcNewBuildOptimizer({ acquisitionCosts, salePrice, saleDate,
+                                 sellingCosts, deemedValue,
+                                 div43ClaimedPre = 0, div43ClaimedPost = 0,
+                                 cpiRate = 0.025, marginalRate,
+                                 capitalLosses = 0, quarantinePool = 0,
+                                 minTaxFloor = 0.30, discountPct = 0.5 }) {
+  const optionA = calcOldRegimeCGT({
+    salePrice, sellingCosts, acquisitionCosts,
+    div43Claimed: div43ClaimedPre + div43ClaimedPost,
+    capitalLosses, quarantinePool, marginalRate, discountPct,
+  });
+  const optionB = calcDualEraCGT({
+    deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre,
+    salePrice, saleDate, sellingCosts, div43ClaimedPost,
+    cpiRate, marginalRate, capitalLosses, quarantinePool,
+    minTaxFloor, discountPct,
+  });
+  return {
+    optionA, optionB,
+    winner: optionA.tax <= optionB.totalCGT ? 'A' : 'B',
+    flags: { newBuildDefinitionPending: true },
+  };
+}
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -361,5 +390,6 @@ if (typeof module !== 'undefined' && module.exports) {
     applyOffsets, calcOldRegimeCGT, interpolateDeemedValue,
     calcDualEraCGT, calcTimeApportionedCGT,
     buildQuarantineSchedule, proRateAnnualResults,
+    calcNewBuildOptimizer,
   };
 }

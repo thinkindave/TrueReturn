@@ -373,4 +373,75 @@ test('spans multiple income years', () => {
   approxEqual(total, -8000 * E.yearFrac('2027-01-01', '2030-06-01'), 10);
 });
 
+// ── T3/T5: quarantine ↔ dual-era integration ─────────────────────────────
+console.log('\nT3/T5 integration');
+
+test('T3: pool built during holding is consumed at sale, pre-first', () => {
+  const route = E.routeRegimes({ contractDate: '2026-08-01', dwellingType: 'established', saleDate: '2031-08-01' });
+  assert.deepStrictEqual(route, { ng: 'QUARANTINE_FROM_2027', cgt: 'DUAL_ERA' });
+
+  const sched = E.buildQuarantineSchedule({
+    annualResults: t3Years, ngRegime: route.ng, marginalRate: 0.39,
+  });
+  approxEqual(sched.poolAtSale, 49000, 0.001);
+
+  const r = E.calcDualEraCGT({
+    deemedValue: 710000, oldCostBase: 700000,
+    salePrice: 850000, saleDate: '2031-08-01', sellingCosts: 18000,
+    cpiRate: 0.025, marginalRate: 0.39, quarantinePool: sched.poolAtSale,
+  });
+  // pre gross 10000 → pool → 0; post gross 46648 → minus 39000 → 7648 @ 39%
+  approxEqual(r.preAfterOffsets, 0, 0.001);
+  approxEqual(r.taxOnPre, 0, 0.001);
+  approxEqual(r.postGross, 46648.05, 5);
+  approxEqual(r.taxOnPost, 2982.74, 5);
+  approxEqual(r.strandedPool, 0, 0.001);
+  // spec §4.4 anti-double-benefit invariant: cost base unchanged by the pool
+  const noPool = E.calcDualEraCGT({
+    deemedValue: 710000, oldCostBase: 700000,
+    salePrice: 850000, saleDate: '2031-08-01', sellingCosts: 18000,
+    cpiRate: 0.025, marginalRate: 0.39, quarantinePool: 0,
+  });
+  assert.strictEqual(r.indexedCostBase, noPool.indexedCostBase);
+});
+
+test('T5: stranded pool is reported, never lost silently, never refunds salary tax', () => {
+  const sched = E.buildQuarantineSchedule({
+    annualResults: t3Years, ngRegime: 'QUARANTINE_FROM_2027', marginalRate: 0.39,
+  });
+  const r = E.calcDualEraCGT({
+    deemedValue: 710000, oldCostBase: 700000,
+    salePrice: 720000, saleDate: '2031-08-01', sellingCosts: 18000,
+    cpiRate: 0.025, marginalRate: 0.39, quarantinePool: sched.poolAtSale,
+  });
+  approxEqual(r.poolUsed, 10000, 0.001);      // pre gross only; post is a loss
+  approxEqual(r.strandedPool, 39000, 0.001);
+  assert.strictEqual(r.taxOnPre, 0);
+  assert.strictEqual(r.taxOnPost, 0);
+  approxEqual(sched.totalRefunds, 4290, 0.001);   // only the pre-era FY refunded
+});
+
+// ── New-build optimizer (spec §7b, T4) ───────────────────────────────────
+console.log('\ncalcNewBuildOptimizer');
+
+test('T4: Option A (whole-gain discount) beats Option B and is chosen', () => {
+  const r = E.calcNewBuildOptimizer({
+    acquisitionCosts: 700000, salePrice: 950000, saleDate: '2032-10-01',
+    sellingCosts: 20000, deemedValue: 715000, cpiRate: 0.025, marginalRate: 0.39,
+  });
+  approxEqual(r.optionA.tax, 44850, 0.01);
+  approxEqual(r.optionB.totalCGT, 48163.70, 20);   // exact-day derivation; spec's rounded ≈48334
+  assert.strictEqual(r.winner, 'A');
+});
+
+test('affordable housing uses the 60% discount in Option A', () => {
+  const r = E.calcNewBuildOptimizer({
+    acquisitionCosts: 700000, salePrice: 950000, saleDate: '2032-10-01',
+    sellingCosts: 20000, deemedValue: 715000, cpiRate: 0.025, marginalRate: 0.39,
+    discountPct: 0.6,
+  });
+  approxEqual(r.optionA.tax, 35880, 0.01);
+  assert.strictEqual(r.winner, 'A');
+});
+
 summary();
