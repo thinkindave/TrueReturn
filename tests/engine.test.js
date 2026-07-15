@@ -565,4 +565,55 @@ test('engine exposes the §10 disclaimers for UI consumption', () => {
   }
 });
 
+// ── Whole-journey helpers (spec §11) ─────────────────────────────────────
+console.log('\nannualizedReturn & irrFromCashflows');
+
+test('annualizedReturn: basic compounding', () => {
+  // $100k → +$21k over 2 years = 10% p.a. (1.21 = 1.1^2)
+  approxEqual(E.annualizedReturn(21000, 100000, 2), 0.10, 1e-9);
+});
+
+test('annualizedReturn: negative profit gives a real negative rate', () => {
+  const r = E.annualizedReturn(-19000, 100000, 2);
+  approxEqual(r, -0.10, 1e-9); // 0.81 = 0.9^2
+});
+
+test('annualizedReturn: loss of entire stake or more returns -1, never NaN', () => {
+  assert.strictEqual(E.annualizedReturn(-100000, 100000, 5), -1);
+  assert.strictEqual(E.annualizedReturn(-150000, 100000, 5), -1);
+});
+
+test('annualizedReturn: invalid inputs return null', () => {
+  assert.strictEqual(E.annualizedReturn(1000, 0, 5), null);
+  assert.strictEqual(E.annualizedReturn(1000, 100000, 0), null);
+});
+
+test('irrFromCashflows: single in/out reproduces the compound rate', () => {
+  const irr = E.irrFromCashflows([
+    { date: '2020-01-01', amount: -100000 },
+    { date: '2022-01-01', amount: 121000 },
+  ]);
+  approxEqual(irr, 0.10, 1e-6);
+});
+
+test('irrFromCashflows: interim outflows lower the IRR below the naive rate', () => {
+  // Same profit as roeSimple would see, but $10k fed in at year 1.
+  const irr = E.irrFromCashflows([
+    { date: '2020-01-01', amount: -100000 },
+    { date: '2021-01-01', amount: -10000 },
+    { date: '2025-01-01', amount: 160000 },
+  ]);
+  assert(irr !== null && irr > 0, 'IRR should solve');
+  const naive = E.annualizedReturn(50000, 100000, 5);
+  assert(irr < naive, `IRR ${irr} should be below naive ${naive}`);
+});
+
+test('irrFromCashflows: no sign change returns null', () => {
+  assert.strictEqual(E.irrFromCashflows([
+    { date: '2020-01-01', amount: -1000 },
+    { date: '2021-01-01', amount: -2000 },
+  ]), null);
+  assert.strictEqual(E.irrFromCashflows([]), null);
+});
+
 summary();

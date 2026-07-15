@@ -510,6 +510,39 @@ function compareSaleTiming(inputs) {
   };
 }
 
+// ── Whole-journey outputs (spec §§11–13) ─────────────────────────────────
+// Return-on-equity, IRR, and the opportunity-cost benchmark. All outputs
+// are neutral numbers — no judgment fields (spec neutrality constraint).
+
+// Annualized return on cashInvested given total netProfit over `years`.
+// A loss of the whole stake (or more) returns -1 (−100% p.a. floor) so
+// callers never see NaN from a negative base with a fractional exponent.
+function annualizedReturn(netProfit, cashInvested, years) {
+  if (cashInvested <= 0 || years <= 0) return null;
+  const ratio = 1 + netProfit / cashInvested;
+  if (ratio <= 0) return -1;
+  return Math.pow(ratio, 1 / years) - 1;
+}
+
+// IRR of dated cash flows [{date, amount}] (negative = out of pocket).
+// Bisection on NPV over (−99.99%, 1000%); null when no root is bracketed
+// (e.g. all flows the same sign).
+function irrFromCashflows(flows) {
+  if (!flows || flows.length === 0) return null;
+  const t0 = flows.reduce((min, f) => (f.date < min ? f.date : min), flows[0].date);
+  const npv = r => flows.reduce(
+    (s, f) => s + f.amount / Math.pow(1 + r, yearFrac(t0, f.date)), 0);
+  let lo = -0.9999, hi = 10;
+  let fLo = npv(lo), fHi = npv(hi);
+  if (!isFinite(fLo) || !isFinite(fHi) || fLo * fHi > 0) return null;
+  for (let i = 0; i < 100; i++) {
+    const mid = (lo + hi) / 2;
+    const fMid = npv(mid);
+    if (fLo * fMid <= 0) { hi = mid; } else { lo = mid; fLo = fMid; }
+  }
+  return (lo + hi) / 2;
+}
+
 // ── Required disclaimers (spec §10) — single source for Phase 2 UI ───────
 const DISCLAIMERS = {
   generalInfo: 'General information only, not tax or financial advice. Models the Treasury Laws Amendment (Tax Reform No. 1) Act 2026.',
@@ -533,6 +566,7 @@ if (typeof module !== 'undefined' && module.exports) {
     buildQuarantineSchedule, proRateAnnualResults,
     calcNewBuildOptimizer,
     runSaleScenario, compareSaleTiming,
+    annualizedReturn, irrFromCashflows,
     DISCLAIMERS,
   };
 }
