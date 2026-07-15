@@ -964,6 +964,24 @@ test('comparison scenarios carry the blocks (spec §11: every calculation)', () 
   assert(out.scenario1.benchmark && out.scenario2.benchmark);
 });
 
+test('principal paydown counts as cash invested, not profit (ROE unchanged)', () => {
+  const io = E.runSaleScenario(wholeJourneyInputs, '2027-06-01'); // interest-only: balance == loanAmount
+  const paydown = E.runSaleScenario({ ...wholeJourneyInputs, loanBalance: 400000 }, '2027-06-01');
+  // $80k repaid raises netProceeds but is offset in totalCashInvested:
+  approxEqual(paydown.equity.totalCashInvested, io.equity.totalCashInvested + 80000, 0.01);
+  approxEqual(paydown.equity.roeSimple, io.equity.roeSimple, 1e-9);
+  assert(paydown.equity.flags.principalRepaidAtSale === true
+      && io.equity.flags.principalRepaidAtSale === false);
+});
+
+test('partialJourney flag marks comparison-mode ROE when purchase predates valuation', () => {
+  const partial = E.runSaleScenario(wholeJourneyInputs, '2027-06-01');
+  assert.strictEqual(partial.equity.flags.partialJourney, true); // 2020 contract, 2025 valuation
+  const full = E.runSaleScenario(
+    { ...wholeJourneyInputs, contractDate: '2025-07-01' }, '2027-06-01');
+  assert.strictEqual(full.equity.flags.partialJourney, false);
+});
+
 test('§10: benchmark disclaimer exists', () => {
   assert(typeof E.DISCLAIMERS.benchmarkHistorical === 'string'
     && E.DISCLAIMERS.benchmarkHistorical.length > 0);

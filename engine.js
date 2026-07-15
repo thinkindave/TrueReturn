@@ -466,21 +466,30 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
   const netProceeds = salePrice - sellingCosts - cgt - loanBalance;
 
   // Whole-journey blocks (spec §§11–12). Comparison-mode caveat: holding
-  // flows are only modelled valuation→sale, so ROE/IRR here cover that
-  // window; the pre-valuation history is identical across both scenarios
-  // and cancels in the comparison. The whole-journey calculator (Phase 2b)
-  // calls calcEquityReturns/calcBenchmark directly with full-journey flows.
+  // flows are only modelled valuation→sale, so when the purchase predates
+  // the valuation the absolute ROE/IRR overstate the whole journey — the
+  // pre-valuation bleed is missing while the full gain is counted. The
+  // scenario DELTA still cancels this. flags.partialJourney marks it so the
+  // UI never presents these as whole-journey figures; the whole-journey
+  // calculator (Phase 2b) calls calcEquityReturns directly with full flows.
   let equity = null, benchmark = null;
   if (loanAmount !== null && purchasePrice !== null) {
     const holdingCashflows = sched.rows.map(r => ({
       date: r.fyStartISO,
       amount: r.netResult + r.refund - r.taxOnProfit,
     }));
-    equity = calcEquityReturns({
-      purchasePrice, purchaseCosts, loanAmount,
-      contractDate, saleDate, netProceedsAfterTax: netProceeds,
-      holdingCashflows, salePrice,
-    });
+    const principalRepaid = Math.max(0, loanAmount - loanBalance);
+    equity = {
+      ...calcEquityReturns({
+        purchasePrice, purchaseCosts, loanAmount,
+        contractDate, saleDate, netProceedsAfterTax: netProceeds,
+        holdingCashflows, salePrice, principalRepaid,
+      }),
+      flags: {
+        partialJourney: valuationDate > contractDate,
+        principalRepaidAtSale: loanAmount - loanBalance > 0,
+      },
+    };
     if (benchmarkReturn !== null) {
       benchmark = calcBenchmark({
         depositCashInvested: equity.depositCashInvested,
@@ -595,16 +604,20 @@ function irrFromCashflows(flows) {
 // netProfit generalizes spec §11 to cash-positive years: inflows join the
 // profit side; only outflows count as cash invested. With all-negative
 // flows (the essay case, T7) this is exactly the spec formula.
+// principalRepaid: loan principal paid down over the hold. Its timing is
+// unknown to the engine, so it is modelled as repaid at sale — neutral for
+// roeSimple, best-case for IRR. It counts as cash invested, not profit.
 function calcEquityReturns({ purchasePrice, purchaseCosts = 0, loanAmount,
                              contractDate, saleDate, netProceedsAfterTax,
-                             holdingCashflows = [], salePrice = null }) {
+                             holdingCashflows = [], salePrice = null,
+                             principalRepaid = 0 }) {
   const depositCashInvested = purchasePrice + purchaseCosts - loanAmount;
   let contributions = 0, holdingInflows = 0;
   for (const f of holdingCashflows) {
     if (f.amount < 0) contributions -= f.amount;
     else holdingInflows += f.amount;
   }
-  const totalCashInvested = depositCashInvested + contributions;
+  const totalCashInvested = depositCashInvested + contributions + principalRepaid;
   const netProfit = netProceedsAfterTax + holdingInflows - totalCashInvested;
   const holdingYears = yearFrac(contractDate, saleDate);
 
@@ -615,6 +628,9 @@ function calcEquityReturns({ purchasePrice, purchaseCosts = 0, loanAmount,
     { date: contractDate, amount: -depositCashInvested },
     ...holdingCashflows,
     { date: saleDate, amount: netProceedsAfterTax },
+    ...(principalRepaid > 0
+      ? [{ date: saleDate, amount: -principalRepaid }]
+      : []),
   ]);
   const leverageMultiple = depositCashInvested > 0
     ? purchasePrice / depositCashInvested : null;
