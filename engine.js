@@ -403,7 +403,10 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
   const { contractDate, dwellingType, acquisitionCosts, valuationDate,
           currentValueEstimate, growthAssumption, marginalRate,
           sellingCostsPct, annualNetRental, loanBalance, cpiRate,
-          capitalLosses = 0, div43Claimed = 0 } = inputs;
+          capitalLosses = 0, div43Claimed = 0,
+          purchasePrice = null, purchaseCosts = 0, loanAmount = null,
+          benchmarkReturn = null, benchmarkFeeDrag = 0.001,
+          dcaHoldingContributions = false } = inputs;
 
   const route = routeRegimes({ contractDate, dwellingType, saleDate });
   const growthYears = yearFrac(valuationDate, saleDate);
@@ -461,11 +464,42 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
   }
 
   const netProceeds = salePrice - sellingCosts - cgt - loanBalance;
+
+  // Whole-journey blocks (spec §§11–12). Comparison-mode caveat: holding
+  // flows are only modelled valuation→sale, so ROE/IRR here cover that
+  // window; the pre-valuation history is identical across both scenarios
+  // and cancels in the comparison. The whole-journey calculator (Phase 2b)
+  // calls calcEquityReturns/calcBenchmark directly with full-journey flows.
+  let equity = null, benchmark = null;
+  if (loanAmount !== null && purchasePrice !== null) {
+    const holdingCashflows = sched.rows.map(r => ({
+      date: r.fyStartISO,
+      amount: r.netResult + r.refund - r.taxOnProfit,
+    }));
+    equity = calcEquityReturns({
+      purchasePrice, purchaseCosts, loanAmount,
+      contractDate, saleDate, netProceedsAfterTax: netProceeds,
+      holdingCashflows, salePrice,
+    });
+    if (benchmarkReturn !== null) {
+      benchmark = calcBenchmark({
+        depositCashInvested: equity.depositCashInvested,
+        contractDate, saleDate, benchmarkReturn, feeDrag: benchmarkFeeDrag,
+        contributions: dcaHoldingContributions
+          ? holdingCashflows.filter(f => f.amount < 0)
+              .map(f => ({ date: f.date, amount: -f.amount }))
+          : [],
+        marginalRate, cpiRate,
+      });
+    }
+  }
+
   return {
     saleDate, cgtRegime: route.cgt, ngRegime: route.ng,
     salePrice, sellingCosts, cgt, deemedValue, detail, holding,
     netProceeds,
     totalWealth: netProceeds + holding.netCashflow,
+    equity, benchmark,
     flags,
   };
 }
@@ -667,6 +701,7 @@ const DISCLAIMERS = {
   deemedValueEstimate: 'The 30 June 2027 value is an estimate; your actual outcome depends on the real market value at that date.',
   apportionPending: 'The official apportioning method has not yet been legislated; the time-based split shown is a placeholder.',
   cpiAssumption: 'Future cost-base indexation uses a projected CPI assumption, not actual CPI.',
+  benchmarkHistorical: 'Benchmark presets are historical, before-tax figures — not a forecast.',
 };
 
 // ── Node export guard ────────────────────────────────────────────────────

@@ -909,4 +909,64 @@ test('benchmark held under 12 months gets no CGT discount', () => {
   approxEqual(r.cgt, gain * 0.39, 1);
 });
 
+// ── Whole-journey blocks on scenarios (spec §11 "every calculation") ─────
+console.log('\nrunSaleScenario equity/benchmark integration');
+
+const wholeJourneyInputs = {
+  contractDate: '2020-07-01', dwellingType: 'established',
+  acquisitionCosts: 620000, valuationDate: '2025-07-01',
+  currentValueEstimate: 780000, growthAssumption: 0.04,
+  marginalRate: 0.39, sellingCostsPct: 0.02,
+  annualNetRental: -8000, loanBalance: 480000, cpiRate: 0.025,
+  // Phase 2a additions:
+  purchasePrice: 600000, purchaseCosts: 20000, loanAmount: 480000,
+  benchmarkReturn: 0.09,
+};
+
+test('equity block appears when loanAmount is provided, on both scenario regimes', () => {
+  for (const saleDate of ['2027-06-01', '2030-06-01']) {
+    const r = E.runSaleScenario(wholeJourneyInputs, saleDate);
+    assert(r.equity, `equity block missing for ${saleDate}`);
+    approxEqual(r.equity.depositCashInvested, 140000, 0.001);
+    assert(isFinite(r.equity.roeSimple));
+    approxEqual(r.equity.leverageMultiple, 600000 / 140000, 0.001);
+  }
+});
+
+test('benchmark block rides along and routes through the same regimes', () => {
+  const pre = E.runSaleScenario(wholeJourneyInputs, '2027-06-01');
+  const post = E.runSaleScenario(wholeJourneyInputs, '2030-06-01');
+  assert.strictEqual(pre.benchmark.regime, 'OLD');
+  assert.strictEqual(post.benchmark.regime, 'DUAL_ERA');
+  assert(isFinite(pre.benchmark.benchmarkRoe) && isFinite(post.benchmark.benchmarkRoe));
+});
+
+test('no loanAmount → no equity/benchmark blocks (existing callers unaffected)', () => {
+  const { purchasePrice, purchaseCosts, loanAmount, benchmarkReturn,
+          ...legacy } = wholeJourneyInputs;
+  const r = E.runSaleScenario(legacy, '2027-06-01');
+  assert.strictEqual(r.equity, null);
+  assert.strictEqual(r.benchmark, null);
+});
+
+test('dcaHoldingContributions feeds the bleed into the benchmark', () => {
+  const dca = E.runSaleScenario(
+    { ...wholeJourneyInputs, dcaHoldingContributions: true }, '2027-06-01');
+  const lump = E.runSaleScenario(wholeJourneyInputs, '2027-06-01');
+  assert(dca.benchmark.totalContributed > lump.benchmark.totalContributed);
+});
+
+test('comparison scenarios carry the blocks (spec §11: every calculation)', () => {
+  const out = E.compareSaleTiming({
+    ...wholeJourneyInputs, saleDate1: '2027-06-01', saleDate2: '2030-06-01',
+  });
+  assert(out.scenario1.equity && out.scenario2.equity);
+  assert(out.scenario1.benchmark && out.scenario2.benchmark);
+});
+
+test('§10: benchmark disclaimer exists', () => {
+  assert(typeof E.DISCLAIMERS.benchmarkHistorical === 'string'
+    && E.DISCLAIMERS.benchmarkHistorical.length > 0);
+});
+
 summary();
