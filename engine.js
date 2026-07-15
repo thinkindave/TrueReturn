@@ -565,6 +565,8 @@ function calcEquityReturns({ purchasePrice, purchaseCosts = 0, loanAmount,
   const netProfit = netProceedsAfterTax + holdingInflows - totalCashInvested;
   const holdingYears = yearFrac(contractDate, saleDate);
 
+  // Deposit-only base is deliberate (spec §11 #1): profit nets contributions,
+  // the base does not — do not "fix" to totalCashInvested (breaks T7).
   const roeSimple = annualizedReturn(netProfit, depositCashInvested, holdingYears);
   const irr = irrFromCashflows([
     { date: contractDate, amount: -depositCashInvested },
@@ -580,6 +582,70 @@ function calcEquityReturns({ purchasePrice, purchaseCosts = 0, loanAmount,
 
   return { depositCashInvested, totalCashInvested, netProfit, holdingYears,
            roeSimple, irr, leverageMultiple, assetGrowthAnnual };
+}
+
+// ── Opportunity-cost benchmark (spec §12) ────────────────────────────────
+// An unleveraged benchmark on the same cash and the same clock as the
+// property, taxed through the SAME CGT regimes (the 2027 change applies to
+// all CGT assets): pre-boundary sale → old regime; on/after → dual-era,
+// with the deemed 30 June 2027 value being the benchmark's own compounded
+// value on that date. NG quarantine never applies (not residential rental).
+// Assumes acquisition before 1 July 2027, like the dual-era property
+// module; post-boundary acquisitions are out of scope for v1.
+// Preset values are CONFIG — historical, before tax, not a forecast
+// (figures as at July 2026; update from source when refreshed).
+const BENCHMARK_PRESETS = {
+  vas:  { label: 'VAS (Australian shares)',   annualReturn: 0.088 },
+  vgs:  { label: 'VGS (international shares)', annualReturn: 0.115 },
+  hisa: { label: 'High-interest savings',      annualReturn: 0.045 },
+};
+
+function calcBenchmark({ depositCashInvested, contractDate, saleDate,
+                         benchmarkReturn, feeDrag = 0.001,
+                         contributions = [], // [{date, amount>0}] DCA mode
+                         marginalRate, cpiRate = 0.025, minTaxFloor = 0.30 }) {
+  const netRate = benchmarkReturn - feeDrag;
+  const grow = (amount, fromISO, toISO) =>
+    amount * Math.pow(1 + netRate, yearFrac(fromISO, toISO));
+
+  const valueAtSale = grow(depositCashInvested, contractDate, saleDate)
+    + contributions.reduce((s, c) => s + grow(c.amount, c.date, saleDate), 0);
+  const totalContributed = depositCashInvested
+    + contributions.reduce((s, c) => s + c.amount, 0);
+
+  let cgtDetail, cgt, regime;
+  if (saleDate < BOUNDARY_ISO) {
+    regime = 'OLD';
+    cgtDetail = calcOldRegimeCGT({
+      salePrice: valueAtSale, sellingCosts: 0,
+      acquisitionCosts: totalContributed, marginalRate,
+    });
+    cgt = cgtDetail.tax;
+  } else {
+    regime = 'DUAL_ERA';
+    const preContribs = contributions.filter(c => c.date < BOUNDARY_ISO);
+    const postContribs = contributions.filter(c => c.date >= BOUNDARY_ISO);
+    const deemedValue = grow(depositCashInvested, contractDate, DEEMED_DATE_ISO)
+      + preContribs.reduce((s, c) => s + grow(c.amount, c.date, DEEMED_DATE_ISO), 0);
+    cgtDetail = calcDualEraCGT({
+      deemedValue,
+      oldCostBase: depositCashInvested
+        + preContribs.reduce((s, c) => s + c.amount, 0),
+      salePrice: valueAtSale, saleDate, sellingCosts: 0,
+      postExpenditures: postContribs.map(c => ({ date: c.date, amount: c.amount })),
+      cpiRate, marginalRate, minTaxFloor,
+    });
+    cgt = cgtDetail.totalCGT;
+  }
+
+  const netProfit = valueAtSale - totalContributed - cgt;
+  const holdingYears = yearFrac(contractDate, saleDate);
+  return {
+    valueAtSale, totalContributed, cgt, cgtDetail, netProfit, holdingYears,
+    benchmarkRoe: annualizedReturn(netProfit, depositCashInvested, holdingYears),
+    regime,
+    flags: { historicalNotForecast: true, unleveraged: true },
+  };
 }
 
 // ── Required disclaimers (spec §10) — single source for Phase 2 UI ───────
@@ -606,6 +672,7 @@ if (typeof module !== 'undefined' && module.exports) {
     calcNewBuildOptimizer,
     runSaleScenario, compareSaleTiming,
     annualizedReturn, irrFromCashflows, calcEquityReturns,
+    calcBenchmark, BENCHMARK_PRESETS,
     DISCLAIMERS,
   };
 }

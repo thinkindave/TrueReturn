@@ -687,4 +687,103 @@ test('cash-positive holding years add to profit, not to cash invested', () => {
   approxEqual(r.netProfit, 203000 + 3000 - 108000, 0.001);
 });
 
+// ── Opportunity-cost benchmark (spec §12, test T8) ───────────────────────
+console.log('\ncalcBenchmark (spec §12)');
+
+test('T8: pre-2027 sale — old regime, exact-formula values', () => {
+  // Spec T8's "≈$163,100" mis-rounds 1.09^5.1 (=1.5519 → $161,421); per
+  // §8 we assert the formula, not the rounding. Invariant preserved:
+  // benchmark ROE (~7.5%) well below property ROE (~11.7%), both after tax.
+  const r = E.calcBenchmark({
+    depositCashInvested: 104000,
+    contractDate: '2020-12-01', saleDate: '2026-01-07',
+    benchmarkReturn: 0.09, feeDrag: 0, marginalRate: 0.39,
+  });
+  assert.strictEqual(r.regime, 'OLD');
+  approxEqual(r.valueAtSale, 161421, 5);
+  approxEqual(r.cgt, 11197, 5);      // (161421−104000)×0.5×0.39
+  approxEqual(r.netProfit, 46224, 10);
+  approxEqual(r.benchmarkRoe, 0.0748, 0.001);
+});
+
+test('T8 invariant: benchmark ROE sits below the T7 property ROE', () => {
+  const prop = E.calcEquityReturns(t7);
+  const bench = E.calcBenchmark({
+    depositCashInvested: 104000,
+    contractDate: '2020-12-01', saleDate: '2026-01-07',
+    benchmarkReturn: 0.09, feeDrag: 0, marginalRate: 0.39,
+  });
+  assert(bench.benchmarkRoe < prop.roeSimple,
+    'unleveraged benchmark should trail the leveraged property here');
+});
+
+test('post-2027 sale routes through dual-era; 30% floor binds at low MTR', () => {
+  const r = E.calcBenchmark({
+    depositCashInvested: 100000,
+    contractDate: '2024-07-01', saleDate: '2029-07-01',
+    benchmarkReturn: 0.08, feeDrag: 0, marginalRate: 0.21, cpiRate: 0.025,
+  });
+  assert.strictEqual(r.regime, 'DUAL_ERA');
+  // Deemed value = benchmark's own compounded value at 30 Jun 2027.
+  approxEqual(r.cgtDetail.preGross,
+    100000 * Math.pow(1.08, E.yearFrac('2024-07-01', '2027-06-30')) - 100000, 1);
+  assert(r.cgtDetail.minTaxBound, '30% floor should bind at MTR 21%');
+  assert(r.cgt > 0 && r.netProfit > 0);
+});
+
+test('dual-era CGT exceeds an old-law counterfactual when growth outruns CPI', () => {
+  const inputs = {
+    depositCashInvested: 100000,
+    contractDate: '2024-07-01', saleDate: '2029-07-01',
+    benchmarkReturn: 0.08, feeDrag: 0, marginalRate: 0.39, cpiRate: 0.025,
+  };
+  const r = E.calcBenchmark(inputs);
+  const oldLaw = E.calcOldRegimeCGT({
+    salePrice: r.valueAtSale, sellingCosts: 0,
+    acquisitionCosts: 100000, marginalRate: 0.39,
+  });
+  assert(r.cgt > oldLaw.tax,
+    'the 2027 change should raise the benchmark\'s tax too — the essay\'s "hits shares as well"');
+});
+
+test('DCA mode: contributions compound from their own dates', () => {
+  // 50k at 2025-01-01 + 10k at 2026-01-01, sold 2027-01-01 at 10%, no drag:
+  // value = 50000×1.1² + 10000×1.1 = 71,500.
+  const r = E.calcBenchmark({
+    depositCashInvested: 50000,
+    contractDate: '2025-01-01', saleDate: '2027-01-01',
+    benchmarkReturn: 0.10, feeDrag: 0, marginalRate: 0.39,
+    contributions: [{ date: '2026-01-01', amount: 10000 }],
+  });
+  approxEqual(r.valueAtSale, 71500, 0.5);
+  approxEqual(r.totalContributed, 60000, 0.001);
+  // gain 11,500 → discounted 5,750 → CGT 2,242.50
+  approxEqual(r.cgt, 2242.5, 0.5);
+  approxEqual(r.netProfit, 9257.5, 1);
+});
+
+test('fee drag default 0.10% p.a. reduces the compounded value', () => {
+  const base = { depositCashInvested: 100000,
+    contractDate: '2020-01-01', saleDate: '2025-01-01',
+    benchmarkReturn: 0.09, marginalRate: 0.39 };
+  const withDrag = E.calcBenchmark(base);            // default feeDrag 0.001
+  const noDrag = E.calcBenchmark({ ...base, feeDrag: 0 });
+  assert(withDrag.valueAtSale < noDrag.valueAtSale);
+  approxEqual(withDrag.valueAtSale, 100000 * Math.pow(1.089, 5), 1);
+});
+
+test('benchmark presets exist as config with the disclaimer flag', () => {
+  for (const key of ['vas', 'vgs', 'hisa']) {
+    const p = E.BENCHMARK_PRESETS[key];
+    assert(p && typeof p.annualReturn === 'number' && p.label,
+      `preset ${key} must be config with label + annualReturn`);
+  }
+  const r = E.calcBenchmark({
+    depositCashInvested: 100000,
+    contractDate: '2020-01-01', saleDate: '2025-01-01',
+    benchmarkReturn: E.BENCHMARK_PRESETS.vas.annualReturn, marginalRate: 0.39,
+  });
+  assert.strictEqual(r.flags.historicalNotForecast, true);
+});
+
 summary();
