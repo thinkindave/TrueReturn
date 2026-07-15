@@ -786,4 +786,101 @@ test('benchmark presets exist as config with the disclaimer flag', () => {
   assert.strictEqual(r.flags.historicalNotForecast, true);
 });
 
+// ── Negative & zero growth (spec §13) ────────────────────────────────────
+console.log('\nnegative & zero growth (spec §13)');
+
+test('old regime: sale below cost base → CGT 0, loss recorded', () => {
+  const r = E.calcOldRegimeCGT({
+    salePrice: 686000, sellingCosts: 13720, acquisitionCosts: 720000,
+    marginalRate: 0.39,
+  });
+  approxEqual(r.tax, 0, 0.001);
+  approxEqual(r.capitalLossRealized, 47720, 0.001); // 733,720 − 686,000
+});
+
+test('dual-era: losses in both components → CGT 0, loss recorded, never clamped away', () => {
+  const r = E.calcDualEraCGT({
+    deemedValue: 672280, oldCostBase: 720000,
+    salePrice: 645000, saleDate: '2029-07-01', sellingCosts: 12900,
+    cpiRate: 0.025, marginalRate: 0.39,
+  });
+  approxEqual(r.totalCGT, 0, 0.001);
+  assert(r.capitalLossRealized > 0, 'combined loss must be reported');
+});
+
+test('capitalLossRealized is 0 on a gain (no spurious losses)', () => {
+  const r = E.calcOldRegimeCGT({
+    salePrice: 660000, sellingCosts: 14000, acquisitionCosts: 520000,
+    div43Claimed: 10000, marginalRate: 0.39,
+  });
+  approxEqual(r.tax, 26520, 0.01); // T1 regression guard
+  approxEqual(r.capitalLossRealized, 0, 0.001);
+});
+
+test('runSaleScenario accepts negative growth: price falls, CGT 0, wealth can be negative', () => {
+  const inputs = {
+    contractDate: '2020-07-01', dwellingType: 'established',
+    acquisitionCosts: 720000, valuationDate: '2025-07-01',
+    currentValueEstimate: 700000, growthAssumption: -0.02,
+    marginalRate: 0.39, sellingCostsPct: 0.02,
+    annualNetRental: -8000, loanBalance: 640000, cpiRate: 0.025,
+  };
+  const r = E.runSaleScenario(inputs, '2026-07-01');
+  approxEqual(r.salePrice, 686000, 0.5); // 700000 × 0.98
+  approxEqual(r.cgt, 0, 0.001);
+  assert(r.detail.capitalLossRealized > 0);
+  assert(r.totalWealth < r.netProceeds, 'holding bleed must subtract');
+  assert(isFinite(r.totalWealth), 'never blanked or NaN');
+});
+
+test('flat growth (0%) is a plain valid input', () => {
+  const inputs = {
+    contractDate: '2020-07-01', dwellingType: 'established',
+    acquisitionCosts: 720000, valuationDate: '2025-07-01',
+    currentValueEstimate: 700000, growthAssumption: 0,
+    marginalRate: 0.39, sellingCostsPct: 0.02,
+    annualNetRental: -8000, loanBalance: 640000, cpiRate: 0.025,
+  };
+  const r = E.runSaleScenario(inputs, '2026-07-01');
+  approxEqual(r.salePrice, 700000, 0.5); // no clamp, no drift
+});
+
+test('compareSaleTiming survives negative growth end-to-end', () => {
+  const out = E.compareSaleTiming({
+    contractDate: '2026-08-01', dwellingType: 'established',
+    acquisitionCosts: 720000, valuationDate: '2026-08-01',
+    currentValueEstimate: 700000, growthAssumption: -0.03,
+    marginalRate: 0.39, sellingCostsPct: 0.02,
+    annualNetRental: -12000, loanBalance: 560000, cpiRate: 0.025,
+    saleDate1: '2027-06-01', saleDate2: '2030-06-01',
+  });
+  assert(isFinite(out.scenario1.totalWealth) && isFinite(out.scenario2.totalWealth));
+  assert(out.scenario2.totalWealth < out.scenario1.totalWealth,
+    'falling market + quarantine bleed: holding longer ends worse here');
+  // breakeven may legitimately be null (no crossing in 0–15%); must not throw
+  assert(out.breakevenGrowth === null || isFinite(out.breakevenGrowth));
+});
+
+test('§13 benchmark: negative return produces CGT 0 and a real negative ROE', () => {
+  const r = E.calcBenchmark({
+    depositCashInvested: 100000,
+    contractDate: '2024-01-01', saleDate: '2026-01-01',
+    benchmarkReturn: -0.03, feeDrag: 0, marginalRate: 0.39,
+  });
+  approxEqual(r.cgt, 0, 0.001);
+  assert(r.netProfit < 0 && isFinite(r.netProfit));
+  assert(r.benchmarkRoe < 0 && isFinite(r.benchmarkRoe));
+});
+
+test('benchmark held under 12 months gets no CGT discount', () => {
+  const r = E.calcBenchmark({
+    depositCashInvested: 100000,
+    contractDate: '2026-01-01', saleDate: '2026-07-01',
+    benchmarkReturn: 0.10, feeDrag: 0, marginalRate: 0.39,
+  });
+  // ~6 months at 10%: gain ≈ 100000×(1.1^0.4956 − 1); taxed WITHOUT discount
+  const gain = r.valueAtSale - 100000;
+  approxEqual(r.cgt, gain * 0.39, 1);
+});
+
 summary();

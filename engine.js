@@ -221,6 +221,7 @@ function calcOldRegimeCGT({ salePrice, sellingCosts, acquisitionCosts,
   return {
     costBase, grossGain, gainAfterOffsets, taxableGain,
     tax: taxableGain * marginalRate,
+    capitalLossRealized: Math.max(0, -o.preAfter),
     poolUsed: o.poolUsed, strandedPool: o.strandedPool,
     capitalLossesRemaining: o.capitalLossesRemaining,
   };
@@ -276,6 +277,7 @@ function calcDualEraCGT({ deemedValue, oldCostBase, div43ClaimedPre = 0,
     preGross, preAfterOffsets: o.preAfter, taxablePre, taxOnPre,
     indexedCostBase, postGross, postAfterOffsets: o.postAfter,
     taxOnPost, totalCGT: taxOnPre + taxOnPost,
+    capitalLossRealized: Math.max(0, -o.preAfter) + Math.max(0, -o.postAfter),
     minTaxBound: minTaxFloor > marginalRate && Math.max(0, o.postAfter) > 0,
     poolUsed: o.poolUsed, strandedPool: o.strandedPool,
     capitalLossesRemaining: o.capitalLossesRemaining,
@@ -613,12 +615,15 @@ function calcBenchmark({ depositCashInvested, contractDate, saleDate,
   const totalContributed = depositCashInvested
     + contributions.reduce((s, c) => s + c.amount, 0);
 
+  const holdingYears = yearFrac(contractDate, saleDate);
+
   let cgtDetail, cgt, regime;
   if (saleDate < BOUNDARY_ISO) {
     regime = 'OLD';
     cgtDetail = calcOldRegimeCGT({
       salePrice: valueAtSale, sellingCosts: 0,
       acquisitionCosts: totalContributed, marginalRate,
+      heldOver12Months: holdingYears >= 1,
     });
     cgt = cgtDetail.tax;
   } else {
@@ -639,7 +644,6 @@ function calcBenchmark({ depositCashInvested, contractDate, saleDate,
   }
 
   const netProfit = valueAtSale - totalContributed - cgt;
-  const holdingYears = yearFrac(contractDate, saleDate);
   return {
     valueAtSale, totalContributed, cgt, cgtDetail, netProfit, holdingYears,
     benchmarkRoe: annualizedReturn(netProfit, depositCashInvested, holdingYears),
