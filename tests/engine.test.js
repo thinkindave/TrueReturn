@@ -805,7 +805,33 @@ test('dual-era: losses in both components → CGT 0, loss recorded, never clampe
     cpiRate: 0.025, marginalRate: 0.39,
   });
   approxEqual(r.totalCGT, 0, 0.001);
-  assert(r.capitalLossRealized > 0, 'combined loss must be reported');
+  // pre loss 47,720 + post loss vs UNINDEXED base (672,280+12,900=685,180):
+  // 685,180 − 645,000 = 40,180. Indexation must not enlarge it to ~74k.
+  approxEqual(r.capitalLossRealized, 47720 + 40180, 0.5);
+});
+
+test('dual-era mixed case: pre gain taxed, post loss measured unindexed', () => {
+  // Rise then fall: pre-component gain 200k; post falls below deemed value.
+  const r = E.calcDualEraCGT({
+    deemedValue: 800000, oldCostBase: 600000,
+    salePrice: 700000, saleDate: '2029-07-01', sellingCosts: 0,
+    cpiRate: 0.025, marginalRate: 0.39,
+  });
+  approxEqual(r.taxOnPre, 39000, 0.5);      // 200k → 100k discounted × 39%
+  approxEqual(r.taxOnPost, 0, 0.001);
+  // post loss = 800,000 − 700,000 (unindexed), NOT 840,500 − 700,000
+  approxEqual(r.capitalLossRealized, 100000, 0.5);
+});
+
+test('dual-era in-between zone: neither post gain nor post loss', () => {
+  // salePrice between unindexed (800,000) and indexed (840,500) bases.
+  const r = E.calcDualEraCGT({
+    deemedValue: 800000, oldCostBase: 800000,
+    salePrice: 820000, saleDate: '2029-07-01', sellingCosts: 0,
+    cpiRate: 0.025, marginalRate: 0.39,
+  });
+  approxEqual(r.taxOnPost, 0, 0.001);
+  approxEqual(r.capitalLossRealized, 0, 0.001);
 });
 
 test('capitalLossRealized is 0 on a gain (no spurious losses)', () => {

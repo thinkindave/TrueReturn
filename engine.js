@@ -264,6 +264,12 @@ function calcDualEraCGT({ deemedValue, oldCostBase, div43ClaimedPre = 0,
   const indexedCostBase = indexedElement1 + indexedExpenditure + sellingCosts;
   const postGross = salePrice - indexedCostBase;
 
+  // §13: losses are measured against the UNINDEXED cost base — indexation
+  // cannot create or enlarge a loss (mirrors the frozen-indexation rule).
+  // salePrice between the two bases ⇒ neither gain nor loss (both 0).
+  const unindexedPostCostBase = (deemedValue - div43ClaimedPost)
+    + postExpenditures.reduce((s, e) => s + e.amount, 0) + sellingCosts;
+
   const o = applyOffsets({ preGross, postGross, capitalLosses, quarantinePool });
 
   const taxablePre = heldOver12MonthsAt2027
@@ -277,7 +283,8 @@ function calcDualEraCGT({ deemedValue, oldCostBase, div43ClaimedPre = 0,
     preGross, preAfterOffsets: o.preAfter, taxablePre, taxOnPre,
     indexedCostBase, postGross, postAfterOffsets: o.postAfter,
     taxOnPost, totalCGT: taxOnPre + taxOnPost,
-    capitalLossRealized: Math.max(0, -o.preAfter) + Math.max(0, -o.postAfter),
+    capitalLossRealized: Math.max(0, -o.preAfter)
+      + Math.max(0, unindexedPostCostBase - salePrice),
     minTaxBound: minTaxFloor > marginalRate && Math.max(0, o.postAfter) > 0,
     poolUsed: o.poolUsed, strandedPool: o.strandedPool,
     capitalLossesRemaining: o.capitalLossesRemaining,
