@@ -1053,4 +1053,75 @@ test('deflationary CPI never shrinks the indexed cost base', () => {
   approxEqual(r.indexedCostBase, 800000, 0.001);
 });
 
+// ── Reform-aware sale outcome for the UI (Phase 2b-1) ────────────────────
+console.log('\ncalcReformSale (UI router wrapper)');
+
+test('addYearsISO adds whole years', () => {
+  assert.strictEqual(E.addYearsISO('2026-07-16', 5), '2031-07-16');
+  assert.strictEqual(E.addYearsISO('2024-02-29', 1), '2025-03-01'); // UTC rollover, no crash
+});
+
+test('grandfathered pre-2027 sale reproduces spec T1 through the wrapper', () => {
+  const r = E.calcReformSale({
+    contractDate: '2020-12-01', dwellingType: 'established', saleDate: '2026-03-01',
+    salePrice: 660000, sellingCostsPct: 14000 / 660000,
+    acquisitionCosts: 520000, div43Claimed: 10000,
+    marginalRate: 0.39, remainingLoan: 400000,
+  });
+  assert.strictEqual(r.regime, 'OLD');
+  assert.strictEqual(r.ngRegime, 'FULL');
+  approxEqual(r.salesCosts, 14000, 0.01);
+  approxEqual(r.cgt, 26520, 0.01);                       // spec T1
+  approxEqual(r.netProceeds, 660000 - 14000 - 400000, 0.01);
+  approxEqual(r.trueCashReturn, r.netProceeds - r.cgt, 0.001);
+});
+
+test('post-2027 established sale routes dual-era and reproduces spec T2', () => {
+  const r = E.calcReformSale({
+    contractDate: '2020-07-01', dwellingType: 'established', saleDate: '2029-07-01',
+    salePrice: 900000, sellingCostsPct: 20000 / 900000,
+    acquisitionCosts: 600000, deemedValue: 800000, deemedValueIsEstimate: false,
+    marginalRate: 0.39,
+  });
+  assert.strictEqual(r.regime, 'DUAL_ERA');
+  approxEqual(r.cgt, 54405, 0.5);                        // spec T2
+  assert.strictEqual(r.flags.deemedValueIsEstimate, false);
+});
+
+test('sub-12-month hold gets no discount through the wrapper (OLD)', () => {
+  const r = E.calcReformSale({
+    contractDate: '2026-08-01', dwellingType: 'established', saleDate: '2027-06-01',
+    salePrice: 750000, sellingCostsPct: 0.02, acquisitionCosts: 700000,
+    marginalRate: 0.39,
+  });
+  approxEqual(r.cgt, (750000 - 715000) * 0.39, 0.5);     // undiscounted
+});
+
+test('new build routes BEST_OF; 12-month flags pass through to both options', () => {
+  // Contract Oct 2026 → under 12 months at 30 Jun 2027 AND at an Aug 2027 sale:
+  // neither option may apply the 50% discount.
+  const r = E.calcReformSale({
+    contractDate: '2026-10-01', dwellingType: 'newBuild', saleDate: '2027-08-01',
+    salePrice: 760000, sellingCostsPct: 0, acquisitionCosts: 700000,
+    deemedValue: 745000, marginalRate: 0.39,
+  });
+  assert.strictEqual(r.regime, 'BEST_OF');
+  assert.strictEqual(r.flags.newBuildDefinitionPending, true);
+  // Option A undiscounted: gain 60,000 × 39% = 23,400 (not 11,700)
+  approxEqual(r.detail.optionA.tax, 60000 * 0.39, 0.5);
+  // Option B pre-component undiscounted: taxablePre equals the full pre gain
+  approxEqual(r.detail.optionB.taxablePre,
+              Math.max(0, r.detail.optionB.preAfterOffsets), 0.001);
+});
+
+test('quarantine pool passed to the wrapper reduces the gain at sale', () => {
+  const base = { contractDate: '2026-08-01', dwellingType: 'established',
+    saleDate: '2031-08-01', salePrice: 850000, sellingCostsPct: 18000 / 850000,
+    acquisitionCosts: 700000, deemedValue: 710000, marginalRate: 0.39 };
+  const withPool = E.calcReformSale({ ...base, quarantinePool: 49000 });
+  const noPool = E.calcReformSale(base);
+  assert(withPool.cgt < noPool.cgt, 'pool must reduce CGT at sale');
+  assert.strictEqual(withPool.ngRegime, 'QUARANTINE_FROM_2027');
+});
+
 summary();
