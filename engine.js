@@ -256,11 +256,12 @@ function calcDualEraCGT({ deemedValue, oldCostBase, div43ClaimedPre = 0,
   const yrs = yearFrac(BOUNDARY_ISO, saleDate);
   // §5.3: indexation requires the reacquired asset be held ≥ 12 months.
   const indexationApplies = yrs >= 1;
+  // deflation never shrinks the base (frozen-indexation convention)
   const indexedElement1 = (deemedValue - div43ClaimedPost)
-    * (indexationApplies ? cpiFactor(cpiRate, yrs) : 1);
+    * (indexationApplies ? Math.max(1, cpiFactor(cpiRate, yrs)) : 1);
   const indexedExpenditure = postExpenditures.reduce((sum, e) =>
     sum + e.amount * (indexationApplies && e.indexable !== false
-      ? cpiFactor(cpiRate, yearFrac(e.date, saleDate)) : 1), 0);
+      ? Math.max(1, cpiFactor(cpiRate, yearFrac(e.date, saleDate))) : 1), 0);
   const indexedCostBase = indexedElement1 + indexedExpenditure + sellingCosts;
   const postGross = salePrice - indexedCostBase;
 
@@ -270,7 +271,22 @@ function calcDualEraCGT({ deemedValue, oldCostBase, div43ClaimedPre = 0,
   const unindexedPostCostBase = (deemedValue - div43ClaimedPost)
     + postExpenditures.reduce((s, e) => s + e.amount, 0) + sellingCosts;
 
-  const o = applyOffsets({ preGross, postGross, capitalLosses, quarantinePool });
+  // §5.7 intra-event netting: both components crystallise at the same
+  // disposal, so a same-sale component loss (measured unindexed, §13)
+  // offsets the other component's gross gain — pre/discount gains first,
+  // then post/indexed — before user losses and the quarantine pool apply.
+  // Only the residual survives as a reportable capital loss.
+  const preLoss = Math.max(0, -preGross);
+  const postLoss = Math.max(0, unindexedPostCostBase - salePrice);
+  let sameSaleLoss = preLoss + postLoss;
+  let preNet = Math.max(0, preGross);
+  let postNet = Math.max(0, postGross);
+  const absorbPre = Math.min(preNet, sameSaleLoss);
+  preNet -= absorbPre; sameSaleLoss -= absorbPre;
+  const absorbPost = Math.min(postNet, sameSaleLoss);
+  postNet -= absorbPost; sameSaleLoss -= absorbPost;
+
+  const o = applyOffsets({ preGross: preNet, postGross: postNet, capitalLosses, quarantinePool });
 
   const taxablePre = heldOver12MonthsAt2027
     ? Math.max(0, o.preAfter) * (1 - discountPct)
@@ -283,8 +299,7 @@ function calcDualEraCGT({ deemedValue, oldCostBase, div43ClaimedPre = 0,
     preGross, preAfterOffsets: o.preAfter, taxablePre, taxOnPre,
     indexedCostBase, postGross, postAfterOffsets: o.postAfter,
     taxOnPost, totalCGT: taxOnPre + taxOnPost,
-    capitalLossRealized: Math.max(0, -o.preAfter)
-      + Math.max(0, unindexedPostCostBase - salePrice),
+    capitalLossRealized: sameSaleLoss,
     minTaxBound: minTaxFloor > marginalRate && Math.max(0, o.postAfter) > 0,
     poolUsed: o.poolUsed, strandedPool: o.strandedPool,
     capitalLossesRemaining: o.capitalLossesRemaining,
@@ -434,6 +449,7 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
     detail = calcOldRegimeCGT({
       salePrice, sellingCosts, acquisitionCosts, div43Claimed,
       capitalLosses, quarantinePool: sched.poolAtSale, marginalRate,
+      heldOver12Months: yearFrac(contractDate, saleDate) >= 1,
     });
     cgt = detail.tax;
   } else {
@@ -456,6 +472,7 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
         deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre: div43Claimed,
         salePrice, saleDate, sellingCosts, cpiRate, marginalRate,
         capitalLosses, quarantinePool: sched.poolAtSale,
+        heldOver12MonthsAt2027: yearFrac(contractDate, DEEMED_DATE_ISO) >= 1,
         deemedValueIsEstimate: flags.deemedValueIsEstimate === true,
       });
       detail = dual;
@@ -473,7 +490,9 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
   // UI never presents these as whole-journey figures; the whole-journey
   // calculator (Phase 2b) calls calcEquityReturns directly with full flows.
   let equity = null, benchmark = null;
-  if (loanAmount !== null && purchasePrice !== null) {
+  if (loanAmount !== null && purchasePrice !== null
+      && purchasePrice + purchaseCosts - loanAmount > 0) {
+    // Flows are dated at FY start — up to ~a year early; bias is consistent and cancels in scenario deltas.
     const holdingCashflows = sched.rows.map(r => ({
       date: r.fyStartISO,
       amount: r.netResult + r.refund - r.taxOnProfit,
@@ -488,6 +507,7 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
       flags: {
         partialJourney: valuationDate > contractDate,
         principalRepaidAtSale: loanAmount - loanBalance > 0,
+        loanIncreasedOverHold: loanBalance > loanAmount,
       },
     };
     if (benchmarkReturn !== null) {

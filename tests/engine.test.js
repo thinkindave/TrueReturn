@@ -426,8 +426,11 @@ test('T5: stranded pool is reported, never lost silently, never refunds salary t
     salePrice: 720000, saleDate: '2031-08-01', sellingCosts: 18000,
     cpiRate: 0.025, marginalRate: 0.39, quarantinePool: sched.poolAtSale,
   });
-  approxEqual(r.poolUsed, 10000, 0.001);      // pre gross only; post is a loss
-  approxEqual(r.strandedPool, 39000, 0.001);
+  // §5.7 intra-event netting: the same-sale post loss (8,000, unindexed)
+  // nets against the pre gain before the carried-forward pool applies —
+  // current-year losses precede carry-forwards.
+  approxEqual(r.poolUsed, 2000, 0.001);
+  approxEqual(r.strandedPool, 47000, 0.001);
   assert.strictEqual(r.taxOnPre, 0);
   assert.strictEqual(r.taxOnPost, 0);
   approxEqual(sched.totalRefunds, 4290, 0.001);   // only the pre-era FY refunded
@@ -810,17 +813,28 @@ test('dual-era: losses in both components → CGT 0, loss recorded, never clampe
   approxEqual(r.capitalLossRealized, 47720 + 40180, 0.5);
 });
 
-test('dual-era mixed case: pre gain taxed, post loss measured unindexed', () => {
+test('dual-era mixed case: same-sale post loss nets against pre gain before discount (§5.7)', () => {
   // Rise then fall: pre-component gain 200k; post falls below deemed value.
   const r = E.calcDualEraCGT({
     deemedValue: 800000, oldCostBase: 600000,
     salePrice: 700000, saleDate: '2029-07-01', sellingCosts: 0,
     cpiRate: 0.025, marginalRate: 0.39,
   });
-  approxEqual(r.taxOnPre, 39000, 0.5);      // 200k → 100k discounted × 39%
+  approxEqual(r.taxOnPre, 19500, 0.5);      // (200k − 100k) → 50k discounted × 39%
   approxEqual(r.taxOnPost, 0, 0.001);
-  // post loss = 800,000 − 700,000 (unindexed), NOT 840,500 − 700,000
-  approxEqual(r.capitalLossRealized, 100000, 0.5);
+  approxEqual(r.capitalLossRealized, 0, 0.001); // fully absorbed intra-event
+});
+
+test('dual-era mixed case: loss exceeding the gain leaves a residual, CGT 0', () => {
+  // pre gain 50k, post loss 100k (unindexed 800k vs sale 700k)
+  const r = E.calcDualEraCGT({
+    deemedValue: 800000, oldCostBase: 750000,
+    salePrice: 700000, saleDate: '2029-07-01', sellingCosts: 0,
+    cpiRate: 0.025, marginalRate: 0.39,
+  });
+  approxEqual(r.taxOnPre, 0, 0.001);
+  approxEqual(r.taxOnPost, 0, 0.001);
+  approxEqual(r.capitalLossRealized, 50000, 0.5);
 });
 
 test('dual-era in-between zone: neither post gain nor post loss', () => {
@@ -985,6 +999,58 @@ test('partialJourney flag marks comparison-mode ROE when purchase predates valua
 test('§10: benchmark disclaimer exists', () => {
   assert(typeof E.DISCLAIMERS.benchmarkHistorical === 'string'
     && E.DISCLAIMERS.benchmarkHistorical.length > 0);
+});
+
+// ── Code-review fixes: 12-month discount wiring, guards, deflation clamp ─
+console.log('\ncode-review fixes');
+
+test('property held under 12 months gets no 50% discount (old regime)', () => {
+  const r = E.runSaleScenario({
+    contractDate: '2026-08-01', dwellingType: 'established',
+    acquisitionCosts: 700000, valuationDate: '2026-08-01',
+    currentValueEstimate: 750000, growthAssumption: 0,
+    marginalRate: 0.39, sellingCostsPct: 0.02,
+    annualNetRental: 0, loanBalance: 0, cpiRate: 0.025,
+  }, '2027-06-01');
+  // gain = 750,000 − (700,000 + 15,000) = 35,000; no discount at 10 months
+  approxEqual(r.cgt, 35000 * 0.39, 0.5);
+});
+
+test('dual-era pre-component: no discount when under 12 months at 30 Jun 2027', () => {
+  const r = E.runSaleScenario({
+    contractDate: '2026-09-01', dwellingType: 'established',
+    acquisitionCosts: 700000, valuationDate: '2026-09-01',
+    currentValueEstimate: 700000, growthAssumption: 0.04,
+    marginalRate: 0.39, sellingCostsPct: 0.02,
+    annualNetRental: 0, loanBalance: 0, cpiRate: 0.025,
+  }, '2030-06-01');
+  // ~10 months held at the deemed date → taxablePre must equal the full
+  // (undiscounted) pre component after offsets
+  approxEqual(r.detail.taxablePre, Math.max(0, r.detail.preAfterOffsets), 0.001);
+});
+
+test('non-positive deposit (100%+ LVR) yields no equity/benchmark blocks', () => {
+  const r = E.runSaleScenario(
+    { ...wholeJourneyInputs, loanAmount: 620000 }, '2027-06-01'); // deposit = 0
+  assert.strictEqual(r.equity, null);
+  assert.strictEqual(r.benchmark, null);
+});
+
+test('equity release over the hold is flagged, never silently absorbed', () => {
+  const r = E.runSaleScenario(
+    { ...wholeJourneyInputs, loanBalance: 520000 }, '2027-06-01');
+  assert.strictEqual(r.equity.flags.loanIncreasedOverHold, true);
+  const base = E.runSaleScenario(wholeJourneyInputs, '2027-06-01');
+  assert.strictEqual(base.equity.flags.loanIncreasedOverHold, false);
+});
+
+test('deflationary CPI never shrinks the indexed cost base', () => {
+  const r = E.calcDualEraCGT({
+    deemedValue: 800000, oldCostBase: 800000,
+    salePrice: 810000, saleDate: '2029-07-01', sellingCosts: 0,
+    cpiRate: -0.02, marginalRate: 0.39,
+  });
+  approxEqual(r.indexedCostBase, 800000, 0.001);
 });
 
 summary();
