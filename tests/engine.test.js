@@ -616,4 +616,75 @@ test('irrFromCashflows: no sign change returns null', () => {
   assert.strictEqual(E.irrFromCashflows([]), null);
 });
 
+// ── Return on equity (spec §11, test T7) ─────────────────────────────────
+console.log('\ncalcEquityReturns (spec §11)');
+
+// T7: purchase $520k (costs in-price), loan $416k → deposit $104k.
+// Sold $660k, selling costs $14k, CGT $27k, payout $416k → net $203k.
+// ~$20k after-tax contributions over the hold; ~5.1yr hold.
+const t7 = {
+  purchasePrice: 520000, purchaseCosts: 0, loanAmount: 416000,
+  contractDate: '2020-12-01', saleDate: '2026-01-07', // yearFrac ≈ 5.1013
+  netProceedsAfterTax: 203000, // 660000 − 14000 − 27000 − 416000
+  salePrice: 660000,
+  holdingCashflows: [
+    { date: '2021-07-01', amount: -4000 },
+    { date: '2022-07-01', amount: -4000 },
+    { date: '2023-07-01', amount: -4000 },
+    { date: '2024-07-01', amount: -4000 },
+    { date: '2025-07-01', amount: -4000 },
+  ],
+};
+
+test('T7: deposit, total cash and net profit', () => {
+  const r = E.calcEquityReturns(t7);
+  approxEqual(r.depositCashInvested, 104000, 0.001);
+  approxEqual(r.totalCashInvested, 124000, 0.001);
+  approxEqual(r.netProfit, 79000, 0.001);
+});
+
+test('T7: roeSimple ≈ 11.7% p.a. (reconciles to the essay\'s ~11.5%)', () => {
+  const r = E.calcEquityReturns(t7);
+  // (1 + 79000/104000)^(1/5.1013) − 1
+  approxEqual(r.roeSimple, 0.1171, 0.001);
+});
+
+test('T7: IRR solves and is below roeSimple (prices the timing of the bleed)', () => {
+  const r = E.calcEquityReturns(t7);
+  assert(r.irr !== null && r.irr > 0, 'IRR should solve');
+  assert(r.irr < r.roeSimple, `irr ${r.irr} should be < roeSimple ${r.roeSimple}`);
+});
+
+test('T7: leverage multiple ≈ 5× and asset growth ≈ 4.8% p.a.', () => {
+  const r = E.calcEquityReturns(t7);
+  approxEqual(r.leverageMultiple, 5.0, 0.001);
+  // (660000/520000)^(1/5.1013) − 1 — the amplification pair's other half
+  approxEqual(r.assetGrowthAnnual, 0.0478, 0.001);
+});
+
+test('§13: negative net profit yields a real negative ROE, never blanked', () => {
+  const r = E.calcEquityReturns({
+    ...t7, netProceedsAfterTax: 87000, // netProfit = 87000 − 124000 = −37000
+  });
+  approxEqual(r.netProfit, -37000, 0.001);
+  assert(r.roeSimple < 0 && isFinite(r.roeSimple), 'ROE must be a real negative');
+});
+
+test('§13: loss beyond the whole stake floors at −1, never NaN', () => {
+  const r = E.calcEquityReturns({ ...t7, netProceedsAfterTax: -20000 });
+  assert.strictEqual(r.roeSimple, -1);
+});
+
+test('cash-positive holding years add to profit, not to cash invested', () => {
+  const r = E.calcEquityReturns({
+    ...t7,
+    holdingCashflows: [
+      { date: '2021-07-01', amount: -4000 },
+      { date: '2022-07-01', amount: 3000 }, // a good year
+    ],
+  });
+  approxEqual(r.totalCashInvested, 108000, 0.001); // deposit + 4000 only
+  approxEqual(r.netProfit, 203000 + 3000 - 108000, 0.001);
+});
+
 summary();

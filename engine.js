@@ -527,6 +527,8 @@ function annualizedReturn(netProfit, cashInvested, years) {
 // IRR of dated cash flows [{date, amount}] (negative = out of pocket).
 // Bisection on NPV over (−99.99%, 1000%); null when no root is bracketed
 // (e.g. all flows the same sign).
+// Mixed-sign interim flows (non-conventional) may have multiple IRRs; this
+// returns whichever root the bracket catches, or null.
 function irrFromCashflows(flows) {
   if (!flows || flows.length === 0) return null;
   const t0 = flows.reduce((min, f) => (f.date < min ? f.date : min), flows[0].date);
@@ -541,6 +543,43 @@ function irrFromCashflows(flows) {
     if (fLo * fMid <= 0) { hi = mid; } else { lo = mid; fLo = fMid; }
   }
   return (lo + hi) / 2;
+}
+
+// ── Return on equity / leverage (spec §11) ───────────────────────────────
+// The essay's pivotal outputs: what the investor's CASH returned, next to
+// what the ASSET did — the gap is leverage, reported without judgment.
+// holdingCashflows: dated after-tax flows (negative = money fed in).
+// netProfit generalizes spec §11 to cash-positive years: inflows join the
+// profit side; only outflows count as cash invested. With all-negative
+// flows (the essay case, T7) this is exactly the spec formula.
+function calcEquityReturns({ purchasePrice, purchaseCosts = 0, loanAmount,
+                             contractDate, saleDate, netProceedsAfterTax,
+                             holdingCashflows = [], salePrice = null }) {
+  const depositCashInvested = purchasePrice + purchaseCosts - loanAmount;
+  let contributions = 0, holdingInflows = 0;
+  for (const f of holdingCashflows) {
+    if (f.amount < 0) contributions -= f.amount;
+    else holdingInflows += f.amount;
+  }
+  const totalCashInvested = depositCashInvested + contributions;
+  const netProfit = netProceedsAfterTax + holdingInflows - totalCashInvested;
+  const holdingYears = yearFrac(contractDate, saleDate);
+
+  const roeSimple = annualizedReturn(netProfit, depositCashInvested, holdingYears);
+  const irr = irrFromCashflows([
+    { date: contractDate, amount: -depositCashInvested },
+    ...holdingCashflows,
+    { date: saleDate, amount: netProceedsAfterTax },
+  ]);
+  const leverageMultiple = depositCashInvested > 0
+    ? purchasePrice / depositCashInvested : null;
+  // Amplification pair (§11 #4): asset growth beside ROE, both % p.a.
+  const assetGrowthAnnual = salePrice !== null
+    ? annualizedReturn(salePrice - purchasePrice, purchasePrice, holdingYears)
+    : null;
+
+  return { depositCashInvested, totalCashInvested, netProfit, holdingYears,
+           roeSimple, irr, leverageMultiple, assetGrowthAnnual };
 }
 
 // ── Required disclaimers (spec §10) — single source for Phase 2 UI ───────
@@ -566,7 +605,7 @@ if (typeof module !== 'undefined' && module.exports) {
     buildQuarantineSchedule, proRateAnnualResults,
     calcNewBuildOptimizer,
     runSaleScenario, compareSaleTiming,
-    annualizedReturn, irrFromCashflows,
+    annualizedReturn, irrFromCashflows, calcEquityReturns,
     DISCLAIMERS,
   };
 }
