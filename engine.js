@@ -402,11 +402,14 @@ function calcNewBuildOptimizer({ acquisitionCosts, salePrice, saleDate,
     div43Claimed: div43ClaimedPre + div43ClaimedPost,
     capitalLosses, quarantinePool, marginalRate, heldOver12Months, discountPct,
   });
+  // discountPct deliberately NOT forwarded: spec §7b grants the 60%
+  // affordable-housing discount under Option A only; the dual-era
+  // pre-component is fixed at 50% by spec §5.2.
   const optionB = calcDualEraCGT({
     deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre,
     salePrice, saleDate, sellingCosts, div43ClaimedPost,
     cpiRate, marginalRate, capitalLosses, quarantinePool,
-    minTaxFloor, heldOver12MonthsAt2027, discountPct,
+    minTaxFloor, heldOver12MonthsAt2027,
   });
   return {
     optionA, optionB,
@@ -428,6 +431,9 @@ function calcReformSale({ contractDate, dwellingType = 'established', saleDate,
                           quarantinePool = 0, capitalLosses = 0,
                           cpiRate = 0.025, marginalRate, remainingLoan = 0 }) {
   const route = routeRegimes({ contractDate, dwellingType, saleDate });
+  if (route.cgt !== 'OLD' && deemedValue == null) {
+    throw new Error('calcReformSale: deemedValue is required for ' + route.cgt + ' routes');
+  }
   const sellingCosts = salePrice * sellingCostsPct;
   const heldOver12Months = yearFrac(contractDate, saleDate) >= 1;
   const heldOver12MonthsAt2027 = yearFrac(contractDate, DEEMED_DATE_ISO) >= 1;
@@ -450,6 +456,7 @@ function calcReformSale({ contractDate, dwellingType = 'established', saleDate,
     });
     cgt = detail.winner === 'A' ? detail.optionA.tax : detail.optionB.totalCGT;
     flags.newBuildDefinitionPending = true;
+    flags.deemedValueIsEstimate = deemedValueIsEstimate;
   } else {
     detail = calcDualEraCGT({
       deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre: div43Claimed,

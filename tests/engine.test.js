@@ -1124,4 +1124,26 @@ test('quarantine pool passed to the wrapper reduces the gain at sale', () => {
   assert.strictEqual(withPool.ngRegime, 'QUARANTINE_FROM_2027');
 });
 
+test('calcReformSale throws loudly when deemedValue is missing on a non-OLD route', () => {
+  assert.throws(() => E.calcReformSale({
+    contractDate: '2020-07-01', dwellingType: 'established', saleDate: '2029-07-01',
+    salePrice: 900000, sellingCostsPct: 0.02, acquisitionCosts: 600000,
+    marginalRate: 0.39,
+  }), /deemedValue is required/);
+});
+
+test('affordable housing: 60% discount applies to option A only; option B pre stays 50%', () => {
+  const r = E.calcReformSale({
+    contractDate: '2026-10-01', dwellingType: 'affordableHousing', saleDate: '2030-10-01',
+    salePrice: 950000, sellingCostsPct: 0, acquisitionCosts: 700000,
+    deemedValue: 720000, marginalRate: 0.39,
+  });
+  // Option A: gain 250,000 × (1−0.6) = 100,000 × 39% = 39,000
+  approxEqual(r.detail.optionA.tax, 100000 * 0.39, 0.5);
+  // Option B pre: gain 20,000 → 50% discount (held >12mo at 2027-06-30? contract
+  // 2026-10-01 → under 12 months at the deemed date → NO discount → taxablePre = 20,000)
+  approxEqual(r.detail.optionB.taxablePre, 20000, 0.5);
+  assert.strictEqual(r.flags.deemedValueIsEstimate, true); // Issue 3: flag present on BEST_OF
+});
+
 summary();
