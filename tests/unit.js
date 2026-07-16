@@ -721,13 +721,30 @@ test('large profit over long term (30-year loan lifetime)', () => {
 // ---------------------------------------------------------------------------
 // calcScenarioProfit — pure version for unit testing
 //
-// The production calcScenarioProfit(entry, years, growthRate) reads all
-// inputs from DOM elements inside `entry`. The arithmetic is identical;
-// only the data-access layer differs. The pure version below accepts a
-// plain object `data` with the same field names as the DOM data-field
-// attributes, plus a `stateDefaults` map that mirrors the one in index.html.
+// NOTE (2026-07-16, reform-ui-wiring Task 3): production calcScenarioProfit()
+// (and calculate()'s projection loop, and buildPropertyDatasets()) now route
+// their CGT arithmetic through engine.js's calcReformSale() — a date-aware
+// regime router (spec §3) — instead of the inline legacy formula reproduced
+// below. This pure twin is intentionally FROZEN at the pre-reform formula:
+// it is bit-identical to engine.js's legacySaleOutcome() (kept there as its
+// own golden regression, see tests/engine.test.js), which no longer has any
+// production call site but remains a deliberate historical/regression
+// baseline. calcReformSale()'s regime routing depends on wall-clock "today"
+// (via new Date()) and contract/dwelling/deemed-value inputs that this test
+// harness's plain `data` objects don't carry, so a truly "identical" pure
+// twin of the NEW production formula is not achievable without either (a)
+// injecting a deterministic "today" the tests don't currently model, or (b)
+// duplicating engine.test.js's already-thorough direct coverage of
+// calcReformSale/calcOldRegimeCGT/calcDualEraCGT. Flagged to the PO/reviewer
+// rather than silently rewritten — see reform-ui-wiring Task 3 report.
 //
-// Copied verbatim from index.html — verify against source if formulas change.
+// Below this point, "the production calcScenarioProfit(entry, years,
+// growthRate) reads all inputs from DOM elements inside `entry`" describes
+// the LOAN/CASH-FLOW arithmetic only, which is still shared verbatim; the
+// CGT block is the frozen legacy formula, not current production CGT math.
+// The pure version below accepts a plain object `data` with the same field
+// names as the DOM data-field attributes, plus a `stateDefaults` map that
+// mirrors the one in index.html.
 // ---------------------------------------------------------------------------
 
 function calcScenarioProfitPure(data, years, growthRate, marginalTaxRate, annualDepreciation) {
@@ -1131,10 +1148,14 @@ test('omitting marginalTaxRate and annualDepreciation defaults to 0.37 and 0', (
 // ---------------------------------------------------------------------------
 // CGT cost base — loan establishment fee excluded
 //
-// Production formula (lines 4589 and 4804 of index.html):
+// Historical note: this described the legacy formula (pre reform-ui-wiring
+// Task 3) that used to live at the call sites production now replaced with
+// calcReformSale(). It no longer matches current index.html line numbers —
+// see the FROZEN-formula note above calcScenarioProfitPure. Preserved here
+// because calcScenarioProfitPure itself is still frozen at this formula:
 //   costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST - cumulativeDepr)
 //
-// The $800 LOAN_ESTABLISHMENT fee was removed from costBase in this change.
+// The $800 LOAN_ESTABLISHMENT fee was removed from costBase in that change.
 // A lower costBase produces a higher capital gain and therefore more CGT,
 // so removing it (making costBase smaller) should reduce net profit.
 //

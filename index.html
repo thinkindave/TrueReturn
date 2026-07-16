@@ -4406,6 +4406,20 @@
       const expectedGrowth = getVal('expectedGrowth') / 100;
       const propertyAge = getField('propertyAge');
 
+      // ── 2026–27 reform context (UI spec v2.2) ──
+      const TODAY_ISO = new Date().toISOString().slice(0, 10);
+      const contractDate = getField('contractDate') || TODAY_ISO;
+      const dwellingType = getField('dwellingType') || 'established';
+      const currentValue = getVal('currentValueEstimate') || purchasePrice;
+      const deemedValueOverride = getVal('deemedValueOverride') || null;
+      // Deemed 30 June 2027 value: today's value projected at this property's
+      // growth rate. User override (Task 5) wins when present. Guarded with
+      // Math.max(0, ...) in case "today" is already past the deemed date.
+      const deemedValueEstimate = currentValue *
+        Math.pow(1 + expectedGrowth, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
+      const deemedValue = deemedValueOverride || deemedValueEstimate;
+      const deemedValueIsEstimate = !deemedValueOverride;
+
       // State-based values
       const conveyancing = defaults.conveyancing;
       const insurance = defaults.insurance;
@@ -4661,11 +4675,19 @@
 
         // Cash Out Position
         const salePrice = futureValue;
-        const { salesCosts, netProceeds, cgt, trueCashReturn } = legacySaleOutcome({
-          purchasePrice, stampDuty, conveyancing, buildingPest: BUILDING_PEST,
-          cumulativeDepr: annualDepreciation * years,
-          futureValue, remainingLoan, marginalTaxRate,
+        const saleDateISO = addYearsISO(TODAY_ISO, years);
+        const saleOutcome = calcReformSale({
+          contractDate, dwellingType,
+          saleDate: saleDateISO, salePrice: futureValue,
+          sellingCostsPct: 0.03,
+          acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
+          div43Claimed: annualDepreciation * years,
+          deemedValue, deemedValueIsEstimate,
+          quarantinePool: 0,  // Task 4 wires the real pool
+          marginalRate: marginalTaxRate,
+          remainingLoan,
         });
+        const { salesCosts, netProceeds, cgt, trueCashReturn } = saleOutcome;
 
         document.getElementById(`${prefix}Sale`).textContent = formatCurrency(salePrice);
         document.getElementById(`${prefix}SaleCosts`).textContent = formatCurrency(salesCosts);
@@ -4873,10 +4895,29 @@
         : (ev('marginalTaxRate') || 0.37);
       const annualDepreciation = (window.TrueReturn && window.TrueReturn.annualDepreciation) || 0;
       const futureValue = purchasePrice * Math.pow(1 + growthRate, years);
-      const { trueCashReturn } = legacySaleOutcome({
-        purchasePrice, stampDuty, conveyancing, buildingPest: BUILDING_PEST,
-        cumulativeDepr: annualDepreciation * years,
-        futureValue, remainingLoan, marginalTaxRate,
+
+      // ── 2026–27 reform context (UI spec v2.2) ──
+      const TODAY_ISO = new Date().toISOString().slice(0, 10);
+      const contractDate = ef('contractDate') || TODAY_ISO;
+      const dwellingType = ef('dwellingType') || 'established';
+      const currentValue = ev('currentValueEstimate') || purchasePrice;
+      const deemedValueOverride = ev('deemedValueOverride') || null;
+      const deemedValueEstimate = currentValue *
+        Math.pow(1 + growthRate, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
+      const deemedValue = deemedValueOverride || deemedValueEstimate;
+      const deemedValueIsEstimate = !deemedValueOverride;
+
+      const saleDateISO = addYearsISO(TODAY_ISO, years);
+      const { trueCashReturn } = calcReformSale({
+        contractDate, dwellingType,
+        saleDate: saleDateISO, salePrice: futureValue,
+        sellingCostsPct: 0.03,
+        acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
+        div43Claimed: annualDepreciation * years,
+        deemedValue, deemedValueIsEstimate,
+        quarantinePool: 0,  // Task 4 wires the real pool
+        marginalRate: marginalTaxRate,
+        remainingLoan,
       });
 
       let cumulativeCashFlow = 0;
@@ -4925,6 +4966,17 @@
         const loanAmount = purchasePrice - deposit;
         const stampDuty = Math.round(calcStampDuty(state, purchasePrice));
         const totalUpfront = deposit + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT;
+
+        // ── 2026–27 reform context (UI spec v2.2) ──
+        const TODAY_ISO = new Date().toISOString().slice(0, 10);
+        const contractDate = ef('contractDate') || TODAY_ISO;
+        const dwellingType = ef('dwellingType') || 'established';
+        const currentValue = ev('currentValueEstimate') || purchasePrice;
+        const deemedValueOverride = ev('deemedValueOverride') || null;
+        const deemedValueEstimate = currentValue *
+          Math.pow(1 + expectedGrowth, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
+        const deemedValue = deemedValueOverride || deemedValueEstimate;
+        const deemedValueIsEstimate = !deemedValueOverride;
 
         let annualLoanPayment;
         if (loanType === 'IO') {
@@ -4983,10 +5035,17 @@
             const mtr = document.body.dataset.mode === 'simple'
               ? parseFloat(SIMPLE_MODE_TAX)
               : (ev('marginalTaxRate') || 0.37);
-            const { trueCashReturn } = legacySaleOutcome({
-              purchasePrice, stampDuty, conveyancing, buildingPest: BUILDING_PEST,
-              cumulativeDepr: annDepr * y,
-              futureValue, remainingLoan, marginalTaxRate: mtr,
+            const saleDateISO = addYearsISO(TODAY_ISO, y);
+            const { trueCashReturn } = calcReformSale({
+              contractDate, dwellingType,
+              saleDate: saleDateISO, salePrice: futureValue,
+              sellingCostsPct: 0.03,
+              acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
+              div43Claimed: annDepr * y,
+              deemedValue, deemedValueIsEstimate,
+              quarantinePool: 0,  // Task 4 wires the real pool
+              marginalRate: mtr,
+              remainingLoan,
             });
             totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow;
             const returnBase = 1 + totalProfit / totalUpfront;
