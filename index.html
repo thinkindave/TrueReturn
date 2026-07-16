@@ -1638,7 +1638,7 @@
   .property-table-labels,
   .property-row {
     display: grid;
-    grid-template-columns: 4.5rem 1.1fr 1.2fr 0.8fr 0.65fr 0.85fr 0.7fr 0.85fr 0.65fr 0.7fr 0.65fr 0.9fr 4rem;
+    grid-template-columns: 4.5rem 1.1fr 1.2fr 0.8fr 0.65fr 0.85fr 0.7fr 0.85fr 0.65fr 0.7fr 0.65fr 0.9fr 0.95fr 1.1fr 0.85fr 4rem;
     gap: 0 0.5rem;
     align-items: center;
   }
@@ -2713,6 +2713,9 @@
             <div class="prop-col-label advanced-only">Mgmt <span class="help-tip" data-tip="Property manager's fee as a percentage of gross weekly rent">?</span></div>
             <div class="prop-col-label advanced-only">Growth/yr <span class="help-tip" data-tip="Expected annual capital growth rate. The long-run Australian average is ~7%.">?</span></div>
             <div class="prop-col-label advanced-only">Age <span class="help-tip" data-tip="Used to estimate annual depreciation on building structure and fixtures">?</span></div>
+            <div class="prop-col-label advanced-only">Contract date <span class="help-tip" data-tip="Contract date, not settlement. Contracts signed before 7:30pm AEST 12 May 2026 keep full negative gearing even if settled later">?</span></div>
+            <div class="prop-col-label advanced-only">Dwelling type <span class="help-tip" data-tip="New build definition not yet finalised in law — pending a ministerial instrument">?</span></div>
+            <div class="prop-col-label advanced-only">Value today <span class="help-tip" data-tip="Today's estimated market value — only needed when the contract date is in the past; blank uses the purchase price">?</span></div>
             <div class="prop-col-label"></div>
           </div>
           <div class="property-rows">
@@ -2796,11 +2799,25 @@
                     <option value="old">&gt;20y</option>
                   </select>
                 </div>
+                <div class="prop-col advanced-only" data-label="Contract date">
+                  <input type="date" data-field="contractDate">
+                </div>
+                <div class="prop-col advanced-only" data-label="Dwelling type">
+                  <select data-field="dwellingType">
+                    <option value="established" selected>Established</option>
+                    <option value="newBuild">New build (law pending)</option>
+                    <option value="affordableHousing">Affordable housing</option>
+                  </select>
+                </div>
+                <div class="prop-col advanced-only" data-label="Value today">
+                  <input type="number" data-field="currentValueEstimate" min="0" step="1000" placeholder="= purchase price">
+                </div>
                 <button class="card-details-toggle" aria-expanded="false">
                   <span class="card-details-toggle-label">Show details</span>
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <input type="hidden" data-field="marginalTaxRate" value="0.37">
+                <input type="hidden" data-field="deemedValueOverride" value="">
                 <div class="prop-col prop-col-delete">
                   <button class="copy-row-btn" title="Duplicate property">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -3542,6 +3559,10 @@
       expectedGrowth: '6',
       propertyAge:    'mid',
       marginalTaxRate: '0.37',
+      contractDate:   '',
+      dwellingType:   'established',
+      currentValueEstimate: '',
+      deemedValueOverride: '',
     };
     const SIMPLE_MODE_TAX = '0.37';
 
@@ -3776,7 +3797,7 @@
         taxRate: document.getElementById('marginalTaxRateSelect').value,
         properties: entries.map(function(entry) {
           var obj = {};
-          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate'].forEach(function(f) {
+          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','contractDate','dwellingType','currentValueEstimate','deemedValueOverride'].forEach(function(f) {
             var el = entry.querySelector('[data-field="' + f + '"]');
             obj[f] = el ? el.value : '';
           });
@@ -3790,7 +3811,7 @@
       var rows = document.querySelector('.property-rows');
       var template = rows.querySelector('.property-entry');
       if (!template) return;
-      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate'];
+      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','contractDate','dwellingType','currentValueEstimate','deemedValueOverride'];
       var fallbackTaxRate = state.taxRate || '0.37';
       var newEntries = state.properties.slice(0, 8).map(function(prop) {
         var clone = template.cloneNode(true);
