@@ -1638,7 +1638,13 @@
   .property-table-labels,
   .property-row {
     display: grid;
-    grid-template-columns: 4.5rem 1.1fr 1.2fr 0.8fr 0.65fr 0.85fr 0.7fr 0.85fr 0.65fr 0.7fr 0.65fr 0.9fr 0.95fr 1.1fr 0.85fr 4rem;
+    /* 13 tracks: num | name | price | rent | deposit | type | term | state | rate | mgmt | growth | age | actions
+       minmax(0, …) is required: without it each grid sizes its fr tracks to its OWN
+       min-content, so the header (long labels) and the row (short inputs) resolve to
+       different widths and drift apart (~28px at 1280px). Pinning the floor to 0 makes
+       both grids resolve identically. The fr shares are then sized to each label's
+       min-content so nothing collides — total is unchanged at 9.05fr. */
+    grid-template-columns: 4.5rem minmax(0, 0.85fr) minmax(0, 1.35fr) minmax(0, 0.85fr) minmax(0, 0.8fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 0.65fr) minmax(0, 0.65fr) minmax(0, 1.05fr) minmax(0, 0.75fr) 4rem;
     gap: 0 0.5rem;
     align-items: center;
   }
@@ -2317,8 +2323,55 @@
 
   /* Hidden globally; shown only inside mobile card view or desktop View button */
   .card-btn-label { display: none; }
-  .card-details-toggle { display: none; }
   .prop-col-num .card-btn-label { display: inline; }
+
+  /* ── Per-property expandable details ──
+     The toggle and the details area span the full row (they are grid items of
+     .property-row, which has a fixed 13-track template — 1/-1 keeps them out of
+     the tracks and on their own implicit rows). Available at every viewport and
+     in both modes, so the reform fields are always reachable. */
+  .card-details-toggle {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0.25rem 0 0.25rem 4.5rem;
+  }
+  .card-details-toggle:hover { color: var(--text-secondary); }
+  .card-details-toggle svg { transition: transform 0.2s ease; }
+  .property-entry.details-expanded .card-details-toggle svg { transform: rotate(180deg); }
+
+  .property-details {
+    grid-column: 1 / -1;
+    display: none;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    padding: 0.5rem 0 0.5rem 4.5rem;
+    margin-bottom: 0.25rem;
+    border-top: 1px dashed var(--border-subtle);
+  }
+  .property-entry.details-expanded .property-details { display: flex; }
+
+  .detail-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+  .detail-col .prop-col-label { padding-left: 0; }
+  .detail-col input,
+  .detail-col select { width: 100%; }
+  /* Date input needs room for dd/mm/yyyy plus the picker icon */
+  .detail-col--date { flex: 0 0 8.5rem; }
+  .detail-col--dwelling { flex: 0 0 11rem; }
+  .detail-col--value { flex: 0 0 9.5rem; }
 
   /* ── Mobile (max-width: 767px) ── */
   @media (max-width: 767px) {
@@ -2461,27 +2514,21 @@
       letter-spacing: 0.03em;
     }
 
-    /* Show details toggle — only visible in simple+mobile */
-    body[data-mode="simple"] .mobile-card-view .card-details-toggle {
-      display: flex;
+    /* Show details toggle — in card view it is a full-width flex row, not a grid item */
+    .mobile-card-view .card-details-toggle {
       flex: 0 0 100%;
       order: 3;
-      align-items: center;
-      gap: 0.3rem;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 0.72rem;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
       padding: 0.25rem 0;
     }
-    body[data-mode="simple"] .mobile-card-view .card-details-toggle svg {
-      transition: transform 0.2s ease;
+    /* Details area follows the toggle; full width, stacked one field per line */
+    .mobile-card-view .property-details {
+      flex: 0 0 100%;
+      order: 3;
+      padding: 0.5rem 0;
+      gap: 0.5rem;
     }
-    body[data-mode="simple"] .mobile-card-view .property-entry.details-expanded .card-details-toggle svg {
-      transform: rotate(180deg);
+    .mobile-card-view .detail-col {
+      flex: 0 0 100%;
     }
     /* Hide advanced fields in simple+mobile by default */
     body[data-mode="simple"] .mobile-card-view .advanced-only.prop-col {
@@ -2713,9 +2760,6 @@
             <div class="prop-col-label advanced-only">Mgmt <span class="help-tip" data-tip="Property manager's fee as a percentage of gross weekly rent">?</span></div>
             <div class="prop-col-label advanced-only">Growth/yr <span class="help-tip" data-tip="Expected annual capital growth rate. The long-run Australian average is ~7%.">?</span></div>
             <div class="prop-col-label advanced-only">Age <span class="help-tip" data-tip="Used to estimate annual depreciation on building structure and fixtures">?</span></div>
-            <div class="prop-col-label advanced-only">Contract date <span class="help-tip" data-tip="Contract date, not settlement. Contracts signed before 7:30pm AEST 12 May 2026 keep full negative gearing even if settled later">?</span></div>
-            <div class="prop-col-label advanced-only">Dwelling type <span class="help-tip" data-tip="New build definition not yet finalised in law — pending a ministerial instrument">?</span></div>
-            <div class="prop-col-label advanced-only">Value today <span class="help-tip" data-tip="Today's estimated market value — only needed when the contract date is in the past; blank uses the purchase price">?</span></div>
             <div class="prop-col-label"></div>
           </div>
           <div class="property-rows">
@@ -2799,23 +2843,6 @@
                     <option value="old">&gt;20y</option>
                   </select>
                 </div>
-                <div class="prop-col advanced-only" data-label="Contract date">
-                  <input type="date" data-field="contractDate">
-                </div>
-                <div class="prop-col advanced-only" data-label="Dwelling type">
-                  <select data-field="dwellingType">
-                    <option value="established" selected>Established</option>
-                    <option value="newBuild">New build (law pending)</option>
-                    <option value="affordableHousing">Affordable housing</option>
-                  </select>
-                </div>
-                <div class="prop-col advanced-only" data-label="Value today">
-                  <input type="number" data-field="currentValueEstimate" min="0" step="1000" placeholder="= purchase price">
-                </div>
-                <button class="card-details-toggle" aria-expanded="false">
-                  <span class="card-details-toggle-label">Show details</span>
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
                 <input type="hidden" data-field="marginalTaxRate" value="0.37">
                 <input type="hidden" data-field="deemedValueOverride" value="">
                 <div class="prop-col prop-col-delete">
@@ -2827,6 +2854,30 @@
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
                     <span class="card-btn-label">Delete</span>
                   </button>
+                </div>
+                <!-- Toggle + details span the full row; they must come last in DOM so the
+                     13 tracks of row 1 are filled before these create implicit rows. -->
+                <button class="card-details-toggle" aria-expanded="false">
+                  <span class="card-details-toggle-label">Show details</span>
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="property-details">
+                  <div class="detail-col advanced-only detail-col--date" data-label="Contract date">
+                    <div class="prop-col-label">Contract date <span class="help-tip" data-tip="Contract date, not settlement. Blank = today. Contracts signed before 7:30pm AEST 12 May 2026 keep full negative gearing even if settled later">?</span></div>
+                    <input type="date" data-field="contractDate" aria-label="Contract date">
+                  </div>
+                  <div class="detail-col advanced-only detail-col--dwelling" data-label="Dwelling type">
+                    <div class="prop-col-label">Dwelling type <span class="help-tip" data-tip="New build definition not yet finalised in law — pending a ministerial instrument">?</span></div>
+                    <select data-field="dwellingType" aria-label="Dwelling type">
+                      <option value="established" selected>Established</option>
+                      <option value="newBuild">New build (law pending)</option>
+                      <option value="affordableHousing">Affordable housing</option>
+                    </select>
+                  </div>
+                  <div class="detail-col advanced-only detail-col--value" data-label="Value today">
+                    <div class="prop-col-label">Value today <span class="help-tip" data-tip="Today's estimated market value — only needed when the contract date is in the past; blank uses the purchase price">?</span></div>
+                    <input type="number" data-field="currentValueEstimate" min="0" step="1000" placeholder="= purchase price" aria-label="Value today">
+                  </div>
                 </div>
               </div>
             </div>
