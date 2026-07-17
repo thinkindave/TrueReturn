@@ -1297,6 +1297,38 @@
       left: 0;
     }
 
+    /* Quarantined losses (2026-27 reform, spec §4b) */
+    .quarantine-note {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 0 0 0.75rem;
+    }
+
+    .quarantine-explainer {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .quarantine-explainer li {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding-left: 1rem;
+      position: relative;
+    }
+    .quarantine-explainer li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+    }
+    .quarantine-explainer strong {
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
     .line-value {
       font-size: 0.9375rem;
       font-weight: 600;
@@ -3108,6 +3140,32 @@
         </div>
       </div>
 
+      <!-- Quarantined Losses (2026-27 reform, spec §4b) -->
+      <div class="proj-section" id="quarantineSection" hidden>
+        <button class="proj-section-header" aria-expanded="false">
+          <span class="proj-section-title">Quarantined Losses <span class="help-tip" data-tip="Rental losses that no longer reduce your salary tax — they wait in a pool until this property makes rental profits or a capital gain">?</span></span>
+          <span class="proj-section-highlights">
+            <span class="proj-highlight">
+              <span class="proj-highlight-label">Pool at sale (15 yr)</span>
+              <span class="proj-highlight-value" id="resQuarantinePool">-</span>
+            </span>
+          </span>
+          <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="proj-section-body" hidden>
+          <p class="quarantine-note" id="resQuarantineNote"></p>
+          <ul class="quarantine-explainer">
+            <li><strong>Less:</strong> at sale, each quarantined dollar offsets the gross gain — typically saving about half what the old annual refund would have.</li>
+            <li><strong>Later:</strong> nothing back until you sell; the pool isn't indexed, so inflation erodes it while it waits.</li>
+            <li><strong>Only maybe:</strong> if the sale gain is smaller than the pool, the remainder is stranded.</li>
+          </ul>
+          <div class="line-item" id="resStrandedRow" hidden>
+            <span class="line-label">Stranded Losses (never recovered)</span>
+            <span class="line-value" id="resStrandedLosses">-</span>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <div class="card projections-card">
@@ -4492,6 +4550,64 @@
       window.TrueReturn.marginalTaxRate = marginalTaxRate;
       window.TrueReturn.annualDepreciation = annualDepreciation;
 
+      // ── NG quarantine (spec §4) ──
+      // Losses in income years starting on/after 1 Jul 2027 stop refunding
+      // against salary and accrue to a nominal pool that offsets rental
+      // profits, then the capital gain at sale. Grandfathered contracts and
+      // new builds are unaffected.
+      const ngRoute = routeRegimes({ contractDate: contractDate,
+        dwellingType: dwellingType, saleDate: addYearsISO(TODAY_ISO, 15) });
+      const ngQuarantined = ngRoute.ng === 'QUARANTINE_FROM_2027';
+
+      // Per-year taxable net rental result (rent − deductible expenses,
+      // including interest and depreciation), generalizing the snapshot
+      // calc below across all 15 projection years so the quarantine
+      // schedule uses the app's real per-year figures.
+      function netRentalResultForYear(y) {
+        const yGrowthFactor = Math.pow(1 + expectedGrowth, y);
+        const yValue = purchasePrice * yGrowthFactor;
+        const yWeeklyRent = weeklyRent * yGrowthFactor;
+        const yAnnualRent = yWeeklyRent * 52;
+        const yMgmtFee = yAnnualRent * managementFeePct;
+        const yMaintenance = yValue * 0.005;
+        let yInterestOnly;
+        if (loanType === 'IO') {
+          yInterestOnly = loanAmount * interestRate;
+        } else if (interestRate === 0) {
+          yInterestOnly = 0;
+        } else {
+          const yMonthlyRate = interestRate / 12;
+          const yTotalPayments = loanTerm * 12;
+          const yPaymentsMade = Math.min((y - 1) * 12, yTotalPayments);
+          const yRemainingLoan = loanAmount * (Math.pow(1 + yMonthlyRate, yTotalPayments) - Math.pow(1 + yMonthlyRate, yPaymentsMade)) / (Math.pow(1 + yMonthlyRate, yTotalPayments) - 1);
+          yInterestOnly = Math.max(0, yRemainingLoan) * interestRate;
+        }
+        const yDeductibleExpenses = yInterestOnly + yMgmtFee + insurance + councilFees + yMaintenance + annualDepreciation;
+        return yAnnualRent - yDeductibleExpenses;
+      }
+
+      const annualResults = [];
+      for (let y = 1; y <= 15; y++) {
+        const yDateISO = addYearsISO(TODAY_ISO, y - 1);
+        annualResults.push({
+          fyStartISO: fyStartYear(yDateISO) + '-07-01',
+          netResult: netRentalResultForYear(y),
+        });
+      }
+
+      const quarantineSched = buildQuarantineSchedule({
+        annualResults: annualResults, ngRegime: ngRoute.ng,
+        marginalRate: marginalTaxRate });
+      // Pool available at the end of projection year y (used at sale).
+      function quarantinePoolAtYear(y) {
+        let pool = 0;
+        for (let i = 0; i < y && i < quarantineSched.rows.length; i++) {
+          pool += quarantineSched.rows[i].quarantined;
+          pool -= Math.min(pool, Math.max(0, quarantineSched.rows[i].netResult));
+        }
+        return pool;
+      }
+
       // Snapshot year projections
       const snapshotYear = _snapshotYear;
       const snGrowthFactor = Math.pow(1 + expectedGrowth, snapshotYear);
@@ -4603,6 +4719,29 @@
         tbEl.className = 'proj-highlight-value ' + (snTaxBenefit > 0 ? 'positive' : snTaxBenefit < 0 ? 'negative' : '');
       }
 
+      // ── NG quarantine — snapshot override (spec §4a) ──
+      // If this snapshot year falls in the quarantine era and is a loss
+      // year, the old refund no longer applies — show $0 and explain why.
+      const snQuarantineRow = quarantineSched.rows[snapshotYear - 1];
+      const snIsQuarantinedLossYear = !!(ngQuarantined && snQuarantineRow
+        && snQuarantineRow.fyStartISO >= BOUNDARY_ISO && snNetRentalPosition < 0);
+      const quarantineNoteEl = document.getElementById('resQuarantineNote');
+      if (snIsQuarantinedLossYear) {
+        if (tbEl) {
+          tbEl.textContent = formatCurrency(0) + '/yr';
+          tbEl.className = 'proj-highlight-value';
+        }
+        if (quarantineNoteEl) {
+          const snLoss = Math.abs(snNetRentalPosition);
+          quarantineNoteEl.textContent = 'Annual loss: ' + formatCurrency(snLoss) +
+            '. Under the old rules you\'d have received about ' +
+            formatCurrency(snLoss * marginalTaxRate) +
+            ' back each year. These losses are now quarantined — see below.';
+        }
+      } else if (quarantineNoteEl) {
+        quarantineNoteEl.textContent = '';
+      }
+
       // Update DOM — Results
       // Inline results
       // KPI bar (Breakdown tab)
@@ -4628,6 +4767,7 @@
         kpiCoc.className = 'breakdown-kpi-value ' + (cashOnCash >= 0 ? 'positive' : 'negative');
       }
       // Projections
+      let saleOutcome15 = null;
       [{years: 5, prefix: 'proj5'}, {years: 10, prefix: 'proj10'}, {years: 15, prefix: 'projLife'}].forEach(({years, prefix}) => {
         const futureValue = purchasePrice * Math.pow(1 + expectedGrowth, years);
         const capitalGrowth = futureValue - purchasePrice;
@@ -4684,11 +4824,12 @@
           acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
           div43Claimed: annualDepreciation * years,
           deemedValue, deemedValueIsEstimate,
-          quarantinePool: 0,  // Task 4 wires the real pool
+          quarantinePool: quarantinePoolAtYear(years),
           marginalRate: marginalTaxRate,
           remainingLoan,
         });
         const { salesCosts, netProceeds, cgt, trueCashReturn } = saleOutcome;
+        if (years === 15) saleOutcome15 = saleOutcome;
 
         document.getElementById(`${prefix}Sale`).textContent = formatCurrency(salePrice);
         document.getElementById(`${prefix}SaleCosts`).textContent = formatCurrency(salesCosts);
@@ -4764,6 +4905,28 @@
           hReturnOnCashEl.className = 'period-headline-value ' + (annualisedReturn >= 0 ? 'positive' : 'negative');
         }
       });
+
+      // ── NG quarantine pool tracker (spec §4b) ──
+      // Never shown to grandfathered/new-build users — the section stays
+      // hidden entirely rather than surfacing an irrelevant $0.
+      const quarantineSectionEl = document.getElementById('quarantineSection');
+      if (quarantineSectionEl) quarantineSectionEl.hidden = !ngQuarantined;
+      if (ngQuarantined) {
+        const poolEl = document.getElementById('resQuarantinePool');
+        if (poolEl) poolEl.textContent = formatCurrency(quarantinePoolAtYear(15));
+
+        let stranded = 0;
+        if (saleOutcome15) {
+          const d15 = saleOutcome15.detail;
+          stranded = saleOutcome15.regime === 'BEST_OF'
+            ? (d15.winner === 'A' ? d15.optionA.strandedPool : d15.optionB.strandedPool)
+            : (d15.strandedPool || 0);
+        }
+        const strandedRowEl = document.getElementById('resStrandedRow');
+        const strandedEl = document.getElementById('resStrandedLosses');
+        if (strandedRowEl) strandedRowEl.hidden = !(stranded > 0);
+        if (strandedEl) strandedEl.textContent = formatCurrency(stranded);
+      }
 
       // --- Property Highlights ---
 
