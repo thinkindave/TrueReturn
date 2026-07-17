@@ -2371,7 +2371,6 @@
   /* Date input needs room for dd/mm/yyyy plus the picker icon */
   .detail-col--date { flex: 0 0 8.5rem; }
   .detail-col--dwelling { flex: 0 0 11rem; }
-  .detail-col--value { flex: 0 0 9.5rem; }
 
   /* ── Mobile (max-width: 767px) ── */
   @media (max-width: 767px) {
@@ -2873,10 +2872,6 @@
                       <option value="newBuild">New build (law pending)</option>
                       <option value="affordableHousing">Affordable housing</option>
                     </select>
-                  </div>
-                  <div class="detail-col advanced-only detail-col--value" data-label="Value today">
-                    <div class="prop-col-label">Value today <span class="help-tip" data-tip="Today's estimated market value — only needed when the contract date is in the past; blank uses the purchase price">?</span></div>
-                    <input type="number" data-field="currentValueEstimate" min="0" step="1000" placeholder="= purchase price" aria-label="Value today">
                   </div>
                 </div>
               </div>
@@ -3570,6 +3565,14 @@
       return parseFloat(getField(field)) || 0;
     }
 
+    // Local calendar date (not UTC) — TODAY_ISO feeds the 12-month
+    // discount cliff at 30 June 2027; a UTC day-slip could flip it.
+    function todayISO() {
+      var d = new Date();
+      return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+        .toISOString().slice(0, 10);
+    }
+
     function setResult(key, value, className) {
       const entry = getSelectedEntry();
       if (!entry) return;
@@ -3612,7 +3615,6 @@
       marginalTaxRate: '0.37',
       contractDate:   '',
       dwellingType:   'established',
-      currentValueEstimate: '',
       deemedValueOverride: '',
     };
     const SIMPLE_MODE_TAX = '0.37';
@@ -3848,7 +3850,7 @@
         taxRate: document.getElementById('marginalTaxRateSelect').value,
         properties: entries.map(function(entry) {
           var obj = {};
-          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','contractDate','dwellingType','currentValueEstimate','deemedValueOverride'].forEach(function(f) {
+          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','contractDate','dwellingType','deemedValueOverride'].forEach(function(f) {
             var el = entry.querySelector('[data-field="' + f + '"]');
             obj[f] = el ? el.value : '';
           });
@@ -3862,7 +3864,7 @@
       var rows = document.querySelector('.property-rows');
       var template = rows.querySelector('.property-entry');
       if (!template) return;
-      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','contractDate','dwellingType','currentValueEstimate','deemedValueOverride'];
+      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','contractDate','dwellingType','deemedValueOverride'];
       var fallbackTaxRate = state.taxRate || '0.37';
       var newEntries = state.properties.slice(0, 8).map(function(prop) {
         var clone = template.cloneNode(true);
@@ -4407,15 +4409,14 @@
       const propertyAge = getField('propertyAge');
 
       // ── 2026–27 reform context (UI spec v2.2) ──
-      const TODAY_ISO = new Date().toISOString().slice(0, 10);
+      const TODAY_ISO = todayISO();
       const contractDate = getField('contractDate') || TODAY_ISO;
       const dwellingType = getField('dwellingType') || 'established';
-      const currentValue = getVal('currentValueEstimate') || purchasePrice;
       const deemedValueOverride = getVal('deemedValueOverride') || null;
-      // Deemed 30 June 2027 value: today's value projected at this property's
-      // growth rate. User override (Task 5) wins when present. Guarded with
-      // Math.max(0, ...) in case "today" is already past the deemed date.
-      const deemedValueEstimate = currentValue *
+      // Deemed 30 June 2027 value: the SAME projection curve as futureValue
+      // (same base, rate and clock) so the pre/post CGT split lands correctly.
+      // Retrospective "value today" rebasing is deferred to plan 2b-2.
+      const deemedValueEstimate = purchasePrice *
         Math.pow(1 + expectedGrowth, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
       const deemedValue = deemedValueOverride || deemedValueEstimate;
       const deemedValueIsEstimate = !deemedValueOverride;
@@ -4897,12 +4898,14 @@
       const futureValue = purchasePrice * Math.pow(1 + growthRate, years);
 
       // ── 2026–27 reform context (UI spec v2.2) ──
-      const TODAY_ISO = new Date().toISOString().slice(0, 10);
+      const TODAY_ISO = todayISO();
       const contractDate = ef('contractDate') || TODAY_ISO;
       const dwellingType = ef('dwellingType') || 'established';
-      const currentValue = ev('currentValueEstimate') || purchasePrice;
       const deemedValueOverride = ev('deemedValueOverride') || null;
-      const deemedValueEstimate = currentValue *
+      // Deemed 30 June 2027 value: the SAME projection curve as futureValue
+      // (same base, rate and clock) so the pre/post CGT split lands correctly.
+      // Retrospective "value today" rebasing is deferred to plan 2b-2.
+      const deemedValueEstimate = purchasePrice *
         Math.pow(1 + growthRate, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
       const deemedValue = deemedValueOverride || deemedValueEstimate;
       const deemedValueIsEstimate = !deemedValueOverride;
@@ -4938,6 +4941,8 @@
       const entries = document.querySelectorAll('.property-entry');
       const labels = Array.from({length: GRAPH_YEARS + 1}, (_, i) => 'Yr ' + i);
       const datasets = [];
+      // One clock for every entry and year in this render pass.
+      const TODAY_ISO = todayISO();
 
       entries.forEach((entry, idx) => {
         function ef(field) {
@@ -4968,12 +4973,13 @@
         const totalUpfront = deposit + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT;
 
         // ── 2026–27 reform context (UI spec v2.2) ──
-        const TODAY_ISO = new Date().toISOString().slice(0, 10);
         const contractDate = ef('contractDate') || TODAY_ISO;
         const dwellingType = ef('dwellingType') || 'established';
-        const currentValue = ev('currentValueEstimate') || purchasePrice;
         const deemedValueOverride = ev('deemedValueOverride') || null;
-        const deemedValueEstimate = currentValue *
+        // Deemed 30 June 2027 value: the SAME projection curve as futureValue
+        // (same base, rate and clock) so the pre/post CGT split lands correctly.
+        // Retrospective "value today" rebasing is deferred to plan 2b-2.
+        const deemedValueEstimate = purchasePrice *
           Math.pow(1 + expectedGrowth, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
         const deemedValue = deemedValueOverride || deemedValueEstimate;
         const deemedValueIsEstimate = !deemedValueOverride;

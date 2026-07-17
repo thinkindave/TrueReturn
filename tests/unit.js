@@ -1098,9 +1098,9 @@ test('zero purchase price returns zero depreciation', () => {
 // that the new parameters are not ignored.
 // ---------------------------------------------------------------------------
 
-console.log('\ncalcScenarioProfit — marginalTaxRate and annualDepreciation parameters');
+console.log('\ncalcScenarioProfit — marginalTaxRate and annualDepreciation parameters (frozen legacy formula — current coverage lives in engine.test.js calcReformSale suite)');
 
-test('higher marginalTaxRate produces lower profit when there is a capital gain', () => {
+test('legacy frozen formula: higher marginalTaxRate produces lower profit when there is a capital gain', () => {
   // Use positive growth so a capital gain exists and CGT is non-zero.
   // A higher tax rate means more CGT deducted, so profit should be lower.
   const lowTax  = calcScenarioProfitPure(refEntry, 10, 0.05, 0.19, 0);
@@ -1109,14 +1109,14 @@ test('higher marginalTaxRate produces lower profit when there is a capital gain'
     `Expected low-tax profit (${lowTax}) > high-tax profit (${highTax})`);
 });
 
-test('zero marginalTaxRate produces higher profit than default 37% when capital gain exists', () => {
+test('legacy frozen formula: zero marginalTaxRate produces higher profit than default 37% when capital gain exists', () => {
   const noTax      = calcScenarioProfitPure(refEntry, 10, 0.05, 0,    0);
   const defaultTax = calcScenarioProfitPure(refEntry, 10, 0.05, 0.37, 0);
   assert.ok(noTax > defaultTax,
     `Expected zero-tax (${noTax}) > default-tax (${defaultTax})`);
 });
 
-test('positive annualDepreciation lowers cost base and increases CGT (reduces profit)', () => {
+test('legacy frozen formula: positive annualDepreciation lowers cost base and increases CGT (reduces profit)', () => {
   // Depreciation reduces the cost base, raising the capital gain, raising CGT,
   // which should reduce overall profit relative to zero depreciation.
   const withDepr    = calcScenarioProfitPure(refEntry, 10, 0.05, 0.37, 5000);
@@ -1125,7 +1125,7 @@ test('positive annualDepreciation lowers cost base and increases CGT (reduces pr
     `Expected depreciation to reduce profit: withDepr (${withDepr}) < withoutDepr (${withoutDepr})`);
 });
 
-test('annualDepreciation via calcDepreciation matches manual rate for new property', () => {
+test('legacy frozen formula: annualDepreciation via calcDepreciation matches manual rate for new property', () => {
   // Confirm the depreciation value fed into calcScenarioProfitPure is the
   // result of calcDepreciation, not a hardcoded constant.
   // A new ($500k) property: calcDepreciation('new', 500000) = 500000 * 0.75 * 0.025 = 9375
@@ -1138,7 +1138,7 @@ test('annualDepreciation via calcDepreciation matches manual rate for new proper
     `Expected depreciation of ${depr} to change profit vs zero depreciation`);
 });
 
-test('omitting marginalTaxRate and annualDepreciation defaults to 0.37 and 0', () => {
+test('legacy frozen formula: omitting marginalTaxRate and annualDepreciation defaults to 0.37 and 0', () => {
   // Calling with 3 args must equal calling with explicit defaults.
   const threeArgs   = calcScenarioProfitPure(refEntry, 10, 0.04);
   const fiveArgs    = calcScenarioProfitPure(refEntry, 10, 0.04, 0.37, 0);
@@ -1165,7 +1165,7 @@ test('omitting marginalTaxRate and annualDepreciation defaults to 0.37 and 0', (
 // it focuses on the principal components.)
 // ---------------------------------------------------------------------------
 
-console.log('\nCGT cost base — loan establishment fee excluded');
+console.log('\nCGT cost base — loan establishment fee excluded (frozen legacy formula — current coverage lives in engine.test.js calcReformSale suite)');
 
 function calcCostBase(purchasePrice, stampDuty, conveyancing, buildingPest, loanEstablishment, cumulativeDepr) {
   // Current formula: LOAN_ESTABLISHMENT is NOT in costBase
@@ -1794,19 +1794,18 @@ const SIMPLE_MODE_DEFAULTS = {
   marginalTaxRate: '0.37',
   contractDate:    '',
   dwellingType:    'established',
-  currentValueEstimate: '',
   deemedValueOverride:  '',
 };
 const SIMPLE_MODE_TAX = '0.37';
 
 // --- SIMPLE_MODE_DEFAULTS completeness ---
-test('SIMPLE_MODE_DEFAULTS has exactly 15 keys', () => {
+test('SIMPLE_MODE_DEFAULTS has exactly 14 keys', () => {
   const keys = Object.keys(SIMPLE_MODE_DEFAULTS);
-  assert.strictEqual(keys.length, 15, `Expected 15 keys, got ${keys.length}: ${keys.join(', ')}`);
+  assert.strictEqual(keys.length, 14, `Expected 14 keys, got ${keys.length}: ${keys.join(', ')}`);
 });
 
 test('SIMPLE_MODE_DEFAULTS contains all expected keys', () => {
-  const expected = ['purchasePrice', 'weeklyRent', 'depositPct', 'loanType', 'loanTerm', 'state', 'interestRate', 'managementFee', 'expectedGrowth', 'propertyAge', 'marginalTaxRate', 'contractDate', 'dwellingType', 'currentValueEstimate', 'deemedValueOverride'];
+  const expected = ['purchasePrice', 'weeklyRent', 'depositPct', 'loanType', 'loanTerm', 'state', 'interestRate', 'managementFee', 'expectedGrowth', 'propertyAge', 'marginalTaxRate', 'contractDate', 'dwellingType', 'deemedValueOverride'];
   for (const key of expected) {
     assert.ok(Object.prototype.hasOwnProperty.call(SIMPLE_MODE_DEFAULTS, key), `Missing key: ${key}`);
   }
