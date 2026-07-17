@@ -426,10 +426,17 @@ function calcNewBuildOptimizer({ acquisitionCosts, salePrice, saleDate,
 // whenever the sale routes DUAL_ERA or BEST_OF (caller projects it).
 function calcReformSale({ contractDate, dwellingType = 'established', saleDate,
                           salePrice, sellingCostsPct = 0.03,
-                          acquisitionCosts, div43Claimed = 0,
+                          acquisitionCosts, div43Claimed = 0, div43ClaimedPost = 0,
                           deemedValue = null, deemedValueIsEstimate = true,
                           quarantinePool = 0, capitalLosses = 0,
                           cpiRate = 0.025, marginalRate, remainingLoan = 0 }) {
+  // div43Claimed = cumulative Div 43 claimed to 30 June 2027 ("pre"); the new
+  // div43ClaimedPost param is cumulative Div 43 claimed after that date. Tax
+  // spec §5.3: a post-2027 claim reduces the post-component's element 1
+  // BEFORE indexation, so it must never be folded into the pre-component's
+  // cost base — that understates CGT (measured $13,127 / 5.5% on a default
+  // 15-year hold). The OLD route has no era split, so the full pre+post sum
+  // reduces the single cost base there.
   const route = routeRegimes({ contractDate, dwellingType, saleDate });
   if (route.cgt !== 'OLD' && deemedValue == null) {
     throw new Error('calcReformSale: deemedValue is required for ' + route.cgt + ' routes');
@@ -442,14 +449,15 @@ function calcReformSale({ contractDate, dwellingType = 'established', saleDate,
   const flags = {};
   if (route.cgt === 'OLD') {
     detail = calcOldRegimeCGT({
-      salePrice, sellingCosts, acquisitionCosts, div43Claimed,
+      salePrice, sellingCosts, acquisitionCosts,
+      div43Claimed: div43Claimed + div43ClaimedPost,
       capitalLosses, quarantinePool, marginalRate, heldOver12Months,
     });
     cgt = detail.tax;
   } else if (route.cgt === 'BEST_OF') {
     detail = calcNewBuildOptimizer({
       acquisitionCosts, salePrice, saleDate, sellingCosts, deemedValue,
-      div43ClaimedPre: div43Claimed, cpiRate, marginalRate,
+      div43ClaimedPre: div43Claimed, div43ClaimedPost, cpiRate, marginalRate,
       capitalLosses, quarantinePool,
       discountPct: dwellingType === 'affordableHousing' ? 0.6 : 0.5,
       heldOver12Months, heldOver12MonthsAt2027,
@@ -460,7 +468,7 @@ function calcReformSale({ contractDate, dwellingType = 'established', saleDate,
   } else {
     detail = calcDualEraCGT({
       deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre: div43Claimed,
-      salePrice, saleDate, sellingCosts, cpiRate, marginalRate,
+      div43ClaimedPost, salePrice, saleDate, sellingCosts, cpiRate, marginalRate,
       capitalLosses, quarantinePool, heldOver12MonthsAt2027, deemedValueIsEstimate,
     });
     cgt = detail.totalCGT;

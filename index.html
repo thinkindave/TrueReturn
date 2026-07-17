@@ -2400,8 +2400,8 @@
   .detail-col .prop-col-label { padding-left: 0; }
   .detail-col input,
   .detail-col select { width: 100%; }
-  /* Date input needs room for dd/mm/yyyy plus the picker icon */
-  .detail-col--date { flex: 0 0 8.5rem; }
+  .detail-col--grandfathered { flex: 0 0 auto; }
+  .detail-col--grandfathered input[type="checkbox"] { width: auto; }
   .detail-col--dwelling { flex: 0 0 11rem; }
 
   /* ── Mobile (max-width: 767px) ── */
@@ -2893,9 +2893,9 @@
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="property-details">
-                  <div class="detail-col advanced-only detail-col--date" data-label="Contract date">
-                    <div class="prop-col-label">Contract date <span class="help-tip" data-tip="Contract date, not settlement. Blank = today. Contracts signed before 7:30pm AEST 12 May 2026 keep full negative gearing even if settled later">?</span></div>
-                    <input type="date" data-field="contractDate" aria-label="Contract date">
+                  <div class="detail-col advanced-only detail-col--grandfathered" data-label="Bought before 12 May 2026">
+                    <div class="prop-col-label">I bought this before 12 May 2026 <span class="help-tip" data-tip="Contracts signed before 7:30pm AEST 12 May 2026 keep full negative gearing for life — contract date, not settlement. The 2027 CGT change applies either way.">?</span></div>
+                    <input type="checkbox" data-field="grandfathered" aria-label="I bought this before 12 May 2026">
                   </div>
                   <div class="detail-col advanced-only detail-col--dwelling" data-label="Dwelling type">
                     <div class="prop-col-label">Dwelling type <span class="help-tip" data-tip="New build definition not yet finalised in law — pending a ministerial instrument">?</span></div>
@@ -3671,7 +3671,7 @@
       expectedGrowth: '6',
       propertyAge:    'mid',
       marginalTaxRate: '0.37',
-      contractDate:   '',
+      grandfathered:  false,
       dwellingType:   'established',
       deemedValueOverride: '',
     };
@@ -3798,11 +3798,14 @@
 
       // Reset input values: clear all fields, then apply SIMPLE_MODE_DEFAULTS
       newEntry.querySelectorAll('[data-field]').forEach(el => {
-        if (el.tagName === 'INPUT' || el.tagName === 'SELECT') el.value = '';
+        if (el.type === 'checkbox') el.checked = false;
+        else if (el.tagName === 'INPUT' || el.tagName === 'SELECT') el.value = '';
       });
       Object.keys(SIMPLE_MODE_DEFAULTS).forEach(function(field) {
         const el = newEntry.querySelector('[data-field="' + field + '"]');
-        if (el) el.value = SIMPLE_MODE_DEFAULTS[field];
+        if (!el) return;
+        if (el.type === 'checkbox') el.checked = !!SIMPLE_MODE_DEFAULTS[field];
+        else el.value = SIMPLE_MODE_DEFAULTS[field];
       });
 
       // Reset result displays
@@ -3908,9 +3911,9 @@
         taxRate: document.getElementById('marginalTaxRateSelect').value,
         properties: entries.map(function(entry) {
           var obj = {};
-          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','contractDate','dwellingType','deemedValueOverride'].forEach(function(f) {
+          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','grandfathered','dwellingType','deemedValueOverride'].forEach(function(f) {
             var el = entry.querySelector('[data-field="' + f + '"]');
-            obj[f] = el ? el.value : '';
+            obj[f] = el ? (el.type === 'checkbox' ? el.checked : el.value) : '';
           });
           return obj;
         })
@@ -3922,7 +3925,7 @@
       var rows = document.querySelector('.property-rows');
       var template = rows.querySelector('.property-entry');
       if (!template) return;
-      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','contractDate','dwellingType','deemedValueOverride'];
+      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','grandfathered','dwellingType','deemedValueOverride'];
       var fallbackTaxRate = state.taxRate || '0.37';
       var newEntries = state.properties.slice(0, 8).map(function(prop) {
         var clone = template.cloneNode(true);
@@ -3931,9 +3934,12 @@
           var el = clone.querySelector('[data-field="' + f + '"]');
           if (el) {
             if (prop[f] !== undefined) {
-              el.value = prop[f];
+              if (el.type === 'checkbox') el.checked = !!prop[f];
+              else el.value = prop[f];
             } else if (f === 'marginalTaxRate') {
               el.value = fallbackTaxRate;
+            } else if (el.type === 'checkbox') {
+              el.checked = false;
             }
           }
         });
@@ -4468,7 +4474,14 @@
 
       // ── 2026–27 reform context (UI spec v2.2) ──
       const TODAY_ISO = todayISO();
-      const contractDate = getField('contractDate') || TODAY_ISO;
+      // Grandfathering toggle → synthetic contract date (UI spec v2.3 §2).
+      // Budget night + 12 months = 12 May 2027 < 30 June 2027, so a
+      // grandfathered holding always clears the 12-month test at the deemed
+      // date; any purchase from 1 Jul 2026 onward never does. The engine's
+      // router needs only these two dates to reproduce both regimes.
+      const grandfatheredEl = entry ? entry.querySelector('[data-field="grandfathered"]') : null;
+      const grandfathered = grandfatheredEl ? grandfatheredEl.checked : false;
+      const contractDate = grandfathered ? BUDGET_NIGHT_ISO : TODAY_ISO;
       const dwellingType = getField('dwellingType') || 'established';
       const deemedValueOverride = getVal('deemedValueOverride') || null;
       // Deemed 30 June 2027 value: the SAME projection curve as futureValue
@@ -4817,12 +4830,18 @@
         // Cash Out Position
         const salePrice = futureValue;
         const saleDateISO = addYearsISO(TODAY_ISO, years);
+        // Div 43 splits at the deemed date (tax spec §5.3): post-2027
+        // claims reduce element 1 before indexation, so attributing them
+        // to the pre-component understates CGT.
+        const preYears = Math.max(0, Math.min(years, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
+        const div43Pre = annualDepreciation * preYears;
+        const div43Post = annualDepreciation * (years - preYears);
         const saleOutcome = calcReformSale({
           contractDate, dwellingType,
           saleDate: saleDateISO, salePrice: futureValue,
           sellingCostsPct: 0.03,
           acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
-          div43Claimed: annualDepreciation * years,
+          div43Claimed: div43Pre, div43ClaimedPost: div43Post,
           deemedValue, deemedValueIsEstimate,
           quarantinePool: quarantinePoolAtYear(years),
           marginalRate: marginalTaxRate,
@@ -5062,7 +5081,14 @@
 
       // ── 2026–27 reform context (UI spec v2.2) ──
       const TODAY_ISO = todayISO();
-      const contractDate = ef('contractDate') || TODAY_ISO;
+      // Grandfathering toggle → synthetic contract date (UI spec v2.3 §2).
+      // Budget night + 12 months = 12 May 2027 < 30 June 2027, so a
+      // grandfathered holding always clears the 12-month test at the deemed
+      // date; any purchase from 1 Jul 2026 onward never does. The engine's
+      // router needs only these two dates to reproduce both regimes.
+      const grandfatheredEl = entry.querySelector('[data-field="grandfathered"]');
+      const grandfathered = grandfatheredEl ? grandfatheredEl.checked : false;
+      const contractDate = grandfathered ? BUDGET_NIGHT_ISO : TODAY_ISO;
       const dwellingType = ef('dwellingType') || 'established';
       const deemedValueOverride = ev('deemedValueOverride') || null;
       // Deemed 30 June 2027 value: the SAME projection curve as futureValue
@@ -5074,12 +5100,18 @@
       const deemedValueIsEstimate = !deemedValueOverride;
 
       const saleDateISO = addYearsISO(TODAY_ISO, years);
+      // Div 43 splits at the deemed date (tax spec §5.3): post-2027
+      // claims reduce element 1 before indexation, so attributing them
+      // to the pre-component understates CGT.
+      const preYears = Math.max(0, Math.min(years, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
+      const div43Pre = annualDepreciation * preYears;
+      const div43Post = annualDepreciation * (years - preYears);
       const { trueCashReturn } = calcReformSale({
         contractDate, dwellingType,
         saleDate: saleDateISO, salePrice: futureValue,
         sellingCostsPct: 0.03,
         acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
-        div43Claimed: annualDepreciation * years,
+        div43Claimed: div43Pre, div43ClaimedPost: div43Post,
         deemedValue, deemedValueIsEstimate,
         quarantinePool: 0,  // Task 4 wires the real pool
         marginalRate: marginalTaxRate,
@@ -5136,7 +5168,14 @@
         const totalUpfront = deposit + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT;
 
         // ── 2026–27 reform context (UI spec v2.2) ──
-        const contractDate = ef('contractDate') || TODAY_ISO;
+        // Grandfathering toggle → synthetic contract date (UI spec v2.3 §2).
+        // Budget night + 12 months = 12 May 2027 < 30 June 2027, so a
+        // grandfathered holding always clears the 12-month test at the
+        // deemed date; any purchase from 1 Jul 2026 onward never does. The
+        // engine's router needs only these two dates to reproduce both regimes.
+        const grandfatheredEl = entry.querySelector('[data-field="grandfathered"]');
+        const grandfathered = grandfatheredEl ? grandfatheredEl.checked : false;
+        const contractDate = grandfathered ? BUDGET_NIGHT_ISO : TODAY_ISO;
         const dwellingType = ef('dwellingType') || 'established';
         const deemedValueOverride = ev('deemedValueOverride') || null;
         // Deemed 30 June 2027 value: the SAME projection curve as futureValue
@@ -5205,12 +5244,18 @@
               ? parseFloat(SIMPLE_MODE_TAX)
               : (ev('marginalTaxRate') || 0.37);
             const saleDateISO = addYearsISO(TODAY_ISO, y);
+            // Div 43 splits at the deemed date (tax spec §5.3): post-2027
+            // claims reduce element 1 before indexation, so attributing them
+            // to the pre-component understates CGT.
+            const preYears = Math.max(0, Math.min(y, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
+            const div43Pre = annDepr * preYears;
+            const div43Post = annDepr * (y - preYears);
             const { trueCashReturn } = calcReformSale({
               contractDate, dwellingType,
               saleDate: saleDateISO, salePrice: futureValue,
               sellingCostsPct: 0.03,
               acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
-              div43Claimed: annDepr * y,
+              div43Claimed: div43Pre, div43ClaimedPost: div43Post,
               deemedValue, deemedValueIsEstimate,
               quarantinePool: 0,  // Task 4 wires the real pool
               marginalRate: mtr,

@@ -1146,4 +1146,26 @@ test('affordable housing: 60% discount applies to option A only; option B pre st
   assert.strictEqual(r.flags.deemedValueIsEstimate, true); // Issue 3: flag present on BEST_OF
 });
 
+test('calcReformSale: post-2027 Div 43 reduces the post element, not the pre cost base', () => {
+  const common = { contractDate: '2026-07-17', dwellingType: 'established',
+    saleDate: '2041-07-17', salePrice: 650000 * Math.pow(1.06, 15),
+    sellingCostsPct: 0.03, acquisitionCosts: 673775,
+    deemedValue: 650000 * Math.pow(1.06, 0.955), marginalRate: 0.37 };
+  const split = E.calcReformSale({ ...common, div43Claimed: 5820, div43ClaimedPost: 85590 });
+  const allPre = E.calcReformSale({ ...common, div43Claimed: 91410, div43ClaimedPost: 0 });
+  // Attributing post-2027 claims to the pre component understates CGT:
+  assert(split.cgt > allPre.cgt, 'splitting Div 43 at the boundary must raise CGT here');
+  approxEqual(split.detail.preGross, 19241, 50);
+  approxEqual(allPre.detail.preGross, 104831, 50);
+});
+
+test('calcReformSale: OLD route applies the full Div 43 (pre + post) to the cost base', () => {
+  const r = E.calcReformSale({
+    contractDate: '2020-12-01', dwellingType: 'established', saleDate: '2026-03-01',
+    salePrice: 660000, sellingCostsPct: 14000 / 660000, acquisitionCosts: 520000,
+    div43Claimed: 6000, div43ClaimedPost: 4000, marginalRate: 0.39,
+  });
+  approxEqual(r.cgt, 26520, 0.01); // spec T1: total 10,000 claimed
+});
+
 summary();
