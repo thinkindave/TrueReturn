@@ -3154,15 +3154,36 @@
         </button>
         <div class="proj-section-body" hidden>
           <p class="quarantine-note" id="resQuarantineNote"></p>
-          <ul class="quarantine-explainer">
-            <li><strong>Less:</strong> at sale, each quarantined dollar offsets the gross gain — typically saving about half what the old annual refund would have.</li>
-            <li><strong>Later:</strong> nothing back until you sell; the pool isn't indexed, so inflation erodes it while it waits.</li>
-            <li><strong>Only maybe:</strong> if the sale gain is smaller than the pool, the remainder is stranded.</li>
-          </ul>
+          <!-- Spec §4b (corrected 2026-07-17): quarantined losses are recovered
+               through three channels — along the way, at sale, or never
+               (stranded). The pool figure may NEVER appear without the refunds
+               given up to create it, alongside the full reconciliation of
+               where those refunds actually went. -->
+          <div class="line-item">
+            <span class="line-label">Refunds Given Up</span>
+            <span class="line-value" id="resRefundsForegone">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Recovered Along the Way <span class="help-tip" data-tip="When the property makes a rental profit, the pool offsets it — so you pay no tax on that profit. That relief arrives during the hold, not at sale.">?</span></span>
+            <span class="line-value" id="resRecoveredAlongWay">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Recovered at Sale</span>
+            <span class="line-value" id="resPoolBenefit">-</span>
+          </div>
+          <div class="line-item">
+            <span class="line-label">Quarantined Losses by Sale (15 yr)</span>
+            <span class="line-value" id="resQuarantinePoolLine">-</span>
+          </div>
           <div class="line-item" id="resStrandedRow" hidden>
             <span class="line-label">Stranded Losses (never recovered)</span>
             <span class="line-value" id="resStrandedLosses">-</span>
           </div>
+          <p class="quarantine-note" id="resQuarantineNet" hidden></p>
+          <ul class="quarantine-explainer">
+            <li><strong>Later:</strong> nothing back until you sell; the pool isn't indexed, so inflation erodes it while it waits.</li>
+            <li><strong>Only maybe:</strong> if the sale gain is smaller than the pool, the remainder is stranded.</li>
+          </ul>
         </div>
       </div>
 
@@ -4781,6 +4802,7 @@
       }
       // Projections
       let saleOutcome15 = null;
+      let saleArgs15 = null;
       [{years: 5, prefix: 'proj5'}, {years: 10, prefix: 'proj10'}, {years: 15, prefix: 'projLife'}].forEach(({years, prefix}) => {
         const futureValue = purchasePrice * Math.pow(1 + expectedGrowth, years);
         const capitalGrowth = futureValue - purchasePrice;
@@ -4836,7 +4858,7 @@
         const preYears = Math.max(0, Math.min(years, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
         const div43Pre = annualDepreciation * preYears;
         const div43Post = annualDepreciation * (years - preYears);
-        const saleOutcome = calcReformSale({
+        const saleArgs = {
           contractDate, dwellingType,
           saleDate: saleDateISO, salePrice: futureValue,
           sellingCostsPct: 0.03,
@@ -4846,9 +4868,10 @@
           quarantinePool: quarantinePoolAtYear(years),
           marginalRate: marginalTaxRate,
           remainingLoan,
-        });
+        };
+        const saleOutcome = calcReformSale(saleArgs);
         const { salesCosts, netProceeds, cgt, trueCashReturn } = saleOutcome;
-        if (years === 15) saleOutcome15 = saleOutcome;
+        if (years === 15) { saleOutcome15 = saleOutcome; saleArgs15 = saleArgs; }
 
         document.getElementById(`${prefix}Sale`).textContent = formatCurrency(salePrice);
         document.getElementById(`${prefix}SaleCosts`).textContent = formatCurrency(salesCosts);
@@ -4931,9 +4954,54 @@
       const quarantineSectionEl = document.getElementById('quarantineSection');
       if (quarantineSectionEl) quarantineSectionEl.hidden = !ngQuarantined;
       if (ngQuarantined) {
+        const pool15 = quarantinePoolAtYear(15);
         const poolEl = document.getElementById('resQuarantinePool');
-        if (poolEl) poolEl.textContent = formatCurrency(quarantinePoolAtYear(15));
+        if (poolEl) poolEl.textContent = formatCurrency(pool15);
+        const poolLineEl = document.getElementById('resQuarantinePoolLine');
+        if (poolLineEl) poolLineEl.textContent = formatCurrency(pool15);
 
+        // ── Spec §4b (corrected 2026-07-17): the full recovery reconciliation ──
+        // Quarantined losses are recovered through three channels, and W
+        // (refunds given up) is reconciled by construction as A + V + S:
+        // recovered along the way (profit years the pool absorbed),
+        // recovered at sale (measured CGT saving), and stranded (never
+        // recovered). Earlier drafts printed "refunds foregone − pool CGT
+        // saving" as a net cost; that quantity is algebraically identical to
+        // A, i.e. money the investor kept — printing it as a cost was wrong.
+
+        // W = refunds given up. `quarantined` is the loss magnitude, so
+        // loss × MTR is exactly the refund forgone that year.
+        let refundsForegone = 0;
+        let grossQuarantined = 0;
+        quarantineSched.rows.forEach(function(r) {
+          if (r.quarantined > 0) {
+            refundsForegone += r.quarantined * marginalTaxRate;
+            grossQuarantined += r.quarantined;
+          }
+        });
+        const refundsEl = document.getElementById('resRefundsForegone');
+        if (refundsEl) refundsEl.textContent = formatCurrency(refundsForegone);
+
+        // A = recovered along the way — the pool absorbing profitable rental
+        // years, so no tax was paid on that profit. gross − poolAtSale is the
+        // portion of quarantined losses already consumed before sale.
+        const recoveredAlongWay = Math.max(0, (grossQuarantined - pool15) * marginalTaxRate);
+        const alongWayEl = document.getElementById('resRecoveredAlongWay');
+        if (alongWayEl) alongWayEl.textContent = formatCurrency(recoveredAlongWay);
+
+        // V = recovered at sale. MEASURED, not estimated: re-run the same
+        // sale with no pool and difference it. The pool interacts with the
+        // discount, the dual-era split and the stranding rule, so no
+        // closed-form estimate is trustworthy.
+        let poolBenefit = 0;
+        if (saleArgs15) {
+          const noPool = calcReformSale(Object.assign({}, saleArgs15, { quarantinePool: 0 }));
+          poolBenefit = Math.max(0, noPool.cgt - saleOutcome15.cgt);
+        }
+        const benefitEl = document.getElementById('resPoolBenefit');
+        if (benefitEl) benefitEl.textContent = formatCurrency(poolBenefit);
+
+        // S = stranded — never recovered under these inputs.
         let stranded = 0;
         if (saleOutcome15) {
           const d15 = saleOutcome15.detail;
@@ -4941,10 +5009,22 @@
             ? (d15.winner === 'A' ? d15.optionA.strandedPool : d15.optionB.strandedPool)
             : (d15.strandedPool || 0);
         }
+        const strandedTaxValue = stranded * marginalTaxRate;
         const strandedRowEl = document.getElementById('resStrandedRow');
         const strandedEl = document.getElementById('resStrandedLosses');
         if (strandedRowEl) strandedRowEl.hidden = !(stranded > 0);
         if (strandedEl) strandedEl.textContent = formatCurrency(stranded);
+
+        // Headline: timing/risk, not a false net cost. Stranded relief leads
+        // when present (the one genuine, permanent loss); otherwise state the
+        // accurate full-recovery case.
+        const netEl = document.getElementById('resQuarantineNet');
+        if (netEl) {
+          netEl.hidden = false;
+          netEl.textContent = strandedTaxValue > 0
+            ? 'Stranded: about ' + formatCurrency(strandedTaxValue) + ' of relief is never recovered under these inputs.'
+            : 'Every dollar comes back — just later than it would have. The pool isn\'t indexed, so inflation erodes it while it waits.';
+        }
       }
 
       // --- Property Highlights ---

@@ -71,10 +71,29 @@ Shown only when the negative-gearing quarantine actually applies — i.e. whenev
 **a) Cash-flow reframe (in the holding-costs breakdown):** replace the old "tax refund" line with:
 > "Annual loss: $X. Under the old rules you'd have received ~$Y back each year. These losses are now quarantined — see below."
 
-**b) Pool tracker (small module, not a hero):** a running figure — "Quarantined losses by sale: $Z" — with three-line explainer using the *less, later, only maybe* framing:
-- **Less:** at sale, each quarantined dollar offsets the gross gain, typically saving ~half what the old annual refund would have (mirrors how capital losses already interact with the discount).
-- **Later:** nothing back until you sell; the pool isn't indexed, so inflation erodes it while it waits.
-- **Only maybe:** if the sale gain is smaller than the pool, the remainder is stranded — show it explicitly: "Stranded losses (never recovered): $W" in the results breakdown whenever W > 0. Never silently absorb this.
+**b) Pool tracker (small module, not a hero).**
+
+**MANDATORY — the full recovery reconciliation (added 2026-07-17, corrected after measurement).** The pool figure must never appear alone: a CGT figure shown by itself makes quarantine look like a *benefit* (the pool offsets the gain, so quarantined CGT is **lower**). But the counterweight is NOT a simple "cost" — an earlier draft of this spec mandated "net cost = refunds foregone − pool CGT saving", which measurement proved **wrong**: that quantity is algebraically identical to the tax on profitable rental years the pool absorbed, i.e. money the investor *kept*. Printing it as a cost is a factual error.
+
+**The correct model.** Quarantined losses are recovered through *three* channels, and an honest module shows all of them:
+```
+W  = refunds given up      = Σ(quarantined loss × marginalRate)
+A  = recovered along the way = (grossQuarantined − poolAtSale) × marginalRate
+                               (pool absorbing profitable rental years)
+V  = recovered at sale       = CGT with pool=0 minus CGT with pool  (MEASURE, don't estimate)
+S  = stranded                = strandedPool × marginalRate
+```
+Display, in this order, adjacent to and equally prominent as the pool figure:
+> "Refunds given up: **$W** · Recovered along the way: **$A** · Recovered at sale: **$V** · Stranded, never recovered: **$S**"
+
+**The honest headline is timing and risk, not amount.** Where `S == 0` the relief is fully recovered in nominal terms — state exactly that: "Every dollar comes back — just later than it would have, and the pool isn't indexed, so inflation erodes it while it waits." Where `S > 0`, that residue is the genuine loss and must lead.
+
+**The regime's real nominal cost is the lost 50% discount on the pre-2027 slice, not the quarantine.** Measured on the default example: total tax over the hold is $235,990 grandfathered vs $239,529 under the reform — a **$3,539** difference, entirely the discount. Do not attribute that to the pool module; it belongs to the grandfathering toggle (§2 Group 1).
+
+Then the running figure — "Quarantined losses by sale: $Z" — with the *later / only maybe* explainer:
+- ~~**Less:**~~ **STRUCK (2026-07-17 — this claim was false).** v1.0 asserted each quarantined dollar saves "~half what the old annual refund would have," reasoning from how capital losses interact with the 50% discount. That holds only where the gain *is* discounted. The post-1-July-2027 component gets **indexation and no discount**, taxed at `max(MTR, 30%)` — so against it a pooled dollar is worth the **same** as a refunded dollar, just later. Since quarantine only applies to income years starting on/after 1 July 2027, the pool is overwhelmingly consumed against post-2027 gains, where "less" is simply wrong. Do not ship the "less" line. If a pool dollar ever *is* worth less than a refund dollar (pool consumed against a discounted pre-2027 gain), the reconciliation above shows it as measured `V`, without needing a rule of thumb.
+- **Later:** nothing back until you sell; the pool isn't indexed, so inflation erodes it while it waits. **This is the primary real cost** — lead with it.
+- **Only maybe:** if the sale gain is smaller than the pool, the remainder is stranded — show it explicitly: "Stranded losses (never recovered): $S" whenever S > 0. Never silently absorb this. This is the other real cost.
 
 ## 5. Disclaimers and legal-status flags
 
