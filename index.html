@@ -3247,19 +3247,32 @@
           <span class="proj-section-title">Quarantined Losses <span class="help-tip" data-tip="Rental losses that no longer reduce your salary tax — they wait in a pool until this property makes rental profits or a capital gain">?</span></span>
           <span class="proj-section-highlights">
             <span class="proj-highlight">
+              <span class="proj-highlight-label">Refunds Given Up</span>
+              <span class="proj-highlight-value" id="resRefundsForegoneHeader">-</span>
+            </span>
+            <span class="proj-highlight">
               <span class="proj-highlight-label">Pool at sale (15 yr)</span>
               <span class="proj-highlight-value" id="resQuarantinePool">-</span>
             </span>
           </span>
           <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
         </button>
+        <!-- Spec §4b: the pool figure must never appear alone. Refunds given
+             up and the reconciliation headline sit here, outside the
+             collapsible body, so they're visible without expanding — same
+             pattern as the sensitivity band (:3328) sitting outside
+             .period-body. The full breakdown + explainer stay in the body. -->
+        <p class="quarantine-note" id="resQuarantineNet" hidden></p>
         <div class="proj-section-body" hidden>
           <p class="quarantine-note" id="resQuarantineNote"></p>
-          <!-- Spec §4b (corrected 2026-07-17): quarantined losses are recovered
+          <!-- Spec §4b (corrected 2026-07-18): quarantined losses are recovered
                through three channels — along the way, at sale, or never
-               (stranded). The pool figure may NEVER appear without the refunds
-               given up to create it, alongside the full reconciliation of
-               where those refunds actually went. -->
+               (stranded) — and the residual R = W - A - V - S captures relief
+               lost (or gained) to rate mismatch between the refund a dollar
+               replaced and what it was actually worth once pooled. The pool
+               figure may NEVER appear without the refunds given up to create
+               it, alongside the full reconciliation of where those refunds
+               actually went. -->
           <div class="line-item">
             <span class="line-label">Refunds Given Up</span>
             <span class="line-value" id="resRefundsForegone">-</span>
@@ -3280,7 +3293,10 @@
             <span class="line-label">Stranded Losses (never recovered)</span>
             <span class="line-value" id="resStrandedLosses">-</span>
           </div>
-          <p class="quarantine-note" id="resQuarantineNet" hidden></p>
+          <div class="line-item" id="resQuarantineResidual" hidden>
+            <span class="line-label"><span id="resQuarantineResidualLabel">Worth less than a refund</span> <span class="help-tip" id="resQuarantineResidualTip" data-tip="">?</span></span>
+            <span class="line-value" id="resQuarantineResidualValue">-</span>
+          </div>
           <ul class="quarantine-explainer">
             <li><strong>Later:</strong> nothing back until you sell; the pool isn't indexed, so inflation erodes it while it waits.</li>
             <li><strong>Only maybe:</strong> if the sale gain is smaller than the pool, the remainder is stranded.</li>
@@ -5038,7 +5054,7 @@
           const bandWidth = Math.abs(hiOutcome.trueCashReturn - loOutcome.trueCashReturn);
           let bandText = 'If the 30 June 2027 value is 10% lower/higher: ' +
             formatCurrency(loOutcome.trueCashReturn) + ' to ' + formatCurrency(hiOutcome.trueCashReturn);
-          if (bandWidth > 0.15 * Math.abs(trueCashReturn)) {
+          if (bandWidth > 0.15 * Math.abs(netProceeds)) {
             bandText += ' — this estimate matters a lot for your result; consider a real valuation in mid-2027.';
           }
           if (sensEl) { sensEl.textContent = bandText; sensEl.hidden = false; }
@@ -5203,14 +5219,18 @@
         const poolLineEl = document.getElementById('resQuarantinePoolLine');
         if (poolLineEl) poolLineEl.textContent = formatCurrency(pool15);
 
-        // ── Spec §4b (corrected 2026-07-17): the full recovery reconciliation ──
-        // Quarantined losses are recovered through three channels, and W
-        // (refunds given up) is reconciled by construction as A + V + S:
-        // recovered along the way (profit years the pool absorbed),
-        // recovered at sale (measured CGT saving), and stranded (never
-        // recovered). Earlier drafts printed "refunds foregone − pool CGT
-        // saving" as a net cost; that quantity is algebraically identical to
-        // A, i.e. money the investor kept — printing it as a cost was wrong.
+        // ── Spec §4b (corrected 2026-07-18): the full recovery reconciliation ──
+        // Quarantined losses are recovered through three channels: recovered
+        // along the way (profit years the pool absorbed), recovered at sale
+        // (measured CGT saving), and stranded (never recovered). W is NOT
+        // guaranteed to equal A + V + S — the residual R = W - A - V - S
+        // captures relief lost (R > 0, a pooled dollar offsetting a
+        // DISCOUNTED gain is worth less than the refund it replaced) or
+        // gained (R < 0, the 30% minimum-tax floor makes a pooled dollar
+        // worth MORE than that refund). Earlier drafts printed "refunds
+        // foregone − pool CGT saving" as a net cost; that quantity is
+        // algebraically identical to A, i.e. money the investor kept —
+        // printing it as a cost was wrong.
 
         // W = refunds given up. `quarantined` is the loss magnitude, so
         // loss × MTR is exactly the refund forgone that year.
@@ -5224,6 +5244,8 @@
         });
         const refundsEl = document.getElementById('resRefundsForegone');
         if (refundsEl) refundsEl.textContent = formatCurrency(refundsForegone);
+        const refundsHeaderEl = document.getElementById('resRefundsForegoneHeader');
+        if (refundsHeaderEl) refundsHeaderEl.textContent = formatCurrency(refundsForegone);
 
         // A = recovered along the way — the pool absorbing profitable rental
         // years, so no tax was paid on that profit. gross − poolAtSale is the
@@ -5258,15 +5280,57 @@
         if (strandedRowEl) strandedRowEl.hidden = !(stranded > 0);
         if (strandedEl) strandedEl.textContent = formatCurrency(stranded);
 
-        // Headline: timing/risk, not a false net cost. Stranded relief leads
-        // when present (the one genuine, permanent loss); otherwise state the
-        // accurate full-recovery case.
+        // R = the measured residual (spec §4b, corrected 2026-07-18). This is
+        // what BLOCKER 2 (code review 2026-07-18) exists to fix: branching
+        // the headline on strandedTaxValue > 0 alone let an affordable-
+        // housing property (which quarantines, but whose BEST_OF route takes
+        // Option A's 60% discount) print "Every dollar comes back" while
+        // measured V recovered only $4,730 of $11,824 — 60% of relief gone —
+        // because strandedPool was still 0. R never asserts full recovery
+        // from S == 0 alone; it measures the rate mismatch directly.
+        const R = refundsForegone - recoveredAlongWay - poolBenefit - strandedTaxValue;
+        const materialR = refundsForegone > 0 && Math.abs(R) > 0.01 * refundsForegone;
+
+        const residualRowEl = document.getElementById('resQuarantineResidual');
+        const residualLabelEl = document.getElementById('resQuarantineResidualLabel');
+        const residualTipEl = document.getElementById('resQuarantineResidualTip');
+        const residualValueEl = document.getElementById('resQuarantineResidualValue');
+        if (residualRowEl) residualRowEl.hidden = !materialR;
+        if (materialR && residualLabelEl && residualTipEl && residualValueEl) {
+          if (R > 0) {
+            residualLabelEl.textContent = 'Worth less than a refund';
+            residualTipEl.setAttribute('data-tip', 'These losses offset a discounted capital gain rather than your salary, so each dollar is worth less than the refund it replaced.');
+            residualValueEl.textContent = formatCurrency(R);
+          } else {
+            residualLabelEl.textContent = 'Worth more than a refund';
+            residualTipEl.setAttribute('data-tip', 'The 30% minimum tax on the post-2027 gain makes each pooled dollar worth more than the refund it replaced.');
+            residualValueEl.textContent = formatCurrency(-R);
+          }
+        }
+
+        // Headline: branches on the measured residual R, NOT on S alone
+        // (spec §4b). Priority follows the spec: R > 0 leads (relief lost to
+        // rate mismatch is the more surprising, more actionable fact), with
+        // stranded relief appended when both are non-zero; otherwise S > 0
+        // leads as before; otherwise R < 0 is shown honestly (never
+        // clamped); otherwise the accurate full-recovery case.
         const netEl = document.getElementById('resQuarantineNet');
         if (netEl) {
           netEl.hidden = false;
-          netEl.textContent = strandedTaxValue > 0
-            ? 'Stranded: about ' + formatCurrency(strandedTaxValue) + ' of relief is never recovered under these inputs.'
-            : 'Every dollar comes back — just later than it would have. The pool isn\'t indexed, so inflation erodes it while it waits.';
+          let headline;
+          if (materialR && R > 0) {
+            headline = 'Worth less than a refund: about ' + formatCurrency(R) + ' of relief is lost because these losses offset a discounted gain rather than your salary.';
+            if (strandedTaxValue > 0) {
+              headline += ' On top of that, about ' + formatCurrency(strandedTaxValue) + ' is stranded and never recovered under these inputs.';
+            }
+          } else if (strandedTaxValue > 0) {
+            headline = 'Stranded: about ' + formatCurrency(strandedTaxValue) + ' of relief is never recovered under these inputs.';
+          } else if (materialR && R < 0) {
+            headline = 'Worth more than a refund: about ' + formatCurrency(-R) + ' of pooled relief is worth more than a refund, because the 30% minimum tax on the post-2027 gain lifts its value.';
+          } else {
+            headline = 'Every dollar comes back — just later than it would have. The pool isn\'t indexed, so inflation erodes it while it waits.';
+          }
+          netEl.textContent = headline;
         }
       }
 
@@ -5350,6 +5414,100 @@
 
     let _chart1 = null;
 
+    // ── Shared per-entry NG quarantine pool builder (spec §4b, BLOCKER 1 —
+    // code review 2026-07-18) ──
+    // calculate() builds its own quarantine pool (netRentalResultForYear →
+    // buildQuarantineSchedule → quarantinePoolAtYear) for the SELECTED
+    // entry only. calcScenarioProfit (break-even highlight) and
+    // buildPropertyDatasets (Graphs tab) run per-entry and previously
+    // stubbed quarantinePool: 0, so the Projections panel and the Graphs
+    // tab / break-even highlight showed DIFFERENT figures for the same
+    // property and year. This helper reconstructs the same per-entry annual
+    // net-rental series, routes it through the same NG regime, and builds
+    // the same quarantine schedule, so all three call sites measure the
+    // SAME pool for the SAME entry/year. Model matches calculate() exactly
+    // (including the fact that vacancy allowance is NOT a deductible
+    // expense for the taxable rental result, unlike the cash-flow figure).
+    function buildEntryQuarantinePool(entry, growthRate, marginalRate, maxYears) {
+      function ef(field) {
+        const el = entry.querySelector(`[data-field="${field}"]`);
+        return el ? el.value : '';
+      }
+      function ev(field) { return parseFloat(ef(field)) || 0; }
+
+      const purchasePrice = ev('purchasePrice');
+      const depositPct = ev('depositPct') / 100;
+      const loanAmount = purchasePrice * (1 - depositPct);
+      const loanTerm = ev('loanTerm') || 30;
+      const interestRate = ev('interestRate') / 100;
+      const loanType = ef('loanType');
+      const weeklyRent = ev('weeklyRent');
+      const managementFeePct = ev('managementFee') / 100;
+      const state = ef('state');
+      const sd = stateDefaults[state] || stateDefaults['QLD'];
+      const insurance = sd.insurance;
+      const councilFees = sd.council;
+      const annualDepreciation = calcDepreciation(ef('propertyAge'), purchasePrice);
+
+      const TODAY_ISO = todayISO();
+      const grandfatheredEl = entry.querySelector('[data-field="grandfathered"]');
+      const grandfathered = grandfatheredEl ? grandfatheredEl.checked : false;
+      const contractDate = grandfathered ? BUDGET_NIGHT_ISO : TODAY_ISO;
+      const dwellingType = ef('dwellingType') || 'established';
+
+      const ngRoute = routeRegimes({ contractDate: contractDate,
+        dwellingType: dwellingType, saleDate: addYearsISO(TODAY_ISO, maxYears) });
+
+      // Per-year taxable net rental result — mirrors calculate()'s
+      // netRentalResultForYear exactly (same deductible-expense set, same
+      // remaining-loan amortisation formula).
+      function netRentalResultForYear(y) {
+        const yGrowthFactor = Math.pow(1 + growthRate, y);
+        const yValue = purchasePrice * yGrowthFactor;
+        const yWeeklyRent = weeklyRent * yGrowthFactor;
+        const yAnnualRent = yWeeklyRent * 52;
+        const yMgmtFee = yAnnualRent * managementFeePct;
+        const yMaintenance = yValue * 0.005;
+        let yInterestOnly;
+        if (loanType === 'IO') {
+          yInterestOnly = loanAmount * interestRate;
+        } else if (interestRate === 0) {
+          yInterestOnly = 0;
+        } else {
+          const yMonthlyRate = interestRate / 12;
+          const yTotalPayments = loanTerm * 12;
+          const yPaymentsMade = Math.min((y - 1) * 12, yTotalPayments);
+          const yRemainingLoan = loanAmount * (Math.pow(1 + yMonthlyRate, yTotalPayments) - Math.pow(1 + yMonthlyRate, yPaymentsMade)) / (Math.pow(1 + yMonthlyRate, yTotalPayments) - 1);
+          yInterestOnly = Math.max(0, yRemainingLoan) * interestRate;
+        }
+        const yDeductibleExpenses = yInterestOnly + yMgmtFee + insurance + councilFees + yMaintenance + annualDepreciation;
+        return yAnnualRent - yDeductibleExpenses;
+      }
+
+      const annualResults = [];
+      for (let y = 1; y <= maxYears; y++) {
+        const yDateISO = addYearsISO(TODAY_ISO, y - 1);
+        annualResults.push({
+          fyStartISO: fyStartYear(yDateISO) + '-07-01',
+          netResult: netRentalResultForYear(y),
+        });
+      }
+
+      const quarantineSched = buildQuarantineSchedule({
+        annualResults: annualResults, ngRegime: ngRoute.ng,
+        marginalRate: marginalRate });
+
+      // Pool available at the end of projection year y (used at sale).
+      return function quarantinePoolAtYear(y) {
+        let pool = 0;
+        for (let i = 0; i < y && i < quarantineSched.rows.length; i++) {
+          pool += quarantineSched.rows[i].quarantined;
+          pool -= Math.min(pool, Math.max(0, quarantineSched.rows[i].netResult));
+        }
+        return pool;
+      };
+    }
+
     function calcScenarioProfit(entry, years, growthRate) {
       function ef(field) {
         const el = entry.querySelector(`[data-field="${field}"]`);
@@ -5399,7 +5557,12 @@
       const marginalTaxRate = document.body.dataset.mode === 'simple'
         ? parseFloat(SIMPLE_MODE_TAX)
         : (ev('marginalTaxRate') || 0.37);
-      const annualDepreciation = (window.TrueReturn && window.TrueReturn.annualDepreciation) || 0;
+      // Entry-specific — window.TrueReturn.annualDepreciation is written by
+      // calculate() for the SELECTED entry only, but this function runs
+      // per-entry (break-even loop), so reading the global would apply one
+      // entry's Div 43 split to another's sale (WARNING — code review
+      // 2026-07-18). Matches buildPropertyDatasets's annDepr below.
+      const annualDepreciation = calcDepreciation(ef('propertyAge'), purchasePrice);
       const futureValue = purchasePrice * Math.pow(1 + growthRate, years);
 
       // ── 2026–27 reform context (UI spec v2.2) ──
@@ -5429,6 +5592,9 @@
       const preYears = Math.max(0, Math.min(years, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
       const div43Pre = annualDepreciation * preYears;
       const div43Post = annualDepreciation * (years - preYears);
+      // BLOCKER 1 (code review 2026-07-18): the real per-entry pool at this
+      // year, not a stub — see buildEntryQuarantinePool above.
+      const scenarioPoolAtYear = buildEntryQuarantinePool(entry, growthRate, marginalTaxRate, years);
       const { trueCashReturn } = calcReformSale({
         contractDate, dwellingType,
         saleDate: saleDateISO, salePrice: futureValue,
@@ -5436,7 +5602,7 @@
         acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
         div43Claimed: div43Pre, div43ClaimedPost: div43Post,
         deemedValue, deemedValueIsEstimate,
-        quarantinePool: 0,  // Task 4 wires the real pool
+        quarantinePool: scenarioPoolAtYear(years),
         marginalRate: marginalTaxRate,
         remainingLoan,
       });
@@ -5525,6 +5691,16 @@
         const data = [];
         const annualisedReturnData = [];
 
+        // mtr doesn't vary by y — hoisted so the pool below (and the loop)
+        // both use one consistent value instead of recomputing it per year.
+        const mtr = document.body.dataset.mode === 'simple'
+          ? parseFloat(SIMPLE_MODE_TAX)
+          : (ev('marginalTaxRate') || 0.37);
+        // BLOCKER 1 (code review 2026-07-18): build the real per-entry pool
+        // once for this entry/growth-rate/MTR, reused across every year in
+        // the loop below — see buildEntryQuarantinePool above.
+        const datasetPoolAtYear = buildEntryQuarantinePool(entry, expectedGrowth, mtr, GRAPH_YEARS);
+
         for (let y = 0; y <= GRAPH_YEARS; y++) {
           if (y > maxYear) {
             data.push(null);
@@ -5563,9 +5739,6 @@
           let annualisedReturn = null;
           let totalProfit = 0;
           if (y > 0 && totalUpfront > 0) {
-            const mtr = document.body.dataset.mode === 'simple'
-              ? parseFloat(SIMPLE_MODE_TAX)
-              : (ev('marginalTaxRate') || 0.37);
             const saleDateISO = addYearsISO(TODAY_ISO, y);
             // Div 43 splits at the deemed date (tax spec §5.3): post-2027
             // claims reduce element 1 before indexation, so attributing them
@@ -5580,7 +5753,7 @@
               acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
               div43Claimed: div43Pre, div43ClaimedPost: div43Post,
               deemedValue, deemedValueIsEstimate,
-              quarantinePool: 0,  // Task 4 wires the real pool
+              quarantinePool: datasetPoolAtYear(y),
               marginalRate: mtr,
               remainingLoan,
             });

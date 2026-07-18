@@ -88,7 +88,12 @@ S  = stranded                = strandedPool × marginalRate
 Display, in this order, adjacent to and equally prominent as the pool figure:
 > "Refunds given up: **$W** · Recovered along the way: **$A** · Recovered at sale: **$V** · Stranded, never recovered: **$S**"
 
-**The honest headline is timing and risk, not amount.** Where `S == 0` the relief is fully recovered in nominal terms — state exactly that: "Every dollar comes back — just later than it would have, and the pool isn't indexed, so inflation erodes it while it waits." Where `S > 0`, that residue is the genuine loss and must lead.
+**The headline must branch on the measured residual, NOT on `S` alone (corrected 2026-07-18).** Compute `R = W − A − V − S`. `R` captures relief lost to *rate mismatch* — a pooled dollar offsetting a discounted gain is worth less than the refund it replaced. Measured example: an affordable-housing property (which quarantines, but whose `BEST_OF` route normally takes Option A's 60% discount) recovers only **$4,730 of $11,824** at sale — **60% of the relief is gone** — while `strandedPool` is still 0. Branching on `S` alone therefore prints "Every dollar comes back" over a 60% loss. Display a residual row whenever `|R|` is material (> 1% of `W`) and let it drive the headline:
+- `R ≈ 0` and `S == 0` → "Every dollar comes back — just later than it would have. The pool isn't indexed, so inflation erodes it while it waits."
+- `R > 0` → lead with it: "Worth less than a refund: about **$R** of relief is lost because these losses offset a discounted gain rather than your salary." (`R` and `S` are distinct losses; show both when both are non-zero.)
+- `S > 0` → the stranded residue leads, as before.
+`R` may also be **negative** where the 30% minimum-tax floor makes a pooled dollar worth *more* than the refund it replaced (reachable at the 19%/32.5% marginal rates the UI offers). Show it honestly rather than clamping — a labelled residual row absorbs both directions.
+**Never assert full recovery from `S == 0`.** The engine's `strandedPool` measures unusable pool dollars, not their value.
 
 **The regime's real nominal cost is the lost 50% discount on the pre-2027 slice, not the quarantine.** Measured on the default example: total tax over the hold is $235,990 grandfathered vs $239,529 under the reform — a **$3,539** difference, entirely the discount. Do not attribute that to the pool module; it belongs to the grandfathering toggle (§2 Group 1).
 

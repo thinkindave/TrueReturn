@@ -492,7 +492,7 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
   const { contractDate, dwellingType, acquisitionCosts, valuationDate,
           currentValueEstimate, growthAssumption, marginalRate,
           sellingCostsPct, annualNetRental, loanBalance, cpiRate,
-          capitalLosses = 0, div43Claimed = 0,
+          capitalLosses = 0, div43Claimed = 0, div43ClaimedPost = 0,
           purchasePrice = null, purchaseCosts = 0, loanAmount = null,
           benchmarkReturn = null, benchmarkFeeDrag = 0.001,
           dcaHoldingContributions = false } = inputs;
@@ -501,6 +501,9 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
   const growthYears = yearFrac(valuationDate, saleDate);
   const salePrice = currentValueEstimate * Math.pow(1 + growthAssumption, growthYears);
   const sellingCosts = salePrice * sellingCostsPct;
+  // Derived the same way calcReformSale does, so both routers agree.
+  const heldOver12Months = yearFrac(contractDate, saleDate) >= 1;
+  const heldOver12MonthsAt2027 = yearFrac(contractDate, DEEMED_DATE_ISO) >= 1;
 
   // Holding cash flows valuation → sale, with NG treatment per routing.
   const annualResults = proRateAnnualResults(valuationDate, saleDate, annualNetRental);
@@ -521,9 +524,9 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
   let cgt, detail, deemedValue = null, flags = {};
   if (route.cgt === 'OLD') {
     detail = calcOldRegimeCGT({
-      salePrice, sellingCosts, acquisitionCosts, div43Claimed,
+      salePrice, sellingCosts, acquisitionCosts, div43Claimed: div43Claimed + div43ClaimedPost,
       capitalLosses, quarantinePool: sched.poolAtSale, marginalRate,
-      heldOver12Months: yearFrac(contractDate, saleDate) >= 1,
+      heldOver12Months,
     });
     cgt = detail.tax;
   } else {
@@ -534,9 +537,10 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
     if (route.cgt === 'BEST_OF') {
       const opt = calcNewBuildOptimizer({
         acquisitionCosts, salePrice, saleDate, sellingCosts, deemedValue,
-        div43ClaimedPre: div43Claimed, cpiRate, marginalRate,
+        div43ClaimedPre: div43Claimed, div43ClaimedPost, cpiRate, marginalRate,
         capitalLosses, quarantinePool: sched.poolAtSale,
         discountPct: dwellingType === 'affordableHousing' ? 0.6 : 0.5,
+        heldOver12Months, heldOver12MonthsAt2027,
       });
       detail = opt;
       cgt = opt.winner === 'A' ? opt.optionA.tax : opt.optionB.totalCGT;
@@ -544,9 +548,10 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
     } else {
       const dual = calcDualEraCGT({
         deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre: div43Claimed,
+        div43ClaimedPost,
         salePrice, saleDate, sellingCosts, cpiRate, marginalRate,
         capitalLosses, quarantinePool: sched.poolAtSale,
-        heldOver12MonthsAt2027: yearFrac(contractDate, DEEMED_DATE_ISO) >= 1,
+        heldOver12MonthsAt2027,
         deemedValueIsEstimate: flags.deemedValueIsEstimate === true,
       });
       detail = dual;

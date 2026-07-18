@@ -1175,4 +1175,19 @@ test('§10: reform-scope disclaimer exists and omits the general-advice line', (
   assert(!/financial advice/i.test(s), 'general-advice wording belongs to the standing disclaimer');
 });
 
+test('affordable housing: pool offsets a discounted gain, so relief is worth less than MTR', () => {
+  const args = (pool) => ({
+    contractDate: '2026-07-18', dwellingType: 'affordableHousing',
+    saleDate: '2041-07-18', salePrice: 650000 * Math.pow(1.06, 15),
+    sellingCostsPct: 0.03, acquisitionCosts: 673775,
+    deemedValue: 650000 * Math.pow(1.06, 0.95), marginalRate: 0.37,
+    quarantinePool: pool,
+  });
+  const V = E.calcReformSale(args(0)).cgt - E.calcReformSale(args(31958)).cgt;
+  const full = 31958 * 0.37;
+  assert(V < full * 0.6, 'a 60%-discounted gain must recover well under full MTR value');
+  assert(E.calcReformSale(args(31958)).detail.optionA.strandedPool === 0,
+    'and strandedPool stays 0 — so a headline branching on it alone would lie');
+});
+
 summary();
