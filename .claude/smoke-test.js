@@ -51,7 +51,9 @@ const requiredIds = [
   'quarantineSection', 'resQuarantinePool', 'resRefundsForegone',
   'resRecoveredAlongWay', 'resPoolBenefit', 'deemedValueChip',
   'proj5Sensitivity', 'proj10Sensitivity', 'projLifeSensitivity',
-  'minTaxFootnote', 'reformBanner'
+  'minTaxFootnote', 'reformBanner',
+  // New-build CGT treatment line (UI spec §1.4)
+  'proj5CgtTreatment', 'proj10CgtTreatment', 'projLifeCgtTreatment'
 ];
 let idsFailed = false;
 requiredIds.forEach(id => {

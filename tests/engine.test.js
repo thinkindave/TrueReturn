@@ -1168,4 +1168,11 @@ test('calcReformSale: OLD route applies the full Div 43 (pre + post) to the cost
   approxEqual(r.cgt, 26520, 0.01); // spec T1: total 10,000 claimed
 });
 
+test('§10: reform-scope disclaimer exists and omits the general-advice line', () => {
+  const s = E.DISCLAIMERS.reformScope;
+  assert(typeof s === 'string' && s.length > 0);
+  assert(/Tax Reform No\. 1/.test(s), 'must name the Act');
+  assert(!/financial advice/i.test(s), 'general-advice wording belongs to the standing disclaimer');
+});
+
 summary();

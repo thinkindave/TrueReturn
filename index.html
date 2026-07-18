@@ -3326,6 +3326,13 @@
             </div>
           </div>
           <div class="proj-line sensitivity-band" id="proj5Sensitivity" hidden></div>
+          <div class="proj-line sensitivity-band" id="proj5CgtTreatment" hidden>
+            <span id="proj5CgtTreatmentText"></span>
+            <details>
+              <summary>Alternative treatment</summary>
+              <span id="proj5CgtTreatmentAlt"></span>
+            </details>
+          </div>
           <div class="period-body">
 
           <div class="proj-section">
@@ -3462,6 +3469,13 @@
             </div>
           </div>
           <div class="proj-line sensitivity-band" id="proj10Sensitivity" hidden></div>
+          <div class="proj-line sensitivity-band" id="proj10CgtTreatment" hidden>
+            <span id="proj10CgtTreatmentText"></span>
+            <details>
+              <summary>Alternative treatment</summary>
+              <span id="proj10CgtTreatmentAlt"></span>
+            </details>
+          </div>
           <div class="period-body">
 
           <div class="proj-section">
@@ -3598,6 +3612,13 @@
             </div>
           </div>
           <div class="proj-line sensitivity-band" id="projLifeSensitivity" hidden></div>
+          <div class="proj-line sensitivity-band" id="projLifeCgtTreatment" hidden>
+            <span id="projLifeCgtTreatmentText"></span>
+            <details>
+              <summary>Alternative treatment</summary>
+              <span id="projLifeCgtTreatmentAlt"></span>
+            </details>
+          </div>
           <div class="period-body">
 
           <div class="proj-section">
@@ -5026,6 +5047,32 @@
           sensEl.textContent = '';
         }
 
+        // ── New-build CGT treatment line (UI spec §1.4) ──
+        // BEST_OF routes (new build / affordable housing) let the taxpayer
+        // take whichever of the two CGT treatments is cheaper; the engine
+        // already picks it (detail.winner) but never surfaced it. Name the
+        // chosen treatment and put the untaken alternative's figure in a
+        // collapsible row — no sale-timing judgment, just what the law does.
+        const cgtTreatmentEl = document.getElementById(`${prefix}CgtTreatment`);
+        if (cgtTreatmentEl) {
+          if (saleOutcome.regime === 'BEST_OF') {
+            const { winner, optionA, optionB } = saleOutcome.detail;
+            const discountLabel = dwellingType === 'affordableHousing' ? '60%' : '50%';
+            const textEl = document.getElementById(`${prefix}CgtTreatmentText`);
+            const altEl = document.getElementById(`${prefix}CgtTreatmentAlt`);
+            if (winner === 'A') {
+              if (textEl) textEl.textContent = `Best CGT treatment: ${discountLabel} discount (chosen automatically — new builds may pick either regime)`;
+              if (altEl) altEl.textContent = `Alternative (indexation): ${formatCurrency(optionB.totalCGT)}`;
+            } else {
+              if (textEl) textEl.textContent = 'Best CGT treatment: indexation (chosen automatically — new builds may pick either regime)';
+              if (altEl) altEl.textContent = `Alternative (${discountLabel} discount): ${formatCurrency(optionA.tax)}`;
+            }
+            cgtTreatmentEl.hidden = false;
+          } else {
+            cgtTreatmentEl.hidden = true;
+          }
+        }
+
         document.getElementById(`${prefix}Sale`).textContent = formatCurrency(salePrice);
         document.getElementById(`${prefix}SaleCosts`).textContent = formatCurrency(salesCosts);
         document.getElementById(`${prefix}LoanPayout`).textContent = formatCurrency(remainingLoan);
@@ -5139,8 +5186,7 @@
         if (reformInPlay) {
           const textEl = document.getElementById('reformBannerText');
           if (textEl) {
-            textEl.textContent = DISCLAIMERS.generalInfo +
-              ' Some details (new-build definition, the official apportioning method) are still pending — flagged where they apply.';
+            textEl.textContent = DISCLAIMERS.reformScope;
           }
         }
       }
