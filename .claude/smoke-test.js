@@ -46,7 +46,12 @@ const requiredIds = [
   'resTaxBenefit',
   'proj5Value', 'proj5Growth', 'proj5TrueReturn', 'proj5ReturnOnCash',
   'proj10Value', 'proj10Growth', 'proj10TrueReturn', 'proj10ReturnOnCash',
-  'projLifeValue', 'projLifeGrowth', 'projLifeTrueReturn', 'projLifeReturnOnCash'
+  'projLifeValue', 'projLifeGrowth', 'projLifeTrueReturn', 'projLifeReturnOnCash',
+  // Reform UI wiring (2b-1, UI spec §§3–5)
+  'quarantineSection', 'resQuarantinePool', 'resRefundsForegone',
+  'resRecoveredAlongWay', 'resPoolBenefit', 'deemedValueChip',
+  'proj5Sensitivity', 'proj10Sensitivity', 'projLifeSensitivity',
+  'minTaxFootnote', 'reformBanner'
 ];
 let idsFailed = false;
 requiredIds.forEach(id => {
@@ -61,7 +66,9 @@ if (!idsFailed) ok('All required IDs present (' + requiredIds.length + ')');
 const requiredFields = [
   'purchasePrice', 'depositPct', 'loanType', 'loanTerm',
   'state', 'interestRate', 'managementFee', 'weeklyRent',
-  'name', 'expectedGrowth'
+  'name', 'expectedGrowth',
+  // Reform UI wiring (2b-1, UI spec §2/§5)
+  'grandfathered', 'dwellingType', 'deemedValueOverride'
 ];
 let fieldsFailed = false;
 requiredFields.forEach(f => {
