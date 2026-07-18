@@ -215,6 +215,36 @@
       text-decoration: underline;
     }
 
+    /* Reform disclaimer banner (UI spec §5) — off .intro-disclaimer, but a
+       full border instead of alarm-amber, since this flags law-in-progress
+       status rather than a general caution. */
+    .reform-banner {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin: 0.5rem 0 0;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 4px;
+      padding: 0.45rem 0.75rem;
+    }
+    .reform-banner-dismiss {
+      flex: 0 0 auto;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 0.15rem;
+    }
+    .reform-banner-dismiss:hover {
+      color: var(--text-primary);
+    }
+
     .intro-tip {
       font-size: 0.8125rem;
       color: var(--text-muted);
@@ -2794,6 +2824,10 @@
     <p class="intro-headline">See the real return on your property investment.</p>
     <p class="intro-body">Model cash flow, tax, growth and long-term outcomes, and see how changes impact your results. Edit the example below to get started, or add your own. <a href="about.html" class="intro-about-link">Learn how TrueReturn works →</a></p>
     <p class="intro-disclaimer">This tool provides general information only and does not constitute financial advice. You should consider your own circumstances and seek professional advice. <a href="privacy.html" class="intro-disclaimer-link">Privacy Policy</a></p>
+    <div class="reform-banner" id="reformBanner" hidden>
+      <span id="reformBannerText"></span>
+      <button type="button" class="reform-banner-dismiss" id="reformBannerDismiss" aria-label="Dismiss">×</button>
+    </div>
     <p class="intro-tip"><svg class="intro-tip-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7.5V18H9v-2.5l-.7-.5A7 7 0 0 1 12 2z"/><path d="M9 21h6"/><path d="M10 18v1"/><path d="M14 18v1"/></svg> Tip: Duplicate a property to test different scenarios.</p>
   </div>
 
@@ -5091,6 +5125,26 @@
         if (anyMinTaxBound) minTaxEl.textContent = DISCLAIMERS.minTaxSimplified;
       }
 
+      // ── Reform disclaimer banner (UI spec §5) ──
+      // Shown whenever the new engine is actually in play this calculation
+      // (any period routing dual-era/best-of, or NG quarantine applying),
+      // unless the reader already dismissed it this session. Text is
+      // assembled at runtime from DISCLAIMERS — the engine's single source —
+      // so the copy can't drift out of sync between banner and engine.
+      const reformBannerEl = document.getElementById('reformBanner');
+      if (reformBannerEl) {
+        const reformInPlay = anyDualEra || ngQuarantined;
+        const dismissed = sessionStorage.getItem('reformBannerDismissed') === '1';
+        reformBannerEl.hidden = !reformInPlay || dismissed;
+        if (reformInPlay) {
+          const textEl = document.getElementById('reformBannerText');
+          if (textEl) {
+            textEl.textContent = DISCLAIMERS.generalInfo +
+              ' Some details (new-build definition, the official apportioning method) are still pending — flagged where they apply.';
+          }
+        }
+      }
+
       // ── NG quarantine pool tracker (spec §4b) ──
       // Never shown to grandfathered/new-build users — the section stays
       // hidden entirely rather than surfacing an irrelevant $0.
@@ -5680,6 +5734,12 @@
     document.getElementById('snapshotYearSelect').addEventListener('change', function() {
       _snapshotYear = parseInt(this.value, 10);
       calculate();
+    });
+
+    // ── Reform disclaimer banner (UI spec §5): dismiss for this session ──
+    document.getElementById('reformBannerDismiss').addEventListener('click', function() {
+      sessionStorage.setItem('reformBannerDismissed', '1');
+      document.getElementById('reformBanner').hidden = true;
     });
 
     // ── Deemed-value chip (UI spec §2): edit / commit / reset ──
