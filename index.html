@@ -2994,11 +2994,11 @@
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="property-details">
-                  <div class="detail-col advanced-only detail-col--grandfathered" data-label="Bought before 12 May 2026">
+                  <div class="detail-col detail-col--grandfathered" data-label="Bought before 12 May 2026">
                     <div class="prop-col-label">I bought this before 12 May 2026 <span class="help-tip" data-tip="Contracts signed before 7:30pm AEST 12 May 2026 keep full negative gearing for life — contract date, not settlement. The 2027 CGT change applies either way.">?</span></div>
                     <input type="checkbox" data-field="grandfathered" aria-label="I bought this before 12 May 2026">
                   </div>
-                  <div class="detail-col advanced-only detail-col--dwelling" data-label="Dwelling type">
+                  <div class="detail-col detail-col--dwelling" data-label="Dwelling type">
                     <div class="prop-col-label">Dwelling type <span class="help-tip" data-tip="New build definition not yet finalised in law — pending a ministerial instrument">?</span></div>
                     <select data-field="dwellingType" aria-label="Dwelling type">
                       <option value="established" selected>Established</option>
@@ -4009,9 +4009,12 @@
     function initProjectionSections() {
       document.querySelectorAll('.proj-section-header').forEach(header => {
         header.addEventListener('click', () => {
+          const section = header.closest('.proj-section') || header.parentElement;
+          const body = section.querySelector('.proj-section-body');
+          if (!body) return;
           const expanded = header.getAttribute('aria-expanded') === 'true';
           header.setAttribute('aria-expanded', String(!expanded));
-          header.nextElementSibling.hidden = expanded;
+          body.hidden = expanded;
         });
       });
       document.querySelectorAll('.period-header').forEach(header => {
