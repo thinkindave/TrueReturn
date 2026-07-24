@@ -3303,10 +3303,6 @@
           <div class="proj-line sensitivity-band" id="proj5Sensitivity" hidden></div>
           <div class="proj-line sensitivity-band" id="proj5CgtTreatment" hidden>
             <span id="proj5CgtTreatmentText"></span>
-            <details>
-              <summary>Alternative treatment</summary>
-              <span id="proj5CgtTreatmentAlt"></span>
-            </details>
           </div>
           <div class="period-body">
 
@@ -3446,10 +3442,6 @@
           <div class="proj-line sensitivity-band" id="proj10Sensitivity" hidden></div>
           <div class="proj-line sensitivity-band" id="proj10CgtTreatment" hidden>
             <span id="proj10CgtTreatmentText"></span>
-            <details>
-              <summary>Alternative treatment</summary>
-              <span id="proj10CgtTreatmentAlt"></span>
-            </details>
           </div>
           <div class="period-body">
 
@@ -3589,10 +3581,6 @@
           <div class="proj-line sensitivity-band" id="projLifeSensitivity" hidden></div>
           <div class="proj-line sensitivity-band" id="projLifeCgtTreatment" hidden>
             <span id="projLifeCgtTreatmentText"></span>
-            <details>
-              <summary>Alternative treatment</summary>
-              <span id="projLifeCgtTreatmentAlt"></span>
-            </details>
           </div>
           <div class="period-body">
 
@@ -5018,25 +5006,22 @@
           sensEl.textContent = '';
         }
 
-        // ── New-build CGT treatment line (UI spec §1.4) ──
-        // BEST_OF routes (new build / affordable housing) let the taxpayer
-        // take whichever of the two CGT treatments is cheaper; the engine
-        // already picks it (detail.winner) but never surfaced it. Name the
-        // chosen treatment and put the untaken alternative's figure in a
-        // collapsible row — no sale-timing judgment, just what the law does.
+        // ── New-build CGT treatment line (UI spec §1.4, v2.6) ──
+        // BEST_OF routes (new builds) let the taxpayer take whichever of the
+        // two CGT treatments is cheaper; the engine already picks it
+        // (detail.winner). Show BOTH figures on one plain line so "best" is
+        // demonstrated by the numbers rather than asserted — no collapsible
+        // detail row. With Affordable Housing removed the discount is always
+        // 50% (no dwellingType branch needed).
         const cgtTreatmentEl = document.getElementById(`${prefix}CgtTreatment`);
         if (cgtTreatmentEl) {
           if (saleOutcome.regime === 'BEST_OF') {
             const { winner, optionA, optionB } = saleOutcome.detail;
-            const discountLabel = dwellingType === 'affordableHousing' ? '60%' : '50%';
             const textEl = document.getElementById(`${prefix}CgtTreatmentText`);
-            const altEl = document.getElementById(`${prefix}CgtTreatmentAlt`);
             if (winner === 'A') {
-              if (textEl) textEl.textContent = `Best CGT treatment: ${discountLabel} discount (chosen automatically — new builds may pick either regime)`;
-              if (altEl) altEl.textContent = `Alternative (indexation): ${formatCurrency(optionB.totalCGT)}`;
+              if (textEl) textEl.textContent = `Best CGT treatment: 50% discount — ${formatCurrency(optionA.tax)} (vs indexation ${formatCurrency(optionB.totalCGT)}). Chosen automatically; new builds may pick either regime.`;
             } else {
-              if (textEl) textEl.textContent = 'Best CGT treatment: indexation (chosen automatically — new builds may pick either regime)';
-              if (altEl) altEl.textContent = `Alternative (${discountLabel} discount): ${formatCurrency(optionA.tax)}`;
+              if (textEl) textEl.textContent = `Best CGT treatment: indexation — ${formatCurrency(optionB.totalCGT)} (vs 50% discount ${formatCurrency(optionA.tax)}). Chosen automatically; new builds may pick either regime.`;
             }
             cgtTreatmentEl.hidden = false;
           } else {
