@@ -61,9 +61,11 @@ One new row in the existing 5/10/15-year grid, alongside Value / CGT / True Retu
 
 If the pool cannot be fully used at sale (the gain is too small to absorb it), it must **never** be silently swallowed. Surface it as a short note beneath the row, shown **only when greater than zero**:
 
-> "At **10 years**, **$S** of these losses would never be recovered — the sale gain isn't large enough to absorb them."
+> "**$S** of these would never be recovered — the sale gain isn't large enough to absorb them."
 
-`S` = `strandedPool` from that period's sale detail. **Stranding is per-period** — a property can strand at 5 years (small gain) but not at 15 (larger gain), so a single figure would be wrong. Show one note beneath the row, rendered when **any** displayed period has `strandedPool > 0`, naming each affected period and its amount (comma-separated if more than one). Do not add a second grid row.
+`S` = `strandedPool` from that period's sale detail (`saleOutcome.detail.strandedPool`).
+
+**Stranding is per-period, and the note lives inside the period's own column.** A property can strand at 5 years (small gain) but not at 15 (larger gain), so a single shared figure would be wrong. The projections grid is **columnar** — each period (5/10/15) renders its own Sale section — so there is no single "beneath the row" position spanning periods. Render one note per period column, directly beneath that period's quarantined-losses row, shown only when that period's `strandedPool > 0`. Do not add a second grid row and do not attempt a combined cross-period sentence.
 
 ### 2.4 Deleted
 
