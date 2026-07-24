@@ -2461,7 +2461,11 @@
      keeps it out of the tracks and on its own implicit row). */
   .card-details-toggle {
     grid-column: 1 / -1;
-    display: flex;
+    /* Desktop: no expandable details area exists any more (reform fields moved
+       into the always-visible row, UI spec v2.5), so the toggle is hidden.
+       It is re-shown only in mobile card view below, where it drives the
+       simple-mode accordion that reveals the advanced fields. */
+    display: none;
     align-items: center;
     gap: 0.3rem;
     background: none;
@@ -2620,6 +2624,7 @@
 
     /* Show details toggle — in card view it is a full-width flex row, not a grid item */
     .mobile-card-view .card-details-toggle {
+      display: flex;
       flex: 0 0 100%;
       order: 3;
       padding: 0.25rem 0;
