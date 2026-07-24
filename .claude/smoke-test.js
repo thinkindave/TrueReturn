@@ -68,9 +68,7 @@ if (!idsFailed) ok('All required IDs present (' + requiredIds.length + ')');
 const requiredFields = [
   'purchasePrice', 'depositPct', 'loanType', 'loanTerm',
   'state', 'interestRate', 'managementFee', 'weeklyRent',
-  'name', 'expectedGrowth',
-  // Reform UI wiring (2b-1, UI spec §2/§5)
-  'deemedValueOverride'
+  'name', 'expectedGrowth'
 ];
 let fieldsFailed = false;
 requiredFields.forEach(f => {

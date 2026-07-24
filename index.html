@@ -544,44 +544,6 @@
       color: var(--text-primary);
     }
 
-    .chip-source-note {
-      color: var(--text-muted);
-      font-style: italic;
-    }
-
-    .chip-edit-btn {
-      background: none;
-      border: none;
-      padding: 0;
-      color: var(--accent);
-      font-size: 0.8125rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: underline;
-      font-family: inherit;
-    }
-
-    .chip-edit-btn:hover {
-      color: var(--accent-hover, var(--accent));
-    }
-
-    #deemedValueEditWrap {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    #deemedValueInput {
-      width: 9rem;
-      font-family: inherit;
-      font-size: 0.8125rem;
-      padding: 0.25rem 0.4rem;
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface);
-      color: var(--text-primary);
-    }
-
     /* Deemed-value sensitivity band (UI spec §3 — mandatory, never hidden
        behind a collapsible toggle; lives beside the always-visible
        Cash Out Position headline, not inside the collapsed period-body). */
@@ -2948,7 +2910,6 @@
                   </select>
                 </div>
                 <input type="hidden" data-field="marginalTaxRate" value="0.37">
-                <input type="hidden" data-field="deemedValueOverride" value="">
                 <div class="prop-col prop-col-delete">
                   <button class="copy-row-btn" title="Duplicate property">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -3270,13 +3231,8 @@
       <p class="snapshot-property-name" id="projectionsPropertyLabel">Property 1</p>
 
       <div class="deemed-value-chip" id="deemedValueChip" hidden>
-        <span>Estimated value at 30 June 2027: <strong id="deemedValueDisplay">-</strong><span class="chip-source-note" id="deemedValueSourceNote"></span>
-          <span class="help-tip" data-tip="The 2027 tax change splits your gain at this date. This is our projection from your purchase price at your growth rate — edit it if you have a better estimate">?</span></span>
-        <button type="button" class="chip-edit-btn" id="deemedValueEditBtn">edit</button>
-        <span id="deemedValueEditWrap" hidden>
-          <input type="number" id="deemedValueInput" min="0" step="1000" aria-label="Estimated value at 30 June 2027">
-          <button type="button" class="chip-edit-btn" id="deemedValueResetBtn">reset to estimate</button>
-        </span>
+        <span>Estimated value at 30 June 2027: <strong id="deemedValueDisplay">-</strong>
+          <span class="help-tip" data-tip="The 2027 tax change splits your gain at this date. This is our projection from your purchase price at your growth rate.">?</span></span>
       </div>
 
       <div class="projections-grid">
@@ -3791,7 +3747,6 @@
       expectedGrowth: '6',
       propertyAge:    'mid',
       marginalTaxRate: '0.37',
-      deemedValueOverride: '',
     };
     const SIMPLE_MODE_TAX = '0.37';
 
@@ -3801,13 +3756,6 @@
       var taxField = entry.querySelector('[data-field="marginalTaxRate"]');
       var taxSelect = document.getElementById('marginalTaxRateSelect');
       if (taxField && taxSelect) taxSelect.value = taxField.value || SIMPLE_MODE_TAX;
-      // Collapse the deemed-value chip's edit affordance — it's scoped to
-      // whichever property was being edited, and switching properties
-      // should never leave a stale value sitting in the input.
-      var deemedEditWrap = document.getElementById('deemedValueEditWrap');
-      var deemedEditBtn = document.getElementById('deemedValueEditBtn');
-      if (deemedEditWrap) deemedEditWrap.hidden = true;
-      if (deemedEditBtn) deemedEditBtn.hidden = false;
       updateSectionLabels(entry);
       calculate();
     }
@@ -4039,7 +3987,7 @@
         taxRate: document.getElementById('marginalTaxRateSelect').value,
         properties: entries.map(function(entry) {
           var obj = {};
-          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','deemedValueOverride'].forEach(function(f) {
+          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate'].forEach(function(f) {
             var el = entry.querySelector('[data-field="' + f + '"]');
             obj[f] = el ? (el.type === 'checkbox' ? el.checked : el.value) : '';
           });
@@ -4053,7 +4001,7 @@
       var rows = document.querySelector('.property-rows');
       var template = rows.querySelector('.property-entry');
       if (!template) return;
-      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','deemedValueOverride'];
+      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate'];
       var fallbackTaxRate = state.taxRate || '0.37';
       var newEntries = state.properties.slice(0, 8).map(function(prop) {
         var clone = template.cloneNode(true);
@@ -4606,14 +4554,13 @@
       // contractDate is always today and the property is never grandfathered.
       const contractDate = TODAY_ISO;
       const dwellingType = (propertyAge === 'newBuild') ? 'newBuild' : 'established';
-      const deemedValueOverride = getVal('deemedValueOverride') || null;
       // Deemed 30 June 2027 value: the SAME projection curve as futureValue
       // (same base, rate and clock) so the pre/post CGT split lands correctly.
+      // Always the computed estimate (UI spec v2.6 §2 — no user override).
       // Retrospective "value today" rebasing is deferred to plan 2b-2.
-      const deemedValueEstimate = purchasePrice *
+      const deemedValue = purchasePrice *
         Math.pow(1 + expectedGrowth, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
-      const deemedValue = deemedValueOverride || deemedValueEstimate;
-      const deemedValueIsEstimate = !deemedValueOverride;
+      const deemedValueIsEstimate = true;
 
       // State-based values
       const conveyancing = defaults.conveyancing;
@@ -5104,19 +5051,16 @@
         }
       });
 
-      // ── Deemed-value chip (UI spec §2) ──
+      // ── Deemed-value informational line (UI spec v2.6 §2) ──
       // Shown only when at least one shown period actually routes through
       // the dual-era/best-of regimes — gated off the engine's own regime
       // field, never hardcoded, so it tracks correctly if TODAY_ISO ever
-      // moves back before 1 Jul 2027.
+      // moves back before 1 Jul 2027. Read-only: no edit affordance.
       const deemedChipEl = document.getElementById('deemedValueChip');
       if (deemedChipEl) {
         deemedChipEl.hidden = !anyDualEra;
-        deemedChipEl.dataset.value = String(Math.round(deemedValue));
         const displayEl = document.getElementById('deemedValueDisplay');
         if (displayEl) displayEl.textContent = formatCurrency(deemedValue);
-        const sourceNoteEl = document.getElementById('deemedValueSourceNote');
-        if (sourceNoteEl) sourceNoteEl.textContent = deemedValueIsEstimate ? '' : ' (your figure)';
       }
 
       // ── Minimum-tax footnote (UI spec §5) ──
@@ -5513,14 +5457,13 @@
       // contractDate is always today and the property is never grandfathered.
       const contractDate = TODAY_ISO;
       const dwellingType = (propertyAge === 'newBuild') ? 'newBuild' : 'established';
-      const deemedValueOverride = ev('deemedValueOverride') || null;
       // Deemed 30 June 2027 value: the SAME projection curve as futureValue
       // (same base, rate and clock) so the pre/post CGT split lands correctly.
+      // Always the computed estimate (UI spec v2.6 §2 — no user override).
       // Retrospective "value today" rebasing is deferred to plan 2b-2.
-      const deemedValueEstimate = purchasePrice *
+      const deemedValue = purchasePrice *
         Math.pow(1 + growthRate, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
-      const deemedValue = deemedValueOverride || deemedValueEstimate;
-      const deemedValueIsEstimate = !deemedValueOverride;
+      const deemedValueIsEstimate = true;
 
       const saleDateISO = addYearsISO(TODAY_ISO, years);
       // Div 43 splits at the deemed date (tax spec §5.3): post-2027
@@ -5598,14 +5541,13 @@
         // contractDate is always today and the property is never grandfathered.
         const contractDate = TODAY_ISO;
         const dwellingType = (propertyAge === 'newBuild') ? 'newBuild' : 'established';
-        const deemedValueOverride = ev('deemedValueOverride') || null;
         // Deemed 30 June 2027 value: the SAME projection curve as futureValue
         // (same base, rate and clock) so the pre/post CGT split lands correctly.
+        // Always the computed estimate (UI spec v2.6 §2 — no user override).
         // Retrospective "value today" rebasing is deferred to plan 2b-2.
-        const deemedValueEstimate = purchasePrice *
+        const deemedValue = purchasePrice *
           Math.pow(1 + expectedGrowth, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
-        const deemedValue = deemedValueOverride || deemedValueEstimate;
-        const deemedValueIsEstimate = !deemedValueOverride;
+        const deemedValueIsEstimate = true;
 
         let annualLoanPayment;
         if (loanType === 'IO') {
@@ -5891,33 +5833,6 @@
     document.getElementById('reformBannerDismiss').addEventListener('click', function() {
       sessionStorage.setItem('reformBannerDismissed', '1');
       document.getElementById('reformBanner').hidden = true;
-    });
-
-    // ── Deemed-value chip (UI spec §2): edit / commit / reset ──
-    document.getElementById('deemedValueEditBtn').addEventListener('click', function() {
-      var chip = document.getElementById('deemedValueChip');
-      var input = document.getElementById('deemedValueInput');
-      var wrap = document.getElementById('deemedValueEditWrap');
-      input.value = chip.dataset.value || '';
-      wrap.hidden = false;
-      this.hidden = true;
-    });
-    document.getElementById('deemedValueInput').addEventListener('change', function() {
-      var entry = getSelectedEntry();
-      if (!entry) return;
-      var field = entry.querySelector('[data-field="deemedValueOverride"]');
-      if (field) field.value = this.value;
-      calculate();
-    });
-    document.getElementById('deemedValueResetBtn').addEventListener('click', function() {
-      var entry = getSelectedEntry();
-      if (entry) {
-        var field = entry.querySelector('[data-field="deemedValueOverride"]');
-        if (field) field.value = '';
-      }
-      document.getElementById('deemedValueEditWrap').hidden = true;
-      document.getElementById('deemedValueEditBtn').hidden = false;
-      calculate();
     });
 
     document.getElementById('addPropertyBtn').addEventListener('click', addPropertyRow);

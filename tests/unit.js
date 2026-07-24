@@ -1792,18 +1792,17 @@ const SIMPLE_MODE_DEFAULTS = {
   expectedGrowth:  '6',
   propertyAge:     'mid',
   marginalTaxRate: '0.37',
-  deemedValueOverride:  '',
 };
 const SIMPLE_MODE_TAX = '0.37';
 
 // --- SIMPLE_MODE_DEFAULTS completeness ---
-test('SIMPLE_MODE_DEFAULTS has exactly 12 keys', () => {
+test('SIMPLE_MODE_DEFAULTS has exactly 11 keys', () => {
   const keys = Object.keys(SIMPLE_MODE_DEFAULTS);
-  assert.strictEqual(keys.length, 12, `Expected 12 keys, got ${keys.length}: ${keys.join(', ')}`);
+  assert.strictEqual(keys.length, 11, `Expected 11 keys, got ${keys.length}: ${keys.join(', ')}`);
 });
 
 test('SIMPLE_MODE_DEFAULTS contains all expected keys', () => {
-  const expected = ['purchasePrice', 'weeklyRent', 'depositPct', 'loanType', 'loanTerm', 'state', 'interestRate', 'managementFee', 'expectedGrowth', 'propertyAge', 'marginalTaxRate', 'deemedValueOverride'];
+  const expected = ['purchasePrice', 'weeklyRent', 'depositPct', 'loanType', 'loanTerm', 'state', 'interestRate', 'managementFee', 'expectedGrowth', 'propertyAge', 'marginalTaxRate'];
   for (const key of expected) {
     assert.ok(Object.prototype.hasOwnProperty.call(SIMPLE_MODE_DEFAULTS, key), `Missing key: ${key}`);
   }
