@@ -4942,12 +4942,23 @@
           const loOutcome = calcReformSale(Object.assign({}, saleArgs, { deemedValue: deemedValue * 0.9 }));
           const hiOutcome = calcReformSale(Object.assign({}, saleArgs, { deemedValue: deemedValue * 1.1 }));
           const bandWidth = Math.abs(hiOutcome.trueCashReturn - loOutcome.trueCashReturn);
-          let bandText = 'If the 30 June 2027 value is 10% lower/higher: ' +
-            formatCurrency(loOutcome.trueCashReturn) + ' to ' + formatCurrency(hiOutcome.trueCashReturn);
-          if (bandWidth > 0.15 * Math.abs(netProceeds)) {
-            bandText += ' — this estimate matters a lot for your result; consider a real valuation in mid-2027.';
+          // ── Suppress the degenerate band (UI spec v2.6 §3, issue #8) ──
+          // When the ±10% re-runs return the same figure (zero/negligible
+          // spread), hide the band entirely rather than render "$X to $X",
+          // which reads as a bug. This is the normal case for new builds
+          // (Option A's whole-gain path ignores deemedValue completely).
+          // Tested on the arithmetic (sub-dollar spread), never on dwelling
+          // type, so it stays correct if the winning option ever changes.
+          if (bandWidth < 1) {
+            if (sensEl) { sensEl.hidden = true; sensEl.textContent = ''; }
+          } else {
+            let bandText = 'If the 30 June 2027 value is 10% lower/higher: ' +
+              formatCurrency(loOutcome.trueCashReturn) + ' to ' + formatCurrency(hiOutcome.trueCashReturn);
+            if (bandWidth > 0.15 * Math.abs(netProceeds)) {
+              bandText += ' — this estimate matters a lot for your result; consider a real valuation in mid-2027.';
+            }
+            if (sensEl) { sensEl.textContent = bandText; sensEl.hidden = false; }
           }
-          if (sensEl) { sensEl.textContent = bandText; sensEl.hidden = false; }
         } else if (sensEl) {
           sensEl.hidden = true;
           sensEl.textContent = '';
