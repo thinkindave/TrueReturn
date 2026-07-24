@@ -1195,4 +1195,9 @@ test('§10: forward-looking scope disclaimer exists and names the 12 May 2026 as
   assert(typeof s === 'string' && /12 May 2026/.test(s) && /overstate/.test(s));
 });
 
+test('calcDepreciation: newBuild matches the newest bracket (2.5%)', () => {
+  assert.strictEqual(E.calcDepreciation('newBuild', 800000), E.calcDepreciation('new', 800000));
+  approxEqual(E.calcDepreciation('newBuild', 800000), 800000 * 0.75 * 0.025, 0.001);
+});
+
 summary();

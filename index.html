@@ -2454,11 +2454,11 @@
   .card-btn-label { display: none; }
   .prop-col-num .card-btn-label { display: inline; }
 
-  /* ── Per-property expandable details ──
-     The toggle and the details area span the full row (they are grid items of
-     .property-row, which has a fixed 13-track template — 1/-1 keeps them out of
-     the tracks and on their own implicit rows). Available at every viewport and
-     in both modes, so the reform fields are always reachable. */
+  /* ── Per-property "Show details" toggle ──
+     Predates the reform fields (mobile accordion for advanced-only columns,
+     see .mobile-card-view rules below); the toggle spans the full row (a
+     grid item of .property-row, which has a fixed 13-track template — 1/-1
+     keeps it out of the tracks and on its own implicit row). */
   .card-details-toggle {
     grid-column: 1 / -1;
     display: flex;
@@ -2476,28 +2476,6 @@
   .card-details-toggle:hover { color: var(--text-secondary); }
   .card-details-toggle svg { transition: transform 0.2s ease; }
   .property-entry.details-expanded .card-details-toggle svg { transform: rotate(180deg); }
-
-  .property-details {
-    grid-column: 1 / -1;
-    display: none;
-    flex-wrap: wrap;
-    gap: 0.5rem 1.25rem;
-    padding: 0.5rem 0 0.5rem 4.5rem;
-    margin-bottom: 0.25rem;
-    border-top: 1px dashed var(--border-subtle);
-  }
-  .property-entry.details-expanded .property-details { display: flex; }
-
-  .detail-col {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    min-width: 0;
-  }
-  .detail-col .prop-col-label { padding-left: 0; }
-  .detail-col input,
-  .detail-col select { width: 100%; }
-  .detail-col--dwelling { flex: 0 0 11rem; }
 
   /* ── Mobile (max-width: 767px) ── */
   @media (max-width: 767px) {
@@ -2645,16 +2623,6 @@
       flex: 0 0 100%;
       order: 3;
       padding: 0.25rem 0;
-    }
-    /* Details area follows the toggle; full width, stacked one field per line */
-    .mobile-card-view .property-details {
-      flex: 0 0 100%;
-      order: 3;
-      padding: 0.5rem 0;
-      gap: 0.5rem;
-    }
-    .mobile-card-view .detail-col {
-      flex: 0 0 100%;
     }
     /* Hide advanced fields in simple+mobile by default */
     body[data-mode="simple"] .mobile-card-view .advanced-only.prop-col {
@@ -2889,7 +2857,7 @@
             <div class="prop-col-label advanced-only">Rate <span class="help-tip" data-tip="Annual interest rate on your mortgage">?</span></div>
             <div class="prop-col-label advanced-only">Mgmt <span class="help-tip" data-tip="Property manager's fee as a percentage of gross weekly rent">?</span></div>
             <div class="prop-col-label advanced-only">Growth/yr <span class="help-tip" data-tip="Expected annual capital growth rate. The long-run Australian average is ~7%.">?</span></div>
-            <div class="prop-col-label advanced-only">Age <span class="help-tip" data-tip="Used to estimate annual depreciation on building structure and fixtures">?</span></div>
+            <div class="prop-col-label advanced-only">Age / type <span class="help-tip" data-tip="Used to estimate annual depreciation on building structure and fixtures">?</span></div>
             <div class="prop-col-label"></div>
           </div>
           <div class="property-rows">
@@ -2966,11 +2934,12 @@
                     <span class="suffix">%</span>
                   </div>
                 </div>
-                <div class="prop-col advanced-only" data-label="Age">
+                <div class="prop-col advanced-only" data-label="Age / type">
                   <select data-field="propertyAge">
-                    <option value="new">&lt;5y</option>
-                    <option value="mid" selected>5-20y</option>
-                    <option value="old">&gt;20y</option>
+                    <option value="newBuild">New build</option>
+                    <option value="new">Established, under 10 years</option>
+                    <option value="mid" selected>Established, 10–20 years</option>
+                    <option value="old">Established, 20+ years</option>
                   </select>
                 </div>
                 <input type="hidden" data-field="marginalTaxRate" value="0.37">
@@ -2985,22 +2954,13 @@
                     <span class="card-btn-label">Delete</span>
                   </button>
                 </div>
-                <!-- Toggle + details span the full row; they must come last in DOM so the
-                     13 tracks of row 1 are filled before these create implicit rows. -->
+                <!-- Mobile-only accordion for the advanced-only columns (predates the
+                     reform fields); must come last in DOM so the 13 tracks of row 1
+                     are filled before this creates an implicit row. -->
                 <button class="card-details-toggle" aria-expanded="false">
                   <span class="card-details-toggle-label">Show details</span>
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
-                <div class="property-details">
-                  <div class="detail-col detail-col--dwelling" data-label="Dwelling type">
-                    <div class="prop-col-label">Dwelling type <span class="help-tip" data-tip="New build definition not yet finalised in law — pending a ministerial instrument">?</span></div>
-                    <select data-field="dwellingType" aria-label="Dwelling type">
-                      <option value="established" selected>Established</option>
-                      <option value="newBuild">New build (law pending)</option>
-                      <option value="affordableHousing">Affordable housing</option>
-                    </select>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -3838,7 +3798,6 @@
       expectedGrowth: '6',
       propertyAge:    'mid',
       marginalTaxRate: '0.37',
-      dwellingType:   'established',
       deemedValueOverride: '',
     };
     const SIMPLE_MODE_TAX = '0.37';
@@ -4087,7 +4046,7 @@
         taxRate: document.getElementById('marginalTaxRateSelect').value,
         properties: entries.map(function(entry) {
           var obj = {};
-          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','dwellingType','deemedValueOverride'].forEach(function(f) {
+          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','deemedValueOverride'].forEach(function(f) {
             var el = entry.querySelector('[data-field="' + f + '"]');
             obj[f] = el ? (el.type === 'checkbox' ? el.checked : el.value) : '';
           });
@@ -4101,7 +4060,7 @@
       var rows = document.querySelector('.property-rows');
       var template = rows.querySelector('.property-entry');
       if (!template) return;
-      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','dwellingType','deemedValueOverride'];
+      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','deemedValueOverride'];
       var fallbackTaxRate = state.taxRate || '0.37';
       var newEntries = state.properties.slice(0, 8).map(function(prop) {
         var clone = template.cloneNode(true);
@@ -4653,7 +4612,7 @@
       // Reform always applies (UI spec v2.5): the tool is forward-looking, so
       // contractDate is always today and the property is never grandfathered.
       const contractDate = TODAY_ISO;
-      const dwellingType = getField('dwellingType') || 'established';
+      const dwellingType = (propertyAge === 'newBuild') ? 'newBuild' : 'established';
       const deemedValueOverride = getVal('deemedValueOverride') || null;
       // Deemed 30 June 2027 value: the SAME projection curve as futureValue
       // (same base, rate and clock) so the pre/post CGT split lands correctly.
@@ -4892,7 +4851,7 @@
         nrEl.textContent = formatCurrency(snNetRentalPosition) + '/yr';
         nrEl.className = 'line-value ' + (snNetRentalPosition >= 0 ? 'positive' : 'negative');
       }
-      const deprBracket = propertyAge === 'new' ? 'new' : propertyAge === 'mid' ? 'mid-age' : 'older';
+      const deprBracket = (propertyAge === 'new' || propertyAge === 'newBuild') ? 'new' : propertyAge === 'mid' ? 'mid-age' : 'older';
       const deprEl = document.getElementById('resDepreciation');
       if (deprEl) deprEl.textContent = '~' + formatCurrency(annualDepreciation);
       const deprBracketEl = document.getElementById('resDepreciationBracket');
@@ -5438,13 +5397,14 @@
       const sd = stateDefaults[state] || stateDefaults['QLD'];
       const insurance = sd.insurance;
       const councilFees = sd.council;
-      const annualDepreciation = calcDepreciation(ef('propertyAge'), purchasePrice);
+      const propertyAge = ef('propertyAge');
+      const annualDepreciation = calcDepreciation(propertyAge, purchasePrice);
 
       const TODAY_ISO = todayISO();
       // Reform always applies (UI spec v2.5): the tool is forward-looking, so
       // contractDate is always today and the property is never grandfathered.
       const contractDate = TODAY_ISO;
-      const dwellingType = ef('dwellingType') || 'established';
+      const dwellingType = (propertyAge === 'newBuild') ? 'newBuild' : 'established';
 
       const ngRoute = routeRegimes({ contractDate: contractDate,
         dwellingType: dwellingType, saleDate: addYearsISO(TODAY_ISO, maxYears) });
@@ -5553,7 +5513,8 @@
       // per-entry (break-even loop), so reading the global would apply one
       // entry's Div 43 split to another's sale (WARNING — code review
       // 2026-07-18). Matches buildPropertyDatasets's annDepr below.
-      const annualDepreciation = calcDepreciation(ef('propertyAge'), purchasePrice);
+      const propertyAge = ef('propertyAge');
+      const annualDepreciation = calcDepreciation(propertyAge, purchasePrice);
       const futureValue = purchasePrice * Math.pow(1 + growthRate, years);
 
       // ── 2026–27 reform context (UI spec v2.2) ──
@@ -5561,7 +5522,7 @@
       // Reform always applies (UI spec v2.5): the tool is forward-looking, so
       // contractDate is always today and the property is never grandfathered.
       const contractDate = TODAY_ISO;
-      const dwellingType = ef('dwellingType') || 'established';
+      const dwellingType = (propertyAge === 'newBuild') ? 'newBuild' : 'established';
       const deemedValueOverride = ev('deemedValueOverride') || null;
       // Deemed 30 June 2027 value: the SAME projection curve as futureValue
       // (same base, rate and clock) so the pre/post CGT split lands correctly.
@@ -5646,7 +5607,7 @@
         // Reform always applies (UI spec v2.5): the tool is forward-looking, so
         // contractDate is always today and the property is never grandfathered.
         const contractDate = TODAY_ISO;
-        const dwellingType = ef('dwellingType') || 'established';
+        const dwellingType = (propertyAge === 'newBuild') ? 'newBuild' : 'established';
         const deemedValueOverride = ev('deemedValueOverride') || null;
         // Deemed 30 June 2027 value: the SAME projection curve as futureValue
         // (same base, rate and clock) so the pre/post CGT split lands correctly.

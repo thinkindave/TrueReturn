@@ -104,7 +104,7 @@
 
     function calcDepreciation(ageBracket, purchasePrice) {
       const buildingValue = purchasePrice * 0.75;
-      if (ageBracket === 'new') return buildingValue * 0.025;
+      if (ageBracket === 'new' || ageBracket === 'newBuild') return buildingValue * 0.025;
       if (ageBracket === 'mid') return buildingValue * 0.0125;
       return buildingValue * 0.0075;
     }

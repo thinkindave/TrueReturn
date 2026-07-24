@@ -70,7 +70,7 @@ const requiredFields = [
   'state', 'interestRate', 'managementFee', 'weeklyRent',
   'name', 'expectedGrowth',
   // Reform UI wiring (2b-1, UI spec §2/§5)
-  'dwellingType', 'deemedValueOverride'
+  'deemedValueOverride'
 ];
 let fieldsFailed = false;
 requiredFields.forEach(f => {
