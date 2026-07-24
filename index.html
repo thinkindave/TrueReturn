@@ -3335,6 +3335,11 @@
                 <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital Gains Tax estimated at 50% discount × your selected marginal tax rate.">?</span></span>
                 <span class="line-value" id="proj5CGT">-</span>
               </div>
+              <div class="line-item" id="proj5QuarantinedRow" hidden>
+                <span class="line-label">Quarantined Losses <span class="help-tip" id="proj5QuarantinedTip" data-tip="">?</span></span>
+                <span class="line-value" id="proj5Quarantined">-</span>
+              </div>
+              <p class="section-note" id="proj5StrandedNote" hidden></p>
             </div>
           </div>
 
@@ -3474,6 +3479,11 @@
                 <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital Gains Tax estimated at 50% discount × your selected marginal tax rate.">?</span></span>
                 <span class="line-value" id="proj10CGT">-</span>
               </div>
+              <div class="line-item" id="proj10QuarantinedRow" hidden>
+                <span class="line-label">Quarantined Losses <span class="help-tip" id="proj10QuarantinedTip" data-tip="">?</span></span>
+                <span class="line-value" id="proj10Quarantined">-</span>
+              </div>
+              <p class="section-note" id="proj10StrandedNote" hidden></p>
             </div>
           </div>
 
@@ -3613,6 +3623,11 @@
                 <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital Gains Tax estimated at 50% discount × your selected marginal tax rate.">?</span></span>
                 <span class="line-value" id="projLifeCGT">-</span>
               </div>
+              <div class="line-item" id="projLifeQuarantinedRow" hidden>
+                <span class="line-label">Quarantined Losses <span class="help-tip" id="projLifeQuarantinedTip" data-tip="">?</span></span>
+                <span class="line-value" id="projLifeQuarantined">-</span>
+              </div>
+              <p class="section-note" id="projLifeStrandedNote" hidden></p>
             </div>
           </div>
 
@@ -4925,6 +4940,31 @@
         const saleOutcome = calcReformSale(saleArgs);
         const { salesCosts, netProceeds, cgt, trueCashReturn } = saleOutcome;
         if (years === 15) { saleOutcome15 = saleOutcome; saleArgs15 = saleArgs; }
+
+        // ── Quarantined losses (redesign §2.2) ──
+        // The pool accumulated to this period's sale year. Already net of
+        // absorption by profitable rental years, so no itemisation needed.
+        // Shown only when quarantine actually applies and a pool exists —
+        // gate on the arithmetic, not the dwelling type.
+        const periodPool = quarantinePoolAtYear(years);
+        const quarRowEl = document.getElementById(`${prefix}QuarantinedRow`);
+        const quarValEl = document.getElementById(`${prefix}Quarantined`);
+        const quarTipEl = document.getElementById(`${prefix}QuarantinedTip`);
+        const showQuar = ngQuarantined && periodPool > 0;
+        if (quarRowEl) quarRowEl.hidden = !showQuar;
+        if (showQuar) {
+          if (quarValEl) quarValEl.textContent = formatCurrency(periodPool);
+          // Measure what the pool is actually worth at this sale, rather
+          // than estimating: re-run the identical sale with no pool and
+          // difference the CGT.
+          const noPoolOutcome = calcReformSale(Object.assign({}, saleArgs, { quarantinePool: 0 }));
+          const poolWorth = Math.max(0, noPoolOutcome.cgt - cgt);
+          if (quarTipEl) {
+            quarTipEl.setAttribute('data-tip',
+              'Rental losses that no longer reduce your salary tax. They build up and offset your capital gain when you sell — worth roughly ' +
+              formatCurrency(poolWorth) + ' in tax at your marginal rate.');
+          }
+        }
 
         // ── Deemed-value sensitivity band (UI spec §3 — mandatory, never
         // hidden behind a toggle). Re-runs at ±10% on deemedValue, holding
