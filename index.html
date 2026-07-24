@@ -4946,6 +4946,11 @@
         // absorption by profitable rental years, so no itemisation needed.
         // Shown only when quarantine actually applies and a pool exists —
         // gate on the arithmetic, not the dwelling type.
+        // NOTE: the pool is NOT monotonic. It rises while the property runs
+        // at a loss, peaks, then falls as profitable rental years absorb it
+        // (engine: buildQuarantineSchedule). On the default property it goes
+        // $62,780 (5yr) → $87,190 (10yr) → $31,958 (15yr) — the decline is
+        // relief arriving early, not an error. The tip explains both paths.
         const periodPool = quarantinePoolAtYear(years);
         const quarRowEl = document.getElementById(`${prefix}QuarantinedRow`);
         const quarValEl = document.getElementById(`${prefix}Quarantined`);
@@ -4961,7 +4966,7 @@
           const poolWorth = Math.max(0, noPoolOutcome.cgt - cgt);
           if (quarTipEl) {
             quarTipEl.setAttribute('data-tip',
-              'Rental losses that no longer reduce your salary tax. They build up and offset your capital gain when you sell — worth roughly ' +
+              'Rental losses that no longer reduce your salary tax. They build up while the property runs at a loss, get used up against rental profits once it turns profitable, and whatever\'s left offsets your capital gain at sale — worth roughly ' +
               formatCurrency(poolWorth) + ' in tax at your marginal rate.');
           }
         }
