@@ -1200,4 +1200,29 @@ test('calcDepreciation: newBuild matches the newest bracket (2.5%)', () => {
   approxEqual(E.calcDepreciation('newBuild', 800000), 800000 * 0.75 * 0.025, 0.001);
 });
 
+test('new build: deemed value cannot move the outcome (Option A ignores it) — zero band', () => {
+  const args = (dv) => ({
+    contractDate: '2026-07-24', dwellingType: 'newBuild', saleDate: '2041-07-24',
+    salePrice: 650000 * Math.pow(1.06, 15), sellingCostsPct: 0.03,
+    acquisitionCosts: 673775, deemedValue: dv, marginalRate: 0.37,
+  });
+  const dv = 650000 * Math.pow(1.06, 0.94);
+  const lo = E.calcReformSale(args(dv * 0.9));
+  const hi = E.calcReformSale(args(dv * 1.1));
+  assert.strictEqual(lo.detail.winner, 'A', 'precondition: Option A wins here');
+  approxEqual(hi.trueCashReturn - lo.trueCashReturn, 0, 0.001);
+});
+
+test('established: deemed value does move the outcome — non-zero band', () => {
+  const args = (dv) => ({
+    contractDate: '2026-07-24', dwellingType: 'established', saleDate: '2041-07-24',
+    salePrice: 650000 * Math.pow(1.06, 15), sellingCostsPct: 0.03,
+    acquisitionCosts: 673775, deemedValue: dv, marginalRate: 0.37,
+  });
+  const dv = 650000 * Math.pow(1.06, 0.94);
+  const lo = E.calcReformSale(args(dv * 0.9));
+  const hi = E.calcReformSale(args(dv * 1.1));
+  assert(Math.abs(hi.trueCashReturn - lo.trueCashReturn) > 1, 'established must show a real spread');
+});
+
 summary();

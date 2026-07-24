@@ -527,10 +527,6 @@
 
     /* Deemed-value chip (2026-27 reform, UI spec §2) */
     .deemed-value-chip {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.5rem;
       font-size: 0.8125rem;
       color: var(--text-secondary);
       background: var(--bg-elevated);
@@ -3231,8 +3227,7 @@
       <p class="snapshot-property-name" id="projectionsPropertyLabel">Property 1</p>
 
       <div class="deemed-value-chip" id="deemedValueChip" hidden>
-        <span>Estimated value at 30 June 2027: <strong id="deemedValueDisplay">-</strong>
-          <span class="help-tip" data-tip="The 2027 tax change splits your gain at this date. This is our projection from your purchase price at your growth rate.">?</span></span>
+        <span>Estimated value at 30 June 2027: <strong id="deemedValueDisplay">-</strong>&nbsp;<span class="help-tip" data-tip="The 2027 tax change splits your gain at this date. This is our projection from your purchase price at your growth rate.">?</span></span>
       </div>
 
       <div class="projections-grid">
@@ -4560,7 +4555,6 @@
       // Retrospective "value today" rebasing is deferred to plan 2b-2.
       const deemedValue = purchasePrice *
         Math.pow(1 + expectedGrowth, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
-      const deemedValueIsEstimate = true;
 
       // State-based values
       const conveyancing = defaults.conveyancing;
@@ -4917,7 +4911,7 @@
           sellingCostsPct: 0.03,
           acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
           div43Claimed: div43Pre, div43ClaimedPost: div43Post,
-          deemedValue, deemedValueIsEstimate,
+          deemedValue,
           quarantinePool: quarantinePoolAtYear(years),
           marginalRate: marginalTaxRate,
           remainingLoan,
@@ -4941,7 +4935,16 @@
 
           const loOutcome = calcReformSale(Object.assign({}, saleArgs, { deemedValue: deemedValue * 0.9 }));
           const hiOutcome = calcReformSale(Object.assign({}, saleArgs, { deemedValue: deemedValue * 1.1 }));
-          const bandWidth = Math.abs(hiOutcome.trueCashReturn - loOutcome.trueCashReturn);
+          // The band is NOT guaranteed monotonic in deemedValue: on the
+          // DUAL_ERA path, once the post-2027 component clips at zero, more
+          // deemed value only inflates the undiscounted pre-2027 gain, so
+          // trueCashReturn can fall as deemedValue rises. Bracket with the
+          // period's own base outcome (trueCashReturn) so the displayed
+          // range is always ascending AND always contains the figure it
+          // brackets, regardless of which direction the re-runs moved.
+          const bandMin = Math.min(loOutcome.trueCashReturn, hiOutcome.trueCashReturn, trueCashReturn);
+          const bandMax = Math.max(loOutcome.trueCashReturn, hiOutcome.trueCashReturn, trueCashReturn);
+          const bandWidth = bandMax - bandMin;
           // ── Suppress the degenerate band (UI spec v2.6 §3, issue #8) ──
           // When the ±10% re-runs return the same figure (zero/negligible
           // spread), hide the band entirely rather than render "$X to $X",
@@ -4953,7 +4956,7 @@
             if (sensEl) { sensEl.hidden = true; sensEl.textContent = ''; }
           } else {
             let bandText = 'If the 30 June 2027 value is 10% lower/higher: ' +
-              formatCurrency(loOutcome.trueCashReturn) + ' to ' + formatCurrency(hiOutcome.trueCashReturn);
+              formatCurrency(bandMin) + ' to ' + formatCurrency(bandMax);
             if (bandWidth > 0.15 * Math.abs(netProceeds)) {
               bandText += ' — this estimate matters a lot for your result; consider a real valuation in mid-2027.';
             }
@@ -4977,9 +4980,9 @@
             const { winner, optionA, optionB } = saleOutcome.detail;
             const textEl = document.getElementById(`${prefix}CgtTreatmentText`);
             if (winner === 'A') {
-              if (textEl) textEl.textContent = `Best CGT treatment: 50% discount — ${formatCurrency(optionA.tax)} (vs indexation ${formatCurrency(optionB.totalCGT)}). Chosen automatically; new builds may pick either regime.`;
+              if (textEl) textEl.innerHTML = `Best CGT treatment: 50% discount — <strong>${formatCurrency(optionA.tax)} tax</strong> (vs&nbsp;indexation ${formatCurrency(optionB.totalCGT)}). Chosen automatically; new builds may pick either regime.`;
             } else {
-              if (textEl) textEl.textContent = `Best CGT treatment: indexation — ${formatCurrency(optionB.totalCGT)} (vs 50% discount ${formatCurrency(optionA.tax)}). Chosen automatically; new builds may pick either regime.`;
+              if (textEl) textEl.innerHTML = `Best CGT treatment: indexation — <strong>${formatCurrency(optionB.totalCGT)} tax</strong> (vs&nbsp;50% discount ${formatCurrency(optionA.tax)}). Chosen automatically; new builds may pick either regime.`;
             }
             cgtTreatmentEl.hidden = false;
           } else {
@@ -5474,7 +5477,6 @@
       // Retrospective "value today" rebasing is deferred to plan 2b-2.
       const deemedValue = purchasePrice *
         Math.pow(1 + growthRate, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
-      const deemedValueIsEstimate = true;
 
       const saleDateISO = addYearsISO(TODAY_ISO, years);
       // Div 43 splits at the deemed date (tax spec §5.3): post-2027
@@ -5492,7 +5494,7 @@
         sellingCostsPct: 0.03,
         acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
         div43Claimed: div43Pre, div43ClaimedPost: div43Post,
-        deemedValue, deemedValueIsEstimate,
+        deemedValue,
         quarantinePool: scenarioPoolAtYear(years),
         marginalRate: marginalTaxRate,
         remainingLoan,
@@ -5558,7 +5560,6 @@
         // Retrospective "value today" rebasing is deferred to plan 2b-2.
         const deemedValue = purchasePrice *
           Math.pow(1 + expectedGrowth, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
-        const deemedValueIsEstimate = true;
 
         let annualLoanPayment;
         if (loanType === 'IO') {
@@ -5637,7 +5638,7 @@
               sellingCostsPct: 0.03,
               acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
               div43Claimed: div43Pre, div43ClaimedPost: div43Post,
-              deemedValue, deemedValueIsEstimate,
+              deemedValue,
               quarantinePool: datasetPoolAtYear(y),
               marginalRate: mtr,
               remainingLoan,
