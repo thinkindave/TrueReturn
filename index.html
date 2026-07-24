@@ -3105,6 +3105,7 @@
           </span>
           <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
         </button>
+        <p class="quarantine-note" id="resTaxBenefitNote" hidden></p>
         <div class="proj-section-body" hidden>
           <div class="tax-rate-row advanced-only">
             <span class="tax-rate-label">Marginal Tax Rate</span>
@@ -4796,27 +4797,31 @@
         tbEl.className = 'proj-highlight-value ' + (snTaxBenefit > 0 ? 'positive' : snTaxBenefit < 0 ? 'negative' : '');
       }
 
-      // ── NG quarantine — snapshot override (spec §4a) ──
+      // ── NG quarantine — snapshot override (spec §4a / redesign §2.1) ──
       // If this snapshot year falls in the quarantine era and is a loss
-      // year, the old refund no longer applies — show $0 and explain why.
+      // year, the old refund no longer applies — show $0 and explain why,
+      // ADJACENT to the figure. This note is the only place the annual cost
+      // of quarantine is stated; the projections pool row is only honest
+      // while it exists (redesign spec §3).
       const snQuarantineRow = quarantineSched.rows[snapshotYear - 1];
       const snIsQuarantinedLossYear = !!(ngQuarantined && snQuarantineRow
         && snQuarantineRow.fyStartISO >= BOUNDARY_ISO && snNetRentalPosition < 0);
-      const quarantineNoteEl = document.getElementById('resQuarantineNote');
+      const tbNoteEl = document.getElementById('resTaxBenefitNote');
       if (snIsQuarantinedLossYear) {
         if (tbEl) {
           tbEl.textContent = formatCurrency(0) + '/yr';
           tbEl.className = 'proj-highlight-value';
         }
-        if (quarantineNoteEl) {
+        if (tbNoteEl) {
           const snLoss = Math.abs(snNetRentalPosition);
-          quarantineNoteEl.textContent = 'Annual loss: ' + formatCurrency(snLoss) +
-            '. Under the old rules you\'d have received about ' +
+          tbNoteEl.textContent = 'Quarantined: under the old rules this would have been about ' +
             formatCurrency(snLoss * marginalTaxRate) +
-            ' back each year. These losses are now quarantined — see below.';
+            ' back. It\'s added to your quarantined losses instead, claimable at sale.';
+          tbNoteEl.hidden = false;
         }
-      } else if (quarantineNoteEl) {
-        quarantineNoteEl.textContent = '';
+      } else if (tbNoteEl) {
+        tbNoteEl.textContent = '';
+        tbNoteEl.hidden = true;
       }
 
       // Update DOM — Results
