@@ -1352,13 +1352,16 @@
       left: 0;
     }
 
-    /* Quarantined losses (2026-27 reform, spec §4b) */
-    .quarantine-note {
+    /* Shared inline note under a section header — used by #resTaxBenefitNote
+       (redesign §2.1) and the per-period stranded notes (§2.3). NOT tied to
+       the quarantine module. */
+    .section-note {
       font-size: 0.8125rem;
       color: var(--text-secondary);
       line-height: 1.5;
       margin: 0 0 0.75rem;
     }
+    .proj-section > .section-note { padding: 0.5rem 1rem 0; margin-bottom: 0.5rem; }
 
     .quarantine-explainer {
       list-style: none;
@@ -3105,7 +3108,7 @@
           </span>
           <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
         </button>
-        <p class="quarantine-note" id="resTaxBenefitNote" hidden></p>
+        <p class="section-note" id="resTaxBenefitNote" hidden></p>
         <div class="proj-section-body" hidden>
           <div class="tax-rate-row advanced-only">
             <span class="tax-rate-label">Marginal Tax Rate</span>
@@ -3179,9 +3182,9 @@
              collapsible body, so they're visible without expanding — same
              pattern as the sensitivity band (:3328) sitting outside
              .period-body. The full breakdown + explainer stay in the body. -->
-        <p class="quarantine-note" id="resQuarantineNet" hidden></p>
+        <p class="section-note" id="resQuarantineNet" hidden></p>
         <div class="proj-section-body" hidden>
-          <p class="quarantine-note" id="resQuarantineNote"></p>
+          <p class="section-note" id="resQuarantineNote" hidden></p>
           <!-- Spec §4b (corrected 2026-07-18): quarantined losses are recovered
                through three channels — along the way, at sale, or never
                (stranded) — and the residual R = W - A - V - S captures relief
@@ -4804,8 +4807,7 @@
       // of quarantine is stated; the projections pool row is only honest
       // while it exists (redesign spec §3).
       const snQuarantineRow = quarantineSched.rows[snapshotYear - 1];
-      const snIsQuarantinedLossYear = !!(ngQuarantined && snQuarantineRow
-        && snQuarantineRow.fyStartISO >= BOUNDARY_ISO && snNetRentalPosition < 0);
+      const snIsQuarantinedLossYear = !!(snQuarantineRow && snQuarantineRow.quarantined > 0);
       const tbNoteEl = document.getElementById('resTaxBenefitNote');
       if (snIsQuarantinedLossYear) {
         if (tbEl) {
@@ -4813,9 +4815,8 @@
           tbEl.className = 'proj-highlight-value';
         }
         if (tbNoteEl) {
-          const snLoss = Math.abs(snNetRentalPosition);
           tbNoteEl.textContent = 'Quarantined: under the old rules this would have been about ' +
-            formatCurrency(snLoss * marginalTaxRate) +
+            formatCurrency(snTaxBenefit) +
             ' back. It\'s added to your quarantined losses instead, claimable at sale.';
           tbNoteEl.hidden = false;
         }
