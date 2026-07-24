@@ -1190,4 +1190,9 @@ test('affordable housing: pool offsets a discounted gain, so relief is worth les
     'and strandedPool stays 0 — so a headline branching on it alone would lie');
 });
 
+test('§10: forward-looking scope disclaimer exists and names the 12 May 2026 assumption', () => {
+  const s = E.DISCLAIMERS.forwardLooking;
+  assert(typeof s === 'string' && /12 May 2026/.test(s) && /overstate/.test(s));
+});
+
 summary();

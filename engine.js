@@ -818,6 +818,7 @@ const DISCLAIMERS = {
   cpiAssumption: 'Future cost-base indexation uses a projected CPI assumption, not actual CPI.',
   benchmarkHistorical: 'Benchmark presets are historical, before-tax figures — not a forecast.',
   reformScope: 'Models the Treasury Laws Amendment (Tax Reform No. 1) Act 2026. Some details — the new-build definition and the official apportioning method — are still pending, and are flagged where they apply.',
+  forwardLooking: 'This calculator assumes you\'re buying after 12 May 2026, so the 2027 negative-gearing and CGT changes apply. If you bought earlier, your negative gearing and CGT are grandfathered and this will overstate your tax.',
 };
 
 // ── Node export guard ────────────────────────────────────────────────────
