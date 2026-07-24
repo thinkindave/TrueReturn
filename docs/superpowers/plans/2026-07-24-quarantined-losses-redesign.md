@@ -75,7 +75,7 @@ No engine or test-file changes are required by the design; Task 6 adds structura
 In the tax-benefit section, insert a sibling **between** the `</button>` that closes `.proj-section-header` and the `<div class="proj-section-body" hidden>` — so it is visible without expanding the section. This mirrors how `#resQuarantineNet` was placed:
 
 ```html
-        <p class="quarantine-note" id="resTaxBenefitNote" hidden></p>
+        <p class="section-note" id="resTaxBenefitNote" hidden></p>
 ```
 
 - [ ] **Step 2: Rewire the JS to write to it**
@@ -147,7 +147,7 @@ Immediately after the CGT `.line-item` in the **proj5** Sale section (the block 
                 <span class="line-label">Quarantined Losses <span class="help-tip" id="proj5QuarantinedTip" data-tip="">?</span></span>
                 <span class="line-value" id="proj5Quarantined">-</span>
               </div>
-              <p class="quarantine-note" id="proj5StrandedNote" hidden></p>
+              <p class="section-note" id="proj5StrandedNote" hidden></p>
 ```
 
 Repeat identically for **proj10** and **projLife**, replacing the `proj5` prefix in all four ids (`proj10QuarantinedRow`, `proj10QuarantinedTip`, `proj10Quarantined`, `proj10StrandedNote`; and `projLifeQuarantinedRow`, `projLifeQuarantinedTip`, `projLifeQuarantined`, `projLifeStrandedNote`).
@@ -270,7 +270,14 @@ Remove the whole block starting `const quarantineSectionEl = document.getElement
 
 - [ ] **Step 3: Delete the dead CSS**
 
-`grep -n 'quarantine' <abs path>` and remove rules that now match nothing (e.g. any `#quarantineSection`-scoped rules). **Keep `.quarantine-note`** — Tasks 1 and 3 both use it.
+`grep -n 'quarantine' <abs path>` and remove rules that now match nothing (e.g. any `#quarantineSection`-scoped rules).
+
+**Do NOT delete `.section-note` or `.proj-section > .section-note`.** These are the shared note styles used by `#resTaxBenefitNote` (Task 1) and the per-period stranded notes (Task 3). They were deliberately renamed away from `.quarantine-note` during Task 1's review precisely so this sweep wouldn't claim them — if they go, both notes silently lose their styling with every test still green. After the sweep, assert they survive:
+
+```
+grep -c 'section-note' <abs index.html path>
+```
+Expected: **non-zero** (at minimum the CSS rules plus the four note elements). If it returns 0, you deleted too much — restore them.
 
 - [ ] **Step 4: Verify nothing dangles**
 
@@ -310,17 +317,29 @@ Replace the `data-tip` on all three CGT lines (`proj5CGT`, `proj10CGT`, `projLif
 Capital gains tax under the 2027 rules: the gain to 30 June 2027 is taxed at your marginal rate, and the gain after that is CPI-indexed and taxed at your marginal rate or 30%, whichever is higher. New builds may instead take the 50% discount on the whole gain.
 ```
 
-- [ ] **Step 3: Verify**
+- [ ] **Step 3: Carry the cost note into the exports**
+
+The CSV and PDF exports scrape `#resTaxBenefit`'s text (`index.html:~4156` and `~4279`), so an exported report shows `$0/yr` with no explanation — and once Task 2's pool row exists, an export could show the pool's upside without the cost. That breaks spec §3's constraint in the exported artefact.
+
+In the CSV export row list, immediately after the `['  Est. Tax Benefit', g('resTaxBenefit')]` entry, add:
+
+```js
+            ['  ', g('resTaxBenefitNote')],
+```
+
+and add the equivalent line to the PDF summary builder alongside its `taxBenefit` field, so the note travels with the figure. If the note is empty (non-quarantined years) the row renders blank, which is correct.
+
+- [ ] **Step 4: Verify**
 
 Run all three suites (absolute paths). Expected: engine 116, unit 199, smoke **8/8**.
 
-Browser: hover-read the CGT tip via DOM (`document.querySelectorAll('[data-tip]')` or read the attribute directly) and confirm the new text is present on all three periods.
+Browser: read the CGT `data-tip` attribute directly on all three periods and confirm the new text. Trigger a CSV export and confirm the note text appears beneath the tax-benefit figure when a quarantined year is selected.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git -C /Users/thinkindave/Claude/TrueReturn/.claude/worktrees/reform-ui-wiring add -A
-git -C /Users/thinkindave/Claude/TrueReturn/.claude/worktrees/reform-ui-wiring commit -m "test: update structural gates for the quarantine redesign; fix stale CGT help-tip (#6)"
+git -C /Users/thinkindave/Claude/TrueReturn/.claude/worktrees/reform-ui-wiring commit -m "test: update structural gates; fix stale CGT help-tip; carry the cost note into exports (#6)"
 ```
 
 ---
