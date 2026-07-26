@@ -47,9 +47,9 @@ const requiredIds = [
   'proj5Value', 'proj5Growth', 'proj5TrueReturn', 'proj5ReturnOnCash',
   'proj10Value', 'proj10Growth', 'proj10TrueReturn', 'proj10ReturnOnCash',
   'projLifeValue', 'projLifeGrowth', 'projLifeTrueReturn', 'projLifeReturnOnCash',
-  // Reform UI wiring (2b-1, UI spec §§3–5)
-  'quarantineSection', 'resQuarantinePool', 'resRefundsForegone',
-  'resRecoveredAlongWay', 'resPoolBenefit', 'deemedValueChip',
+  // Reform UI wiring — quarantine redesign (#6) + deemed value / sensitivity / banner
+  'resTaxBenefitNote', 'proj5Quarantined', 'proj10Quarantined',
+  'projLifeQuarantined', 'deemedValueChip',
   'proj5Sensitivity', 'proj10Sensitivity', 'projLifeSensitivity',
   'minTaxFootnote', 'reformBanner',
   // New-build CGT treatment line (UI spec §1.4)

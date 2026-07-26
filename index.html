@@ -3245,7 +3245,7 @@
                 <span class="line-value" id="proj5NetProceeds">-</span>
               </div>
               <div class="line-item muted">
-                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital Gains Tax estimated at 50% discount × your selected marginal tax rate.">?</span></span>
+                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital gains tax under the 2027 rules: the gain to 30 June 2027 is taxed at your marginal rate, and the gain after that is CPI-indexed and taxed at your marginal rate or 30%, whichever is higher. New builds may instead take the 50% discount on the whole gain.">?</span></span>
                 <span class="line-value" id="proj5CGT">-</span>
               </div>
               <div class="line-item" id="proj5QuarantinedRow" hidden>
@@ -3389,7 +3389,7 @@
                 <span class="line-value" id="proj10NetProceeds">-</span>
               </div>
               <div class="line-item muted">
-                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital Gains Tax estimated at 50% discount × your selected marginal tax rate.">?</span></span>
+                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital gains tax under the 2027 rules: the gain to 30 June 2027 is taxed at your marginal rate, and the gain after that is CPI-indexed and taxed at your marginal rate or 30%, whichever is higher. New builds may instead take the 50% discount on the whole gain.">?</span></span>
                 <span class="line-value" id="proj10CGT">-</span>
               </div>
               <div class="line-item" id="proj10QuarantinedRow" hidden>
@@ -3533,7 +3533,7 @@
                 <span class="line-value" id="projLifeNetProceeds">-</span>
               </div>
               <div class="line-item muted">
-                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital Gains Tax estimated at 50% discount × your selected marginal tax rate.">?</span></span>
+                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital gains tax under the 2027 rules: the gain to 30 June 2027 is taxed at your marginal rate, and the gain after that is CPI-indexed and taxed at your marginal rate or 30%, whichever is higher. New builds may instead take the 50% discount on the whole gain.">?</span></span>
                 <span class="line-value" id="projLifeCGT">-</span>
               </div>
               <div class="line-item" id="projLifeQuarantinedRow" hidden>
@@ -4085,6 +4085,7 @@
             ['  Total Deductibles',          g('resDeductible')],
             ['  Net Rental Position',        g('resNetRental')],
             ['  Est. Tax Benefit',           g('resTaxBenefit')],
+            ['  ',                            g('resTaxBenefitNote')],
             [],
             ['PROJECTIONS',                  '5 Years',              '10 Years',              '15 Years'],
             ['Property Value',               g('proj5Value'),        g('proj10Value'),        g('projLifeValue')],
@@ -4208,6 +4209,7 @@
             totalDeductible: g('resDeductible'),
             netRental:       g('resNetRental'),
             taxBenefit:      g('resTaxBenefit'),
+            taxBenefitNote:  g('resTaxBenefitNote'),
             p5:  snap('proj5'),
             p10: snap('proj10'),
             p15: snap('projLife'),
@@ -4431,6 +4433,7 @@
           + row('Total Deductibles', p.totalDeductible)
           + row('Net Rental Position', p.netRental)
           + row('Est. Tax Benefit', p.taxBenefit)
+          + (p.taxBenefitNote ? row('', p.taxBenefitNote) : '')
         ) + '<p style="font-size:7pt;color:#888;margin:-8pt 0 0 0;font-style:italic">Note: Est. Tax Benefit is not included in Annual Cash Flow as it depends heavily on your individual tax situation.</p>';
         var projHtml = projTable(p.p5, p.p10, p.p15);
         var chartHtml = p.chartSvg
