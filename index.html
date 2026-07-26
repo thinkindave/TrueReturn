@@ -4892,6 +4892,12 @@
           // note is the honesty pair for the pool row, which can otherwise
           // show a pool "worth ~$0" at a low-growth sale with no explanation.
           const strandedEl = document.getElementById(`${prefix}StrandedNote`);
+          // strandedPool sits at detail.strandedPool on the DUAL_ERA path only.
+          // Safe today because a quarantined row is only ever shown for
+          // established properties (DUAL_ERA); new builds are NG-exempt so the
+          // row is hidden. If affordableHousing (NG-eligible + BEST_OF) is ever
+          // re-added to the Age/type dropdown, strandedPool moves under
+          // detail.optionA/optionB and this lookup must branch on the winner.
           const strandedAmt = (saleOutcome.detail && saleOutcome.detail.strandedPool) || 0;
           if (strandedEl) {
             if (strandedAmt > 0) {
