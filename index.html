@@ -4085,7 +4085,7 @@
             ['  Total Deductibles',          g('resDeductible')],
             ['  Net Rental Position',        g('resNetRental')],
             ['  Est. Tax Benefit',           g('resTaxBenefit')],
-            ['  ',                            g('resTaxBenefitNote')],
+            ...(g('resTaxBenefitNote') ? [['  ', g('resTaxBenefitNote')]] : []),
             [],
             ['PROJECTIONS',                  '5 Years',              '10 Years',              '15 Years'],
             ['Property Value',               g('proj5Value'),        g('proj10Value'),        g('projLifeValue')],
