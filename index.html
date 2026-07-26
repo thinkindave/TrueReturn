@@ -4957,6 +4957,10 @@
         const quarTipEl = document.getElementById(`${prefix}QuarantinedTip`);
         const showQuar = ngQuarantined && periodPool > 0;
         if (quarRowEl) quarRowEl.hidden = !showQuar;
+        if (!showQuar) {
+          const staleStranded = document.getElementById(`${prefix}StrandedNote`);
+          if (staleStranded) { staleStranded.textContent = ''; staleStranded.hidden = true; }
+        }
         if (showQuar) {
           if (quarValEl) quarValEl.textContent = formatCurrency(periodPool);
           // Measure what the pool is actually worth at this sale, rather
@@ -4968,6 +4972,23 @@
             quarTipEl.setAttribute('data-tip',
               'Rental losses that no longer reduce your salary tax. They build up while the property runs at a loss, get used up against rental profits once it turns profitable, and whatever\'s left offsets your capital gain at sale — worth roughly ' +
               formatCurrency(poolWorth) + ' in tax at your marginal rate.');
+          }
+          // Stranding is per-period (redesign §2.3): a property can strand at
+          // 5 years (small gain) and not at 15 (larger gain), so this is
+          // computed per period, not once. Never silently absorb it — this
+          // note is the honesty pair for the pool row, which can otherwise
+          // show a pool "worth ~$0" at a low-growth sale with no explanation.
+          const strandedEl = document.getElementById(`${prefix}StrandedNote`);
+          const strandedAmt = (saleOutcome.detail && saleOutcome.detail.strandedPool) || 0;
+          if (strandedEl) {
+            if (strandedAmt > 0) {
+              strandedEl.textContent = formatCurrency(strandedAmt) +
+                ' of these would never be recovered — the sale gain isn\'t large enough to absorb them.';
+              strandedEl.hidden = false;
+            } else {
+              strandedEl.textContent = '';
+              strandedEl.hidden = true;
+            }
           }
         }
 
