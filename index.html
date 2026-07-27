@@ -5011,7 +5011,12 @@
         }
 
         const totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow;
-        const annualisedReturn = totalUpfront > 0 ? (Math.pow(1 + totalProfit / totalUpfront, 1 / years) - 1) * 100 : 0;
+        // A loss larger than the cash invested makes the ROE base negative,
+        // and a negative base to a fractional power is NaN (#13). Floor at
+        // -100% p.a. (total loss), matching engine.js annualizedReturn's
+        // ratio<=0 behaviour.
+        const roeBase = totalUpfront > 0 ? 1 + totalProfit / totalUpfront : 0;
+        const annualisedReturn = roeBase > 0 ? (Math.pow(roeBase, 1 / years) - 1) * 100 : -100;
 
         const bodyCashOutEl = document.getElementById(`${prefix}BodyCashOut`);
         if (bodyCashOutEl) {
