@@ -4739,6 +4739,8 @@
       // while it exists (redesign spec §3).
       const snQuarantineRow = quarantineSched.rows[snapshotYear - 1];
       const snIsQuarantinedLossYear = !!(snQuarantineRow && snQuarantineRow.quarantined > 0);
+      const snIsPreQuarantineLossYear = ngQuarantined && !snIsQuarantinedLossYear &&
+        !!(snQuarantineRow && snQuarantineRow.fyStartISO < BOUNDARY_ISO && snNetRentalPosition < 0);
       const tbNoteEl = document.getElementById('resTaxBenefitNote');
       if (snIsQuarantinedLossYear) {
         if (tbEl) {
@@ -4749,6 +4751,11 @@
           tbNoteEl.textContent = 'Quarantined: under the old rules this would have been about ' +
             formatCurrency(snTaxBenefit) +
             ' back. It\'s added to your quarantined losses instead, claimable at sale.';
+          tbNoteEl.hidden = false;
+        }
+      } else if (snIsPreQuarantineLossYear) {
+        if (tbNoteEl) {
+          tbNoteEl.textContent = 'Negative gearing on established properties applies only until 30 June 2027; after that, these losses are quarantined.';
           tbNoteEl.hidden = false;
         }
       } else if (tbNoteEl) {
