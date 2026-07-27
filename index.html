@@ -5847,6 +5847,7 @@
     (function() {
       var tip = document.getElementById('globalTooltip');
       var activeEl = null;
+      var shownAt = 0;
       function showTip(el) {
         var text = el.getAttribute('data-tip');
         if (!text) return;
@@ -5864,6 +5865,7 @@
         tip.style.left = left + 'px';
         tip.style.top = (top - tip.offsetHeight) + 'px';
         activeEl = el;
+        shownAt = Date.now();
       }
       function hideTip() {
         tip.style.display = 'none';
@@ -5899,17 +5901,27 @@
       document.addEventListener('focusout', function(e) {
         if (e.target.closest && e.target.closest('.help-tip')) hideTip();
       });
-      // Tap / click toggles (mobile: hover never fires there)
+      // Tap / click toggles (mobile: hover never fires there). Guarded by
+      // shownAt: on touch, focusin/mouseover opens the tip just before the
+      // click lands, so a same-tap click must not immediately toggle it back
+      // off — only a later, deliberate click closes it. (#12 review fix)
       document.addEventListener('click', function(e) {
         var el = e.target.closest('.help-tip');
-        if (el) { e.preventDefault(); if (activeEl === el) hideTip(); else showTip(el); }
-        else if (activeEl) { hideTip(); }
+        if (el) {
+          e.preventDefault();
+          if (activeEl === el && (Date.now() - shownAt) > 350) hideTip();
+          else showTip(el);   // idempotent: a same-tap focus/hover already opened it; keep it open
+        } else if (activeEl) {
+          hideTip();
+        }
       });
       document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && activeEl) { hideTip(); return; }
         var el = e.target.closest && e.target.closest('.help-tip');
         if (el && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault(); if (activeEl === el) hideTip(); else showTip(el);
+          e.preventDefault();
+          if (activeEl === el && (Date.now() - shownAt) > 350) hideTip();
+          else showTip(el);
         }
       });
     })();
