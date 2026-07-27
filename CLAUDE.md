@@ -5,54 +5,52 @@ Single-file HTML/CSS/JS property investment calculator. All code lives in `index
 
 ## Mandatory change pipeline
 
-Every requested change **must** pass through all applicable agents in order before being presented to the user for approval. Do not skip steps or combine them.
+This project follows the global pipeline in `~/.claude/CLAUDE.md`. Work is tracked in GitHub Issues via the **github-liaison** agent (labels: `status:todo` → `status:in-dev` → `status:in-review` → `status:po-review`).
 
-**Feature cards** (labelled "feature" in Trello) run the extended pipeline below. All other cards skip the ui-designer steps.
+**New features** run the full pipeline. **Bugs and small tasks** skip brainstorming and writing-plans and start at implementation.
 
 ```
 Request received
       ↓
- trello-liaison     — creates card in To Do (if new) or confirms existing card
+ github-liaison        — find/create tracking issue (status:todo)
       ↓
- [FEATURE CARDS ONLY]
- ui-designer        — reviews requirements, produces Design Proposal
- trello-liaison     — posts Design Proposal comment
- User approval      — approves design or provides feedback
+ [NEW FEATURES ONLY]
+ superpowers:brainstorming      — Design Proposal
+ github-liaison        — post Design Proposal as issue comment
+ User approval         — approve design or give feedback
       ↓ (if approved)
- ui-designer        — produces Implementation Spec for code-writer
- trello-liaison     — posts Implementation Spec comment, moves card to In Development
+ superpowers:writing-plans      — Implementation Plan
+ github-liaison        — post plan summary, move to status:in-dev
       ↓
- [ALL CARDS]
- code-writer        — implements the change (guided by Implementation Spec for features)
- trello-liaison     — moves card to In Development, posts summary comment
+ [ALL TASKS]
+ superpowers:subagent-driven-development  — execute plan task by task (TDD: failing test first)
       ↓
- unit-test-writer   — writes/updates tests for any new pure functions
- trello-liaison     — posts test summary comment
-      ↓
- code-reviewer      — audits for correctness, standards, efficiency
- trello-liaison     — posts full review report comment
-      ↓   (if NEEDS WORK → trello-liaison moves back to In Development → code-writer)
- trello-liaison     — moves card to In Review
-      ↓
- smoke-tester       — runs structural checks and unit tests
- trello-liaison     — posts smoke test results comment
-      ↓   (if FAIL → trello-liaison moves back to In Development → code-writer)
- ui-reviewer        — reviews visual changes (skip if no HTML/CSS changed)
- trello-liaison     — posts UI review comment
-      ↓   (if NEEDS WORK → trello-liaison moves back to In Development → code-writer)
- trello-liaison     — moves card to PO Review, posts final summary
- User approval      — user reviews in Trello and approves or provides feedback
+ code-reviewer         — audit quality & project standards
+ github-liaison        — post review (move to status:in-review)
+      ↓   (if NEEDS WORK → back to status:in-dev → fix → re-review)
+ smoke-tester          — unit tests + structural checks
+ github-liaison        — post smoke results
+      ↓   (if FAIL → back to status:in-dev → fix → re-run from smoke-tester)
+ ui-reviewer           — visual review (SKIP if no HTML/CSS changed)
+ github-liaison        — post UI review
+      ↓   (if NEEDS WORK → back to status:in-dev → fix → re-run from smoke-tester)
+ github-liaison        — move to status:po-review, post final summary
+ Browser gate          — tell user: "Ready to test. Let me know when confirmed."
+ User approval         — confirms (or describes a bug)
+      ↓ (if confirmed)
+ superpowers:finishing-a-development-branch  — local merge (Option 1), clean up worktree
+ github-liaison        — close issue with final summary
+      ↓ (if bug found)
+ github-liaison        — move back to status:in-dev; return to implementation
 ```
 
 ### Rules
-- **Never commit or push** without explicit user instruction.
-- **ui-designer Design Proposal** must be explicitly approved by the user before the Implementation Spec is written or any code is touched.
-- **code-reviewer BLOCKER** findings must be resolved before proceeding to smoke-tester.
-- **smoke-tester FAIL** must be resolved before proceeding to ui-reviewer.
-- **ui-reviewer BLOCKER** findings must be resolved before moving to PO Review.
-- WARNING and NOTE findings from any agent should be included in Trello comments but do not block the pipeline.
-- If any agent sends work back to code-writer, run the full pipeline again from code-writer forward.
-- The trello-liaison always runs after each agent — never skip it.
+- **Never commit or push without explicit user instruction.** Browser confirmation authorises a *local* merge only; pushing to a remote needs a separate explicit instruction.
+- **Design Proposal must be explicitly approved** by the user before writing-plans or touching code.
+- **code-reviewer BLOCKER** findings block smoke-tester. **smoke-tester FAIL** blocks ui-reviewer. **ui-reviewer BLOCKER** blocks PO Review.
+- WARNING and NOTE findings are recorded in the issue but do not block the pipeline.
+- **github-liaison runs after every stage** — the issue thread should be a complete history. Never skip it.
+- **TDD is mandatory**: implementer subagents write a failing test before implementation code.
 
 ### Final summary to user
 After all agents pass, present:
@@ -74,10 +72,9 @@ After all agents pass, present:
 
 | Agent | File | Role |
 |---|---|---|
-| trello-liaison | `.claude/agents/trello-liaison.md` | Creates/moves cards, posts comments |
-| ui-designer | `.claude/agents/ui-designer.md` | Design proposal + implementation spec (feature cards only) |
-| code-writer | `.claude/agents/code-writer.md` | Implements changes |
-| unit-test-writer | `.claude/agents/unit-test-writer.md` | Writes unit tests |
+| github-liaison | `~/.claude/agents/github-liaison.md` (global) | Creates/updates the tracking issue, posts stage comments, moves status labels |
 | code-reviewer | `.claude/agents/code-reviewer.md` | Audits code quality |
-| smoke-tester | `.claude/agents/smoke-tester.md` | Runs structural checks |
+| smoke-tester | `.claude/agents/smoke-tester.md` | Runs structural checks and unit tests |
 | ui-reviewer | `.claude/agents/ui-reviewer.md` | Reviews visual correctness |
+
+Design and implementation are handled by superpowers skills (`brainstorming`, `writing-plans`, `subagent-driven-development`, `finishing-a-development-branch`), not project agents. The Trello-era agents (`code-writer.md`, `ui-designer.md`, `unit-test-writer.md`) remain in `.claude/agents/` for reference but are superseded by those skills.
