@@ -721,13 +721,30 @@ test('large profit over long term (30-year loan lifetime)', () => {
 // ---------------------------------------------------------------------------
 // calcScenarioProfit — pure version for unit testing
 //
-// The production calcScenarioProfit(entry, years, growthRate) reads all
-// inputs from DOM elements inside `entry`. The arithmetic is identical;
-// only the data-access layer differs. The pure version below accepts a
-// plain object `data` with the same field names as the DOM data-field
-// attributes, plus a `stateDefaults` map that mirrors the one in index.html.
+// NOTE (2026-07-16, reform-ui-wiring Task 3): production calcScenarioProfit()
+// (and calculate()'s projection loop, and buildPropertyDatasets()) now route
+// their CGT arithmetic through engine.js's calcReformSale() — a date-aware
+// regime router (spec §3) — instead of the inline legacy formula reproduced
+// below. This pure twin is intentionally FROZEN at the pre-reform formula:
+// it is bit-identical to engine.js's legacySaleOutcome() (kept there as its
+// own golden regression, see tests/engine.test.js), which no longer has any
+// production call site but remains a deliberate historical/regression
+// baseline. calcReformSale()'s regime routing depends on wall-clock "today"
+// (via new Date()) and contract/dwelling/deemed-value inputs that this test
+// harness's plain `data` objects don't carry, so a truly "identical" pure
+// twin of the NEW production formula is not achievable without either (a)
+// injecting a deterministic "today" the tests don't currently model, or (b)
+// duplicating engine.test.js's already-thorough direct coverage of
+// calcReformSale/calcOldRegimeCGT/calcDualEraCGT. Flagged to the PO/reviewer
+// rather than silently rewritten — see reform-ui-wiring Task 3 report.
 //
-// Copied verbatim from index.html — verify against source if formulas change.
+// Below this point, "the production calcScenarioProfit(entry, years,
+// growthRate) reads all inputs from DOM elements inside `entry`" describes
+// the LOAN/CASH-FLOW arithmetic only, which is still shared verbatim; the
+// CGT block is the frozen legacy formula, not current production CGT math.
+// The pure version below accepts a plain object `data` with the same field
+// names as the DOM data-field attributes, plus a `stateDefaults` map that
+// mirrors the one in index.html.
 // ---------------------------------------------------------------------------
 
 function calcScenarioProfitPure(data, years, growthRate, marginalTaxRate, annualDepreciation) {
@@ -1081,9 +1098,9 @@ test('zero purchase price returns zero depreciation', () => {
 // that the new parameters are not ignored.
 // ---------------------------------------------------------------------------
 
-console.log('\ncalcScenarioProfit — marginalTaxRate and annualDepreciation parameters');
+console.log('\ncalcScenarioProfit — marginalTaxRate and annualDepreciation parameters (frozen legacy formula — current coverage lives in engine.test.js calcReformSale suite)');
 
-test('higher marginalTaxRate produces lower profit when there is a capital gain', () => {
+test('legacy frozen formula: higher marginalTaxRate produces lower profit when there is a capital gain', () => {
   // Use positive growth so a capital gain exists and CGT is non-zero.
   // A higher tax rate means more CGT deducted, so profit should be lower.
   const lowTax  = calcScenarioProfitPure(refEntry, 10, 0.05, 0.19, 0);
@@ -1092,14 +1109,14 @@ test('higher marginalTaxRate produces lower profit when there is a capital gain'
     `Expected low-tax profit (${lowTax}) > high-tax profit (${highTax})`);
 });
 
-test('zero marginalTaxRate produces higher profit than default 37% when capital gain exists', () => {
+test('legacy frozen formula: zero marginalTaxRate produces higher profit than default 37% when capital gain exists', () => {
   const noTax      = calcScenarioProfitPure(refEntry, 10, 0.05, 0,    0);
   const defaultTax = calcScenarioProfitPure(refEntry, 10, 0.05, 0.37, 0);
   assert.ok(noTax > defaultTax,
     `Expected zero-tax (${noTax}) > default-tax (${defaultTax})`);
 });
 
-test('positive annualDepreciation lowers cost base and increases CGT (reduces profit)', () => {
+test('legacy frozen formula: positive annualDepreciation lowers cost base and increases CGT (reduces profit)', () => {
   // Depreciation reduces the cost base, raising the capital gain, raising CGT,
   // which should reduce overall profit relative to zero depreciation.
   const withDepr    = calcScenarioProfitPure(refEntry, 10, 0.05, 0.37, 5000);
@@ -1108,7 +1125,7 @@ test('positive annualDepreciation lowers cost base and increases CGT (reduces pr
     `Expected depreciation to reduce profit: withDepr (${withDepr}) < withoutDepr (${withoutDepr})`);
 });
 
-test('annualDepreciation via calcDepreciation matches manual rate for new property', () => {
+test('legacy frozen formula: annualDepreciation via calcDepreciation matches manual rate for new property', () => {
   // Confirm the depreciation value fed into calcScenarioProfitPure is the
   // result of calcDepreciation, not a hardcoded constant.
   // A new ($500k) property: calcDepreciation('new', 500000) = 500000 * 0.75 * 0.025 = 9375
@@ -1121,7 +1138,7 @@ test('annualDepreciation via calcDepreciation matches manual rate for new proper
     `Expected depreciation of ${depr} to change profit vs zero depreciation`);
 });
 
-test('omitting marginalTaxRate and annualDepreciation defaults to 0.37 and 0', () => {
+test('legacy frozen formula: omitting marginalTaxRate and annualDepreciation defaults to 0.37 and 0', () => {
   // Calling with 3 args must equal calling with explicit defaults.
   const threeArgs   = calcScenarioProfitPure(refEntry, 10, 0.04);
   const fiveArgs    = calcScenarioProfitPure(refEntry, 10, 0.04, 0.37, 0);
@@ -1131,10 +1148,14 @@ test('omitting marginalTaxRate and annualDepreciation defaults to 0.37 and 0', (
 // ---------------------------------------------------------------------------
 // CGT cost base — loan establishment fee excluded
 //
-// Production formula (lines 4589 and 4804 of index.html):
+// Historical note: this described the legacy formula (pre reform-ui-wiring
+// Task 3) that used to live at the call sites production now replaced with
+// calcReformSale(). It no longer matches current index.html line numbers —
+// see the FROZEN-formula note above calcScenarioProfitPure. Preserved here
+// because calcScenarioProfitPure itself is still frozen at this formula:
 //   costBase = Math.max(0, purchasePrice + stampDuty + conveyancing + BUILDING_PEST - cumulativeDepr)
 //
-// The $800 LOAN_ESTABLISHMENT fee was removed from costBase in this change.
+// The $800 LOAN_ESTABLISHMENT fee was removed from costBase in that change.
 // A lower costBase produces a higher capital gain and therefore more CGT,
 // so removing it (making costBase smaller) should reduce net profit.
 //
@@ -1144,7 +1165,7 @@ test('omitting marginalTaxRate and annualDepreciation defaults to 0.37 and 0', (
 // it focuses on the principal components.)
 // ---------------------------------------------------------------------------
 
-console.log('\nCGT cost base — loan establishment fee excluded');
+console.log('\nCGT cost base — loan establishment fee excluded (frozen legacy formula — current coverage lives in engine.test.js calcReformSale suite)');
 
 function calcCostBase(purchasePrice, stampDuty, conveyancing, buildingPest, loanEstablishment, cumulativeDepr) {
   // Current formula: LOAN_ESTABLISHMENT is NOT in costBase

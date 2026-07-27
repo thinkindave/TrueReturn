@@ -215,6 +215,36 @@
       text-decoration: underline;
     }
 
+    /* Reform disclaimer banner (UI spec §5) — off .intro-disclaimer, but a
+       full border instead of alarm-amber, since this flags law-in-progress
+       status rather than a general caution. */
+    .reform-banner {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin: 0.5rem 0 0;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 4px;
+      padding: 0.45rem 0.75rem;
+    }
+    .reform-banner-dismiss {
+      flex: 0 0 auto;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 0.15rem;
+    }
+    .reform-banner-dismiss:hover {
+      color: var(--text-primary);
+    }
+
     .intro-tip {
       font-size: 0.8125rem;
       color: var(--text-muted);
@@ -493,6 +523,31 @@
       border-left: 3px solid rgba(251, 191, 36, 0.55);
       border-radius: 0 4px 4px 0;
       padding: 0.45rem 0.75rem;
+    }
+
+    /* Deemed-value chip (2026-27 reform, UI spec §2) */
+    .deemed-value-chip {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .deemed-value-chip strong {
+      color: var(--text-primary);
+    }
+
+    /* Deemed-value sensitivity band (UI spec §3 — mandatory, never hidden
+       behind a collapsible toggle; lives beside the always-visible
+       Cash Out Position headline, not inside the collapsed period-body). */
+    .sensitivity-band {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin: 0.375rem 0 0.75rem;
     }
 
     .split-panel .projections-grid {
@@ -1297,6 +1352,17 @@
       left: 0;
     }
 
+    /* Shared inline note under a section header — used by #resTaxBenefitNote
+       (redesign §2.1) and the per-period stranded notes (§2.3). NOT tied to
+       the quarantine module. */
+    .section-note {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 0 0 0.75rem;
+    }
+    .proj-section > .section-note { padding: 0.5rem 1rem 0; margin-bottom: 0.5rem; }
+
     .line-value {
       font-size: 0.9375rem;
       font-weight: 600;
@@ -1638,7 +1704,13 @@
   .property-table-labels,
   .property-row {
     display: grid;
-    grid-template-columns: 4.5rem 1.1fr 1.2fr 0.8fr 0.65fr 0.85fr 0.7fr 0.85fr 0.65fr 0.7fr 0.65fr 0.9fr 4rem;
+    /* 13 tracks: num | name | price | rent | deposit | type | term | state | rate | mgmt | growth | age | actions
+       minmax(0, …) is required: without it each grid sizes its fr tracks to its OWN
+       min-content, so the header (long labels) and the row (short inputs) resolve to
+       different widths and drift apart (~28px at 1280px). Pinning the floor to 0 makes
+       both grids resolve identically. The fr shares are then sized to each label's
+       min-content so nothing collides — total is unchanged at 9.05fr. */
+    grid-template-columns: 4.5rem minmax(0, 0.85fr) minmax(0, 1.35fr) minmax(0, 0.85fr) minmax(0, 0.8fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 0.65fr) minmax(0, 0.65fr) minmax(0, 1.05fr) minmax(0, 0.75fr) 4rem;
     gap: 0 0.5rem;
     align-items: center;
   }
@@ -2317,8 +2389,34 @@
 
   /* Hidden globally; shown only inside mobile card view or desktop View button */
   .card-btn-label { display: none; }
-  .card-details-toggle { display: none; }
   .prop-col-num .card-btn-label { display: inline; }
+
+  /* ── Per-property "Show details" toggle ──
+     Predates the reform fields (mobile accordion for advanced-only columns,
+     see .mobile-card-view rules below); the toggle spans the full row (a
+     grid item of .property-row, which has a fixed 13-track template — 1/-1
+     keeps it out of the tracks and on its own implicit row). */
+  .card-details-toggle {
+    grid-column: 1 / -1;
+    /* Desktop: no expandable details area exists any more (reform fields moved
+       into the always-visible row, UI spec v2.5), so the toggle is hidden.
+       It is re-shown only in mobile card view below, where it drives the
+       simple-mode accordion that reveals the advanced fields. */
+    display: none;
+    align-items: center;
+    gap: 0.3rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0.25rem 0 0.25rem 4.5rem;
+  }
+  .card-details-toggle:hover { color: var(--text-secondary); }
+  .card-details-toggle svg { transition: transform 0.2s ease; }
+  .property-entry.details-expanded .card-details-toggle svg { transform: rotate(180deg); }
 
   /* ── Mobile (max-width: 767px) ── */
   @media (max-width: 767px) {
@@ -2461,27 +2559,12 @@
       letter-spacing: 0.03em;
     }
 
-    /* Show details toggle — only visible in simple+mobile */
-    body[data-mode="simple"] .mobile-card-view .card-details-toggle {
+    /* Show details toggle — in card view it is a full-width flex row, not a grid item */
+    .mobile-card-view .card-details-toggle {
       display: flex;
       flex: 0 0 100%;
       order: 3;
-      align-items: center;
-      gap: 0.3rem;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 0.72rem;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
       padding: 0.25rem 0;
-    }
-    body[data-mode="simple"] .mobile-card-view .card-details-toggle svg {
-      transition: transform 0.2s ease;
-    }
-    body[data-mode="simple"] .mobile-card-view .property-entry.details-expanded .card-details-toggle svg {
-      transform: rotate(180deg);
     }
     /* Hide advanced fields in simple+mobile by default */
     body[data-mode="simple"] .mobile-card-view .advanced-only.prop-col {
@@ -2649,6 +2732,10 @@
     <p class="intro-headline">See the real return on your property investment.</p>
     <p class="intro-body">Model cash flow, tax, growth and long-term outcomes, and see how changes impact your results. Edit the example below to get started, or add your own. <a href="about.html" class="intro-about-link">Learn how TrueReturn works →</a></p>
     <p class="intro-disclaimer">This tool provides general information only and does not constitute financial advice. You should consider your own circumstances and seek professional advice. <a href="privacy.html" class="intro-disclaimer-link">Privacy Policy</a></p>
+    <div class="reform-banner" id="reformBanner" hidden>
+      <span id="reformBannerText"></span>
+      <button type="button" class="reform-banner-dismiss" id="reformBannerDismiss" aria-label="Dismiss">×</button>
+    </div>
     <p class="intro-tip"><svg class="intro-tip-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7.5V18H9v-2.5l-.7-.5A7 7 0 0 1 12 2z"/><path d="M9 21h6"/><path d="M10 18v1"/><path d="M14 18v1"/></svg> Tip: Duplicate a property to test different scenarios.</p>
   </div>
 
@@ -2712,7 +2799,7 @@
             <div class="prop-col-label advanced-only">Rate <span class="help-tip" data-tip="Annual interest rate on your mortgage">?</span></div>
             <div class="prop-col-label advanced-only">Mgmt <span class="help-tip" data-tip="Property manager's fee as a percentage of gross weekly rent">?</span></div>
             <div class="prop-col-label advanced-only">Growth/yr <span class="help-tip" data-tip="Expected annual capital growth rate. The long-run Australian average is ~7%.">?</span></div>
-            <div class="prop-col-label advanced-only">Age <span class="help-tip" data-tip="Used to estimate annual depreciation on building structure and fixtures">?</span></div>
+            <div class="prop-col-label advanced-only">Age / type <span class="help-tip" data-tip="Used to estimate annual depreciation on building structure and fixtures">?</span></div>
             <div class="prop-col-label"></div>
           </div>
           <div class="property-rows">
@@ -2789,17 +2876,14 @@
                     <span class="suffix">%</span>
                   </div>
                 </div>
-                <div class="prop-col advanced-only" data-label="Age">
+                <div class="prop-col advanced-only" data-label="Age / type">
                   <select data-field="propertyAge">
-                    <option value="new">&lt;5y</option>
-                    <option value="mid" selected>5-20y</option>
-                    <option value="old">&gt;20y</option>
+                    <option value="newBuild">New build</option>
+                    <option value="new">Established, under 10 years</option>
+                    <option value="mid" selected>Established, 10–20 years</option>
+                    <option value="old">Established, 20+ years</option>
                   </select>
                 </div>
-                <button class="card-details-toggle" aria-expanded="false">
-                  <span class="card-details-toggle-label">Show details</span>
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
                 <input type="hidden" data-field="marginalTaxRate" value="0.37">
                 <div class="prop-col prop-col-delete">
                   <button class="copy-row-btn" title="Duplicate property">
@@ -2811,6 +2895,13 @@
                     <span class="card-btn-label">Delete</span>
                   </button>
                 </div>
+                <!-- Mobile-only accordion for the advanced-only columns (predates the
+                     reform fields); must come last in DOM so the 13 tracks of row 1
+                     are filled before this creates an implicit row. -->
+                <button class="card-details-toggle" aria-expanded="false">
+                  <span class="card-details-toggle-label">Show details</span>
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
               </div>
             </div>
           </div>
@@ -2993,6 +3084,7 @@
           </span>
           <svg class="proj-section-chevron" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
         </button>
+        <p class="section-note" id="resTaxBenefitNote" hidden></p>
         <div class="proj-section-body" hidden>
           <div class="tax-rate-row advanced-only">
             <span class="tax-rate-label">Marginal Tax Rate</span>
@@ -3051,6 +3143,10 @@
       <h2>Projections</h2>
       <p class="snapshot-property-name" id="projectionsPropertyLabel">Property 1</p>
 
+      <div class="deemed-value-chip" id="deemedValueChip" hidden>
+        <span>Estimated value at 30 June 2027: <strong id="deemedValueDisplay">-</strong>&nbsp;<span class="help-tip" data-tip="The 2027 tax change splits your gain at this date. This is our projection from your purchase price at your growth rate.">?</span></span>
+      </div>
+
       <div class="projections-grid">
         <!-- 5 Year -->
         <div>
@@ -3071,6 +3167,10 @@
               <span class="period-headline-label">Annual Cash Return</span>
               <span class="period-headline-value" id="proj5HeadlineReturnOnCash">-</span>
             </div>
+          </div>
+          <div class="proj-line sensitivity-band" id="proj5Sensitivity" hidden></div>
+          <div class="proj-line sensitivity-band" id="proj5CgtTreatment" hidden>
+            <span id="proj5CgtTreatmentText"></span>
           </div>
           <div class="period-body">
 
@@ -3145,9 +3245,14 @@
                 <span class="line-value" id="proj5NetProceeds">-</span>
               </div>
               <div class="line-item muted">
-                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital Gains Tax estimated at 50% discount × your selected marginal tax rate.">?</span></span>
+                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital gains tax under the 2027 rules: the gain to 30 June 2027 is taxed at your marginal rate, and the gain after that is CPI-indexed and taxed at your marginal rate or 30%, whichever is higher. New builds may instead take the 50% discount on the whole gain.">?</span></span>
                 <span class="line-value" id="proj5CGT">-</span>
               </div>
+              <div class="line-item" id="proj5QuarantinedRow" hidden>
+                <span class="line-label">Quarantined Losses <span class="help-tip" id="proj5QuarantinedTip" data-tip="">?</span></span>
+                <span class="line-value" id="proj5Quarantined">-</span>
+              </div>
+              <p class="section-note" id="proj5StrandedNote" hidden></p>
             </div>
           </div>
 
@@ -3206,6 +3311,10 @@
               <span class="period-headline-label">Annual Cash Return</span>
               <span class="period-headline-value" id="proj10HeadlineReturnOnCash">-</span>
             </div>
+          </div>
+          <div class="proj-line sensitivity-band" id="proj10Sensitivity" hidden></div>
+          <div class="proj-line sensitivity-band" id="proj10CgtTreatment" hidden>
+            <span id="proj10CgtTreatmentText"></span>
           </div>
           <div class="period-body">
 
@@ -3280,9 +3389,14 @@
                 <span class="line-value" id="proj10NetProceeds">-</span>
               </div>
               <div class="line-item muted">
-                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital Gains Tax estimated at 50% discount × your selected marginal tax rate.">?</span></span>
+                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital gains tax under the 2027 rules: the gain to 30 June 2027 is taxed at your marginal rate, and the gain after that is CPI-indexed and taxed at your marginal rate or 30%, whichever is higher. New builds may instead take the 50% discount on the whole gain.">?</span></span>
                 <span class="line-value" id="proj10CGT">-</span>
               </div>
+              <div class="line-item" id="proj10QuarantinedRow" hidden>
+                <span class="line-label">Quarantined Losses <span class="help-tip" id="proj10QuarantinedTip" data-tip="">?</span></span>
+                <span class="line-value" id="proj10Quarantined">-</span>
+              </div>
+              <p class="section-note" id="proj10StrandedNote" hidden></p>
             </div>
           </div>
 
@@ -3341,6 +3455,10 @@
               <span class="period-headline-label">Annual Cash Return</span>
               <span class="period-headline-value" id="projLifeHeadlineReturnOnCash">-</span>
             </div>
+          </div>
+          <div class="proj-line sensitivity-band" id="projLifeSensitivity" hidden></div>
+          <div class="proj-line sensitivity-band" id="projLifeCgtTreatment" hidden>
+            <span id="projLifeCgtTreatmentText"></span>
           </div>
           <div class="period-body">
 
@@ -3415,9 +3533,14 @@
                 <span class="line-value" id="projLifeNetProceeds">-</span>
               </div>
               <div class="line-item muted">
-                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital Gains Tax estimated at 50% discount × your selected marginal tax rate.">?</span></span>
+                <span class="line-label">Capital Gains Tax <span class="help-tip" data-tip="Capital gains tax under the 2027 rules: the gain to 30 June 2027 is taxed at your marginal rate, and the gain after that is CPI-indexed and taxed at your marginal rate or 30%, whichever is higher. New builds may instead take the 50% discount on the whole gain.">?</span></span>
                 <span class="line-value" id="projLifeCGT">-</span>
               </div>
+              <div class="line-item" id="projLifeQuarantinedRow" hidden>
+                <span class="line-label">Quarantined Losses <span class="help-tip" id="projLifeQuarantinedTip" data-tip="">?</span></span>
+                <span class="line-value" id="projLifeQuarantined">-</span>
+              </div>
+              <p class="section-note" id="projLifeStrandedNote" hidden></p>
             </div>
           </div>
 
@@ -3458,6 +3581,7 @@
         </div>
       </div>
       <p class="projections-disclaimer">This tool provides general information only and does not constitute financial advice. You should consider your own circumstances and seek professional advice.</p>
+      <p class="projections-disclaimer" id="minTaxFootnote" hidden></p>
     </div>
     </div>
 
@@ -3500,6 +3624,14 @@
 
     function getVal(field) {
       return parseFloat(getField(field)) || 0;
+    }
+
+    // Local calendar date (not UTC) — TODAY_ISO feeds the 12-month
+    // discount cliff at 30 June 2027; a UTC day-slip could flip it.
+    function todayISO() {
+      var d = new Date();
+      return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+        .toISOString().slice(0, 10);
     }
 
     function setResult(key, value, className) {
@@ -3666,11 +3798,14 @@
 
       // Reset input values: clear all fields, then apply SIMPLE_MODE_DEFAULTS
       newEntry.querySelectorAll('[data-field]').forEach(el => {
-        if (el.tagName === 'INPUT' || el.tagName === 'SELECT') el.value = '';
+        if (el.type === 'checkbox') el.checked = false;
+        else if (el.tagName === 'INPUT' || el.tagName === 'SELECT') el.value = '';
       });
       Object.keys(SIMPLE_MODE_DEFAULTS).forEach(function(field) {
         const el = newEntry.querySelector('[data-field="' + field + '"]');
-        if (el) el.value = SIMPLE_MODE_DEFAULTS[field];
+        if (!el) return;
+        if (el.type === 'checkbox') el.checked = !!SIMPLE_MODE_DEFAULTS[field];
+        else el.value = SIMPLE_MODE_DEFAULTS[field];
       });
 
       // Reset result displays
@@ -3694,9 +3829,12 @@
     function initProjectionSections() {
       document.querySelectorAll('.proj-section-header').forEach(header => {
         header.addEventListener('click', () => {
+          const section = header.closest('.proj-section') || header.parentElement;
+          const body = section.querySelector('.proj-section-body');
+          if (!body) return;
           const expanded = header.getAttribute('aria-expanded') === 'true';
           header.setAttribute('aria-expanded', String(!expanded));
-          header.nextElementSibling.hidden = expanded;
+          body.hidden = expanded;
         });
       });
       document.querySelectorAll('.period-header').forEach(header => {
@@ -3778,7 +3916,7 @@
           var obj = {};
           ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate'].forEach(function(f) {
             var el = entry.querySelector('[data-field="' + f + '"]');
-            obj[f] = el ? el.value : '';
+            obj[f] = el ? (el.type === 'checkbox' ? el.checked : el.value) : '';
           });
           return obj;
         })
@@ -3799,9 +3937,12 @@
           var el = clone.querySelector('[data-field="' + f + '"]');
           if (el) {
             if (prop[f] !== undefined) {
-              el.value = prop[f];
+              if (el.type === 'checkbox') el.checked = !!prop[f];
+              else el.value = prop[f];
             } else if (f === 'marginalTaxRate') {
               el.value = fallbackTaxRate;
+            } else if (el.type === 'checkbox') {
+              el.checked = false;
             }
           }
         });
@@ -3944,6 +4085,7 @@
             ['  Total Deductibles',          g('resDeductible')],
             ['  Net Rental Position',        g('resNetRental')],
             ['  Est. Tax Benefit',           g('resTaxBenefit')],
+            ...(g('resTaxBenefitNote') ? [['  ', g('resTaxBenefitNote')]] : []),
             [],
             ['PROJECTIONS',                  '5 Years',              '10 Years',              '15 Years'],
             ['Property Value',               g('proj5Value'),        g('proj10Value'),        g('projLifeValue')],
@@ -4067,6 +4209,7 @@
             totalDeductible: g('resDeductible'),
             netRental:       g('resNetRental'),
             taxBenefit:      g('resTaxBenefit'),
+            taxBenefitNote:  g('resTaxBenefitNote'),
             p5:  snap('proj5'),
             p10: snap('proj10'),
             p15: snap('projLife'),
@@ -4290,6 +4433,7 @@
           + row('Total Deductibles', p.totalDeductible)
           + row('Net Rental Position', p.netRental)
           + row('Est. Tax Benefit', p.taxBenefit)
+          + (p.taxBenefitNote ? '<tr><td colspan="2" style="padding:1pt 3pt 3pt;font-size:7pt;color:#888;font-style:italic;text-align:left">' + _esc(p.taxBenefitNote) + '</td></tr>' : '')
         ) + '<p style="font-size:7pt;color:#888;margin:-8pt 0 0 0;font-style:italic">Note: Est. Tax Benefit is not included in Annual Cash Flow as it depends heavily on your individual tax situation.</p>';
         var projHtml = projTable(p.p5, p.p10, p.p15);
         var chartHtml = p.chartSvg
@@ -4333,6 +4477,19 @@
       const managementFeePct = getVal('managementFee') / 100;
       const expectedGrowth = getVal('expectedGrowth') / 100;
       const propertyAge = getField('propertyAge');
+
+      // ── 2026–27 reform context (UI spec v2.2) ──
+      const TODAY_ISO = todayISO();
+      // Reform always applies (UI spec v2.5): the tool is forward-looking, so
+      // contractDate is always today and the property is never grandfathered.
+      const contractDate = TODAY_ISO;
+      const dwellingType = (propertyAge === 'newBuild') ? 'newBuild' : 'established';
+      // Deemed 30 June 2027 value: the SAME projection curve as futureValue
+      // (same base, rate and clock) so the pre/post CGT split lands correctly.
+      // Always the computed estimate (UI spec v2.6 §2 — no user override).
+      // Retrospective "value today" rebasing is deferred to plan 2b-2.
+      const deemedValue = purchasePrice *
+        Math.pow(1 + expectedGrowth, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
 
       // State-based values
       const conveyancing = defaults.conveyancing;
@@ -4404,6 +4561,64 @@
       const annualDepreciation = calcDepreciation(propertyAge, purchasePrice);
       window.TrueReturn.marginalTaxRate = marginalTaxRate;
       window.TrueReturn.annualDepreciation = annualDepreciation;
+
+      // ── NG quarantine (spec §4) ──
+      // Losses in income years starting on/after 1 Jul 2027 stop refunding
+      // against salary and accrue to a nominal pool that offsets rental
+      // profits, then the capital gain at sale. Grandfathered contracts and
+      // new builds are unaffected.
+      const ngRoute = routeRegimes({ contractDate: contractDate,
+        dwellingType: dwellingType, saleDate: addYearsISO(TODAY_ISO, 15) });
+      const ngQuarantined = ngRoute.ng === 'QUARANTINE_FROM_2027';
+
+      // Per-year taxable net rental result (rent − deductible expenses,
+      // including interest and depreciation), generalizing the snapshot
+      // calc below across all 15 projection years so the quarantine
+      // schedule uses the app's real per-year figures.
+      function netRentalResultForYear(y) {
+        const yGrowthFactor = Math.pow(1 + expectedGrowth, y);
+        const yValue = purchasePrice * yGrowthFactor;
+        const yWeeklyRent = weeklyRent * yGrowthFactor;
+        const yAnnualRent = yWeeklyRent * 52;
+        const yMgmtFee = yAnnualRent * managementFeePct;
+        const yMaintenance = yValue * 0.005;
+        let yInterestOnly;
+        if (loanType === 'IO') {
+          yInterestOnly = loanAmount * interestRate;
+        } else if (interestRate === 0) {
+          yInterestOnly = 0;
+        } else {
+          const yMonthlyRate = interestRate / 12;
+          const yTotalPayments = loanTerm * 12;
+          const yPaymentsMade = Math.min((y - 1) * 12, yTotalPayments);
+          const yRemainingLoan = loanAmount * (Math.pow(1 + yMonthlyRate, yTotalPayments) - Math.pow(1 + yMonthlyRate, yPaymentsMade)) / (Math.pow(1 + yMonthlyRate, yTotalPayments) - 1);
+          yInterestOnly = Math.max(0, yRemainingLoan) * interestRate;
+        }
+        const yDeductibleExpenses = yInterestOnly + yMgmtFee + insurance + councilFees + yMaintenance + annualDepreciation;
+        return yAnnualRent - yDeductibleExpenses;
+      }
+
+      const annualResults = [];
+      for (let y = 1; y <= 15; y++) {
+        const yDateISO = addYearsISO(TODAY_ISO, y - 1);
+        annualResults.push({
+          fyStartISO: fyStartYear(yDateISO) + '-07-01',
+          netResult: netRentalResultForYear(y),
+        });
+      }
+
+      const quarantineSched = buildQuarantineSchedule({
+        annualResults: annualResults, ngRegime: ngRoute.ng,
+        marginalRate: marginalTaxRate });
+      // Pool available at the end of projection year y (used at sale).
+      function quarantinePoolAtYear(y) {
+        let pool = 0;
+        for (let i = 0; i < y && i < quarantineSched.rows.length; i++) {
+          pool += quarantineSched.rows[i].quarantined;
+          pool -= Math.min(pool, Math.max(0, quarantineSched.rows[i].netResult));
+        }
+        return pool;
+      }
 
       // Snapshot year projections
       const snapshotYear = _snapshotYear;
@@ -4505,7 +4720,7 @@
         nrEl.textContent = formatCurrency(snNetRentalPosition) + '/yr';
         nrEl.className = 'line-value ' + (snNetRentalPosition >= 0 ? 'positive' : 'negative');
       }
-      const deprBracket = propertyAge === 'new' ? 'new' : propertyAge === 'mid' ? 'mid-age' : 'older';
+      const deprBracket = (propertyAge === 'new' || propertyAge === 'newBuild') ? 'new' : propertyAge === 'mid' ? 'mid-age' : 'older';
       const deprEl = document.getElementById('resDepreciation');
       if (deprEl) deprEl.textContent = '~' + formatCurrency(annualDepreciation);
       const deprBracketEl = document.getElementById('resDepreciationBracket');
@@ -4514,6 +4729,38 @@
       if (tbEl) {
         tbEl.textContent = snTaxBenefit !== 0 ? (snTaxBenefit < 0 ? '-' : '') + formatCurrency(Math.abs(snTaxBenefit)) + '/yr' : '-';
         tbEl.className = 'proj-highlight-value ' + (snTaxBenefit > 0 ? 'positive' : snTaxBenefit < 0 ? 'negative' : '');
+      }
+
+      // ── NG quarantine — snapshot override (spec §4a / redesign §2.1) ──
+      // If this snapshot year falls in the quarantine era and is a loss
+      // year, the old refund no longer applies — show $0 and explain why,
+      // ADJACENT to the figure. This note is the only place the annual cost
+      // of quarantine is stated; the projections pool row is only honest
+      // while it exists (redesign spec §3).
+      const snQuarantineRow = quarantineSched.rows[snapshotYear - 1];
+      const snIsQuarantinedLossYear = !!(snQuarantineRow && snQuarantineRow.quarantined > 0);
+      const snIsPreQuarantineLossYear = ngQuarantined && !snIsQuarantinedLossYear &&
+        !!(snQuarantineRow && snQuarantineRow.fyStartISO < BOUNDARY_ISO && snNetRentalPosition < 0);
+      const tbNoteEl = document.getElementById('resTaxBenefitNote');
+      if (snIsQuarantinedLossYear) {
+        if (tbEl) {
+          tbEl.textContent = formatCurrency(0) + '/yr';
+          tbEl.className = 'proj-highlight-value';
+        }
+        if (tbNoteEl) {
+          tbNoteEl.textContent = 'Quarantined: under the old rules this would have been about ' +
+            formatCurrency(snTaxBenefit) +
+            ' back. It\'s added to your quarantined losses instead, claimable at sale.';
+          tbNoteEl.hidden = false;
+        }
+      } else if (snIsPreQuarantineLossYear) {
+        if (tbNoteEl) {
+          tbNoteEl.textContent = 'Negative gearing on established properties applies only until 30 June 2027; after that, these losses are quarantined.';
+          tbNoteEl.hidden = false;
+        }
+      } else if (tbNoteEl) {
+        tbNoteEl.textContent = '';
+        tbNoteEl.hidden = true;
       }
 
       // Update DOM — Results
@@ -4541,6 +4788,10 @@
         kpiCoc.className = 'breakdown-kpi-value ' + (cashOnCash >= 0 ? 'positive' : 'negative');
       }
       // Projections
+      // Deemed-value chip + minimum-tax footnote (UI spec §2/§5): true when
+      // ANY shown period actually routes through the dual-era/best-of regimes.
+      let anyDualEra = false;
+      let anyMinTaxBound = false;
       [{years: 5, prefix: 'proj5'}, {years: 10, prefix: 'proj10'}, {years: 15, prefix: 'projLife'}].forEach(({years, prefix}) => {
         const futureValue = purchasePrice * Math.pow(1 + expectedGrowth, years);
         const capitalGrowth = futureValue - purchasePrice;
@@ -4589,11 +4840,153 @@
 
         // Cash Out Position
         const salePrice = futureValue;
-        const { salesCosts, netProceeds, cgt, trueCashReturn } = legacySaleOutcome({
-          purchasePrice, stampDuty, conveyancing, buildingPest: BUILDING_PEST,
-          cumulativeDepr: annualDepreciation * years,
-          futureValue, remainingLoan, marginalTaxRate,
-        });
+        const saleDateISO = addYearsISO(TODAY_ISO, years);
+        // Div 43 splits at the deemed date (tax spec §5.3): post-2027
+        // claims reduce element 1 before indexation, so attributing them
+        // to the pre-component understates CGT.
+        const preYears = Math.max(0, Math.min(years, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
+        const div43Pre = annualDepreciation * preYears;
+        const div43Post = annualDepreciation * (years - preYears);
+        const saleArgs = {
+          contractDate, dwellingType,
+          saleDate: saleDateISO, salePrice: futureValue,
+          sellingCostsPct: 0.03,
+          acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
+          div43Claimed: div43Pre, div43ClaimedPost: div43Post,
+          deemedValue,
+          quarantinePool: quarantinePoolAtYear(years),
+          marginalRate: marginalTaxRate,
+          remainingLoan,
+        };
+        const saleOutcome = calcReformSale(saleArgs);
+        const { salesCosts, netProceeds, cgt, trueCashReturn } = saleOutcome;
+
+        // ── Quarantined losses (redesign §2.2) ──
+        // The pool accumulated to this period's sale year. Already net of
+        // absorption by profitable rental years, so no itemisation needed.
+        // Shown only when quarantine actually applies and a pool exists —
+        // gate on the arithmetic, not the dwelling type.
+        // NOTE: the pool is NOT monotonic. It rises while the property runs
+        // at a loss, peaks, then falls as profitable rental years absorb it
+        // (engine: buildQuarantineSchedule). On the default property it goes
+        // $62,780 (5yr) → $87,190 (10yr) → $31,958 (15yr) — the decline is
+        // relief arriving early, not an error. The tip explains both paths.
+        const periodPool = quarantinePoolAtYear(years);
+        const quarRowEl = document.getElementById(`${prefix}QuarantinedRow`);
+        const quarValEl = document.getElementById(`${prefix}Quarantined`);
+        const quarTipEl = document.getElementById(`${prefix}QuarantinedTip`);
+        const showQuar = ngQuarantined && periodPool > 0;
+        if (quarRowEl) quarRowEl.hidden = !showQuar;
+        if (!showQuar) {
+          const staleStranded = document.getElementById(`${prefix}StrandedNote`);
+          if (staleStranded) { staleStranded.textContent = ''; staleStranded.hidden = true; }
+        }
+        if (showQuar) {
+          if (quarValEl) quarValEl.textContent = formatCurrency(periodPool);
+          // Measure what the pool is actually worth at this sale, rather
+          // than estimating: re-run the identical sale with no pool and
+          // difference the CGT.
+          const noPoolOutcome = calcReformSale(Object.assign({}, saleArgs, { quarantinePool: 0 }));
+          const poolWorth = Math.max(0, noPoolOutcome.cgt - cgt);
+          if (quarTipEl) {
+            quarTipEl.setAttribute('data-tip',
+              'Rental losses that no longer reduce your salary tax. They build up while the property runs at a loss, get used up against rental profits once it turns profitable, and whatever\'s left offsets your capital gain at sale — worth roughly ' +
+              formatCurrency(poolWorth) + ' in tax at your marginal rate.');
+          }
+          // Stranding is per-period (redesign §2.3): a property can strand at
+          // 5 years (small gain) and not at 15 (larger gain), so this is
+          // computed per period, not once. Never silently absorb it — this
+          // note is the honesty pair for the pool row, which can otherwise
+          // show a pool "worth ~$0" at a low-growth sale with no explanation.
+          const strandedEl = document.getElementById(`${prefix}StrandedNote`);
+          // strandedPool sits at detail.strandedPool on the DUAL_ERA path only.
+          // Safe today because a quarantined row is only ever shown for
+          // established properties (DUAL_ERA); new builds are NG-exempt so the
+          // row is hidden. If affordableHousing (NG-eligible + BEST_OF) is ever
+          // re-added to the Age/type dropdown, strandedPool moves under
+          // detail.optionA/optionB and this lookup must branch on the winner.
+          const strandedAmt = (saleOutcome.detail && saleOutcome.detail.strandedPool) || 0;
+          if (strandedEl) {
+            if (strandedAmt > 0) {
+              strandedEl.textContent = formatCurrency(strandedAmt) +
+                ' of these would never be recovered — the sale gain isn\'t large enough to absorb them.';
+              strandedEl.hidden = false;
+            } else {
+              strandedEl.textContent = '';
+              strandedEl.hidden = true;
+            }
+          }
+        }
+
+        // ── Deemed-value sensitivity band (UI spec §3 — mandatory, never
+        // hidden behind a toggle). Re-runs at ±10% on deemedValue, holding
+        // every other input — including the div43 pre/post split and the
+        // quarantine pool — identical to the base run via saleArgs, so the
+        // band measures ONLY the deemed-value assumption.
+        const sensEl = document.getElementById(`${prefix}Sensitivity`);
+        if (saleOutcome.regime !== 'OLD') {
+          anyDualEra = true;
+          const minTaxBoundThisPeriod = saleOutcome.regime === 'BEST_OF'
+            ? (saleOutcome.detail.winner === 'B' && !!saleOutcome.detail.optionB.minTaxBound)
+            : !!saleOutcome.detail.minTaxBound;
+          if (minTaxBoundThisPeriod) anyMinTaxBound = true;
+
+          const loOutcome = calcReformSale(Object.assign({}, saleArgs, { deemedValue: deemedValue * 0.9 }));
+          const hiOutcome = calcReformSale(Object.assign({}, saleArgs, { deemedValue: deemedValue * 1.1 }));
+          // The band is NOT guaranteed monotonic in deemedValue: on the
+          // DUAL_ERA path, once the post-2027 component clips at zero, more
+          // deemed value only inflates the undiscounted pre-2027 gain, so
+          // trueCashReturn can fall as deemedValue rises. Bracket with the
+          // period's own base outcome (trueCashReturn) so the displayed
+          // range is always ascending AND always contains the figure it
+          // brackets, regardless of which direction the re-runs moved.
+          const bandMin = Math.min(loOutcome.trueCashReturn, hiOutcome.trueCashReturn, trueCashReturn);
+          const bandMax = Math.max(loOutcome.trueCashReturn, hiOutcome.trueCashReturn, trueCashReturn);
+          const bandWidth = bandMax - bandMin;
+          // ── Suppress the degenerate band (UI spec v2.6 §3, issue #8) ──
+          // When the ±10% re-runs return the same figure (zero/negligible
+          // spread), hide the band entirely rather than render "$X to $X",
+          // which reads as a bug. This is the normal case for new builds
+          // (Option A's whole-gain path ignores deemedValue completely).
+          // Tested on the arithmetic (sub-dollar spread), never on dwelling
+          // type, so it stays correct if the winning option ever changes.
+          if (bandWidth < 1) {
+            if (sensEl) { sensEl.hidden = true; sensEl.textContent = ''; }
+          } else {
+            let bandText = 'If the 30 June 2027 value is 10% lower/higher: ' +
+              formatCurrency(bandMin) + ' to ' + formatCurrency(bandMax);
+            if (bandWidth > 0.15 * Math.abs(netProceeds)) {
+              bandText += ' — this estimate matters a lot for your result; consider a real valuation in mid-2027.';
+            }
+            if (sensEl) { sensEl.textContent = bandText; sensEl.hidden = false; }
+          }
+        } else if (sensEl) {
+          sensEl.hidden = true;
+          sensEl.textContent = '';
+        }
+
+        // ── New-build CGT treatment line (UI spec §1.4, v2.6) ──
+        // BEST_OF routes (new builds) let the taxpayer take whichever of the
+        // two CGT treatments is cheaper; the engine already picks it
+        // (detail.winner). Show BOTH figures on one plain line so "best" is
+        // demonstrated by the numbers rather than asserted — no collapsible
+        // detail row. With Affordable Housing removed the discount is always
+        // 50% (no dwellingType branch needed).
+        const cgtTreatmentEl = document.getElementById(`${prefix}CgtTreatment`);
+        if (cgtTreatmentEl) {
+          if (saleOutcome.regime === 'BEST_OF') {
+            const { winner, optionA, optionB } = saleOutcome.detail;
+            const textEl = document.getElementById(`${prefix}CgtTreatmentText`);
+            if (winner === 'A') {
+              if (textEl) textEl.innerHTML = `Best CGT treatment: 50% discount — <strong>${formatCurrency(optionA.tax)} tax</strong> (vs&nbsp;indexation ${formatCurrency(optionB.totalCGT)}). Chosen automatically; new builds may pick either regime.`;
+            } else {
+              if (textEl) textEl.innerHTML = `Best CGT treatment: indexation — <strong>${formatCurrency(optionB.totalCGT)} tax</strong> (vs&nbsp;50% discount ${formatCurrency(optionA.tax)}). Chosen automatically; new builds may pick either regime.`;
+            }
+            cgtTreatmentEl.hidden = false;
+          } else {
+            cgtTreatmentEl.hidden = true;
+          }
+        }
 
         document.getElementById(`${prefix}Sale`).textContent = formatCurrency(salePrice);
         document.getElementById(`${prefix}SaleCosts`).textContent = formatCurrency(salesCosts);
@@ -4669,6 +5062,46 @@
           hReturnOnCashEl.className = 'period-headline-value ' + (annualisedReturn >= 0 ? 'positive' : 'negative');
         }
       });
+
+      // ── Deemed-value informational line (UI spec v2.6 §2) ──
+      // Shown only when at least one shown period actually routes through
+      // the dual-era/best-of regimes — gated off the engine's own regime
+      // field, never hardcoded, so it tracks correctly if TODAY_ISO ever
+      // moves back before 1 Jul 2027. Read-only: no edit affordance.
+      const deemedChipEl = document.getElementById('deemedValueChip');
+      if (deemedChipEl) {
+        deemedChipEl.hidden = !anyDualEra;
+        const displayEl = document.getElementById('deemedValueDisplay');
+        if (displayEl) displayEl.textContent = formatCurrency(deemedValue);
+      }
+
+      // ── Minimum-tax footnote (UI spec §5) ──
+      // Only when the 30% floor actually bound on a period that's shown —
+      // on BEST_OF only when Option B (the dual-era path) actually won.
+      const minTaxEl = document.getElementById('minTaxFootnote');
+      if (minTaxEl) {
+        minTaxEl.hidden = !anyMinTaxBound;
+        if (anyMinTaxBound) minTaxEl.textContent = DISCLAIMERS.minTaxSimplified;
+      }
+
+      // ── Reform disclaimer banner (UI spec §5) ──
+      // Shown whenever the new engine is actually in play this calculation
+      // (any period routing dual-era/best-of, or NG quarantine applying),
+      // unless the reader already dismissed it this session. Text is
+      // assembled at runtime from DISCLAIMERS — the engine's single source —
+      // so the copy can't drift out of sync between banner and engine.
+      const reformBannerEl = document.getElementById('reformBanner');
+      if (reformBannerEl) {
+        const reformInPlay = anyDualEra || ngQuarantined;
+        const dismissed = sessionStorage.getItem('reformBannerDismissed') === '1';
+        reformBannerEl.hidden = !reformInPlay || dismissed;
+        if (reformInPlay) {
+          const textEl = document.getElementById('reformBannerText');
+          if (textEl) {
+            textEl.textContent = DISCLAIMERS.reformScope + ' ' + DISCLAIMERS.forwardLooking;
+          }
+        }
+      }
 
       // --- Property Highlights ---
 
@@ -4750,6 +5183,101 @@
 
     let _chart1 = null;
 
+    // ── Shared per-entry NG quarantine pool builder (spec §4b, BLOCKER 1 —
+    // code review 2026-07-18) ──
+    // calculate() builds its own quarantine pool (netRentalResultForYear →
+    // buildQuarantineSchedule → quarantinePoolAtYear) for the SELECTED
+    // entry only. calcScenarioProfit (break-even highlight) and
+    // buildPropertyDatasets (Graphs tab) run per-entry and previously
+    // stubbed quarantinePool: 0, so the Projections panel and the Graphs
+    // tab / break-even highlight showed DIFFERENT figures for the same
+    // property and year. This helper reconstructs the same per-entry annual
+    // net-rental series, routes it through the same NG regime, and builds
+    // the same quarantine schedule, so all three call sites measure the
+    // SAME pool for the SAME entry/year. Model matches calculate() exactly
+    // (including the fact that vacancy allowance is NOT a deductible
+    // expense for the taxable rental result, unlike the cash-flow figure).
+    function buildEntryQuarantinePool(entry, growthRate, marginalRate, maxYears) {
+      function ef(field) {
+        const el = entry.querySelector(`[data-field="${field}"]`);
+        return el ? el.value : '';
+      }
+      function ev(field) { return parseFloat(ef(field)) || 0; }
+
+      const purchasePrice = ev('purchasePrice');
+      const depositPct = ev('depositPct') / 100;
+      const loanAmount = purchasePrice * (1 - depositPct);
+      const loanTerm = ev('loanTerm') || 30;
+      const interestRate = ev('interestRate') / 100;
+      const loanType = ef('loanType');
+      const weeklyRent = ev('weeklyRent');
+      const managementFeePct = ev('managementFee') / 100;
+      const state = ef('state');
+      const sd = stateDefaults[state] || stateDefaults['QLD'];
+      const insurance = sd.insurance;
+      const councilFees = sd.council;
+      const propertyAge = ef('propertyAge');
+      const annualDepreciation = calcDepreciation(propertyAge, purchasePrice);
+
+      const TODAY_ISO = todayISO();
+      // Reform always applies (UI spec v2.5): the tool is forward-looking, so
+      // contractDate is always today and the property is never grandfathered.
+      const contractDate = TODAY_ISO;
+      const dwellingType = (propertyAge === 'newBuild') ? 'newBuild' : 'established';
+
+      const ngRoute = routeRegimes({ contractDate: contractDate,
+        dwellingType: dwellingType, saleDate: addYearsISO(TODAY_ISO, maxYears) });
+
+      // Per-year taxable net rental result — mirrors calculate()'s
+      // netRentalResultForYear exactly (same deductible-expense set, same
+      // remaining-loan amortisation formula).
+      function netRentalResultForYear(y) {
+        const yGrowthFactor = Math.pow(1 + growthRate, y);
+        const yValue = purchasePrice * yGrowthFactor;
+        const yWeeklyRent = weeklyRent * yGrowthFactor;
+        const yAnnualRent = yWeeklyRent * 52;
+        const yMgmtFee = yAnnualRent * managementFeePct;
+        const yMaintenance = yValue * 0.005;
+        let yInterestOnly;
+        if (loanType === 'IO') {
+          yInterestOnly = loanAmount * interestRate;
+        } else if (interestRate === 0) {
+          yInterestOnly = 0;
+        } else {
+          const yMonthlyRate = interestRate / 12;
+          const yTotalPayments = loanTerm * 12;
+          const yPaymentsMade = Math.min((y - 1) * 12, yTotalPayments);
+          const yRemainingLoan = loanAmount * (Math.pow(1 + yMonthlyRate, yTotalPayments) - Math.pow(1 + yMonthlyRate, yPaymentsMade)) / (Math.pow(1 + yMonthlyRate, yTotalPayments) - 1);
+          yInterestOnly = Math.max(0, yRemainingLoan) * interestRate;
+        }
+        const yDeductibleExpenses = yInterestOnly + yMgmtFee + insurance + councilFees + yMaintenance + annualDepreciation;
+        return yAnnualRent - yDeductibleExpenses;
+      }
+
+      const annualResults = [];
+      for (let y = 1; y <= maxYears; y++) {
+        const yDateISO = addYearsISO(TODAY_ISO, y - 1);
+        annualResults.push({
+          fyStartISO: fyStartYear(yDateISO) + '-07-01',
+          netResult: netRentalResultForYear(y),
+        });
+      }
+
+      const quarantineSched = buildQuarantineSchedule({
+        annualResults: annualResults, ngRegime: ngRoute.ng,
+        marginalRate: marginalRate });
+
+      // Pool available at the end of projection year y (used at sale).
+      return function quarantinePoolAtYear(y) {
+        let pool = 0;
+        for (let i = 0; i < y && i < quarantineSched.rows.length; i++) {
+          pool += quarantineSched.rows[i].quarantined;
+          pool -= Math.min(pool, Math.max(0, quarantineSched.rows[i].netResult));
+        }
+        return pool;
+      };
+    }
+
     function calcScenarioProfit(entry, years, growthRate) {
       function ef(field) {
         const el = entry.querySelector(`[data-field="${field}"]`);
@@ -4799,12 +5327,48 @@
       const marginalTaxRate = document.body.dataset.mode === 'simple'
         ? parseFloat(SIMPLE_MODE_TAX)
         : (ev('marginalTaxRate') || 0.37);
-      const annualDepreciation = (window.TrueReturn && window.TrueReturn.annualDepreciation) || 0;
+      // Entry-specific — window.TrueReturn.annualDepreciation is written by
+      // calculate() for the SELECTED entry only, but this function runs
+      // per-entry (break-even loop), so reading the global would apply one
+      // entry's Div 43 split to another's sale (WARNING — code review
+      // 2026-07-18). Matches buildPropertyDatasets's annDepr below.
+      const propertyAge = ef('propertyAge');
+      const annualDepreciation = calcDepreciation(propertyAge, purchasePrice);
       const futureValue = purchasePrice * Math.pow(1 + growthRate, years);
-      const { trueCashReturn } = legacySaleOutcome({
-        purchasePrice, stampDuty, conveyancing, buildingPest: BUILDING_PEST,
-        cumulativeDepr: annualDepreciation * years,
-        futureValue, remainingLoan, marginalTaxRate,
+
+      // ── 2026–27 reform context (UI spec v2.2) ──
+      const TODAY_ISO = todayISO();
+      // Reform always applies (UI spec v2.5): the tool is forward-looking, so
+      // contractDate is always today and the property is never grandfathered.
+      const contractDate = TODAY_ISO;
+      const dwellingType = (propertyAge === 'newBuild') ? 'newBuild' : 'established';
+      // Deemed 30 June 2027 value: the SAME projection curve as futureValue
+      // (same base, rate and clock) so the pre/post CGT split lands correctly.
+      // Always the computed estimate (UI spec v2.6 §2 — no user override).
+      // Retrospective "value today" rebasing is deferred to plan 2b-2.
+      const deemedValue = purchasePrice *
+        Math.pow(1 + growthRate, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
+
+      const saleDateISO = addYearsISO(TODAY_ISO, years);
+      // Div 43 splits at the deemed date (tax spec §5.3): post-2027
+      // claims reduce element 1 before indexation, so attributing them
+      // to the pre-component understates CGT.
+      const preYears = Math.max(0, Math.min(years, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
+      const div43Pre = annualDepreciation * preYears;
+      const div43Post = annualDepreciation * (years - preYears);
+      // BLOCKER 1 (code review 2026-07-18): the real per-entry pool at this
+      // year, not a stub — see buildEntryQuarantinePool above.
+      const scenarioPoolAtYear = buildEntryQuarantinePool(entry, growthRate, marginalTaxRate, years);
+      const { trueCashReturn } = calcReformSale({
+        contractDate, dwellingType,
+        saleDate: saleDateISO, salePrice: futureValue,
+        sellingCostsPct: 0.03,
+        acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
+        div43Claimed: div43Pre, div43ClaimedPost: div43Post,
+        deemedValue,
+        quarantinePool: scenarioPoolAtYear(years),
+        marginalRate: marginalTaxRate,
+        remainingLoan,
       });
 
       let cumulativeCashFlow = 0;
@@ -4825,6 +5389,8 @@
       const entries = document.querySelectorAll('.property-entry');
       const labels = Array.from({length: GRAPH_YEARS + 1}, (_, i) => 'Yr ' + i);
       const datasets = [];
+      // One clock for every entry and year in this render pass.
+      const TODAY_ISO = todayISO();
 
       entries.forEach((entry, idx) => {
         function ef(field) {
@@ -4854,6 +5420,18 @@
         const stampDuty = Math.round(calcStampDuty(state, purchasePrice));
         const totalUpfront = deposit + stampDuty + conveyancing + BUILDING_PEST + LOAN_ESTABLISHMENT;
 
+        // ── 2026–27 reform context (UI spec v2.2) ──
+        // Reform always applies (UI spec v2.5): the tool is forward-looking, so
+        // contractDate is always today and the property is never grandfathered.
+        const contractDate = TODAY_ISO;
+        const dwellingType = (propertyAge === 'newBuild') ? 'newBuild' : 'established';
+        // Deemed 30 June 2027 value: the SAME projection curve as futureValue
+        // (same base, rate and clock) so the pre/post CGT split lands correctly.
+        // Always the computed estimate (UI spec v2.6 §2 — no user override).
+        // Retrospective "value today" rebasing is deferred to plan 2b-2.
+        const deemedValue = purchasePrice *
+          Math.pow(1 + expectedGrowth, Math.max(0, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
+
         let annualLoanPayment;
         if (loanType === 'IO') {
           annualLoanPayment = loanAmount * interestRate;
@@ -4869,6 +5447,16 @@
         const maxYear = Math.min(loanTerm, GRAPH_YEARS);
         const data = [];
         const annualisedReturnData = [];
+
+        // mtr doesn't vary by y — hoisted so the pool below (and the loop)
+        // both use one consistent value instead of recomputing it per year.
+        const mtr = document.body.dataset.mode === 'simple'
+          ? parseFloat(SIMPLE_MODE_TAX)
+          : (ev('marginalTaxRate') || 0.37);
+        // BLOCKER 1 (code review 2026-07-18): build the real per-entry pool
+        // once for this entry/growth-rate/MTR, reused across every year in
+        // the loop below — see buildEntryQuarantinePool above.
+        const datasetPoolAtYear = buildEntryQuarantinePool(entry, expectedGrowth, mtr, GRAPH_YEARS);
 
         for (let y = 0; y <= GRAPH_YEARS; y++) {
           if (y > maxYear) {
@@ -4908,13 +5496,23 @@
           let annualisedReturn = null;
           let totalProfit = 0;
           if (y > 0 && totalUpfront > 0) {
-            const mtr = document.body.dataset.mode === 'simple'
-              ? parseFloat(SIMPLE_MODE_TAX)
-              : (ev('marginalTaxRate') || 0.37);
-            const { trueCashReturn } = legacySaleOutcome({
-              purchasePrice, stampDuty, conveyancing, buildingPest: BUILDING_PEST,
-              cumulativeDepr: annDepr * y,
-              futureValue, remainingLoan, marginalTaxRate: mtr,
+            const saleDateISO = addYearsISO(TODAY_ISO, y);
+            // Div 43 splits at the deemed date (tax spec §5.3): post-2027
+            // claims reduce element 1 before indexation, so attributing them
+            // to the pre-component understates CGT.
+            const preYears = Math.max(0, Math.min(y, yearFrac(TODAY_ISO, DEEMED_DATE_ISO)));
+            const div43Pre = annDepr * preYears;
+            const div43Post = annDepr * (y - preYears);
+            const { trueCashReturn } = calcReformSale({
+              contractDate, dwellingType,
+              saleDate: saleDateISO, salePrice: futureValue,
+              sellingCostsPct: 0.03,
+              acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
+              div43Claimed: div43Pre, div43ClaimedPost: div43Post,
+              deemedValue,
+              quarantinePool: datasetPoolAtYear(y),
+              marginalRate: mtr,
+              remainingLoan,
             });
             totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow;
             const returnBase = 1 + totalProfit / totalUpfront;
@@ -5112,6 +5710,12 @@
     document.getElementById('snapshotYearSelect').addEventListener('change', function() {
       _snapshotYear = parseInt(this.value, 10);
       calculate();
+    });
+
+    // ── Reform disclaimer banner (UI spec §5): dismiss for this session ──
+    document.getElementById('reformBannerDismiss').addEventListener('click', function() {
+      sessionStorage.setItem('reformBannerDismissed', '1');
+      document.getElementById('reformBanner').hidden = true;
     });
 
     document.getElementById('addPropertyBtn').addEventListener('click', addPropertyRow);

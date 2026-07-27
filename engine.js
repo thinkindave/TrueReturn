@@ -104,7 +104,7 @@
 
     function calcDepreciation(ageBracket, purchasePrice) {
       const buildingValue = purchasePrice * 0.75;
-      if (ageBracket === 'new') return buildingValue * 0.025;
+      if (ageBracket === 'new' || ageBracket === 'newBuild') return buildingValue * 0.025;
       if (ageBracket === 'mid') return buildingValue * 0.0125;
       return buildingValue * 0.0075;
     }
@@ -163,6 +163,13 @@ function cpiFactor(rate, years) { return Math.pow(1 + rate, years); }
 function fyStartYear(iso) {
   const d = isoToUTC(iso);
   return d.getUTCMonth() >= 6 ? d.getUTCFullYear() : d.getUTCFullYear() - 1;
+}
+
+// Adds whole calendar years to an ISO date (UTC-safe; Feb 29 rolls to Mar 1).
+function addYearsISO(iso, years) {
+  const d = isoToUTC(iso);
+  d.setUTCFullYear(d.getUTCFullYear() + years);
+  return d.toISOString().slice(0, 10);
 }
 
 // ── Regime router (spec §3) ──────────────────────────────────────────────
@@ -388,23 +395,90 @@ function calcNewBuildOptimizer({ acquisitionCosts, salePrice, saleDate,
                                  div43ClaimedPre = 0, div43ClaimedPost = 0,
                                  cpiRate = 0.025, marginalRate,
                                  capitalLosses = 0, quarantinePool = 0,
-                                 minTaxFloor = 0.30, discountPct = 0.5 }) {
+                                 minTaxFloor = 0.30, discountPct = 0.5,
+                                 heldOver12Months = true, heldOver12MonthsAt2027 = true }) {
   const optionA = calcOldRegimeCGT({
     salePrice, sellingCosts, acquisitionCosts,
     div43Claimed: div43ClaimedPre + div43ClaimedPost,
-    capitalLosses, quarantinePool, marginalRate, discountPct,
+    capitalLosses, quarantinePool, marginalRate, heldOver12Months, discountPct,
   });
+  // discountPct deliberately NOT forwarded: spec §7b grants the 60%
+  // affordable-housing discount under Option A only; the dual-era
+  // pre-component is fixed at 50% by spec §5.2.
   const optionB = calcDualEraCGT({
     deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre,
     salePrice, saleDate, sellingCosts, div43ClaimedPost,
     cpiRate, marginalRate, capitalLosses, quarantinePool,
-    minTaxFloor, discountPct,
+    minTaxFloor, heldOver12MonthsAt2027,
   });
   return {
     optionA, optionB,
     winner: optionA.tax <= optionB.totalCGT ? 'A' : 'B',
     flags: { newBuildDefinitionPending: true },
   };
+}
+
+// ── Reform-aware sale outcome for the UI (Phase 2b-1) ────────────────────
+// Routes one sale through the 2026–27 regimes and returns the superset of
+// the fields the UI consumed from legacySaleOutcome. Unlike the legacy
+// math, selling costs are a cost-base element (spec §5.2/T1) — an approved
+// change to live behaviour, recorded in issue #2. deemedValue is required
+// whenever the sale routes DUAL_ERA or BEST_OF (caller projects it).
+function calcReformSale({ contractDate, dwellingType = 'established', saleDate,
+                          salePrice, sellingCostsPct = 0.03,
+                          acquisitionCosts, div43Claimed = 0, div43ClaimedPost = 0,
+                          deemedValue = null, deemedValueIsEstimate = true,
+                          quarantinePool = 0, capitalLosses = 0,
+                          cpiRate = 0.025, marginalRate, remainingLoan = 0 }) {
+  // div43Claimed = cumulative Div 43 claimed to 30 June 2027 ("pre"); the new
+  // div43ClaimedPost param is cumulative Div 43 claimed after that date. Tax
+  // spec §5.3: a post-2027 claim reduces the post-component's element 1
+  // BEFORE indexation, so it must never be folded into the pre-component's
+  // cost base — that understates CGT (measured $13,127 / 5.5% on a default
+  // 15-year hold). The OLD route has no era split, so the full pre+post sum
+  // reduces the single cost base there.
+  const route = routeRegimes({ contractDate, dwellingType, saleDate });
+  if (route.cgt !== 'OLD' && deemedValue == null) {
+    throw new Error('calcReformSale: deemedValue is required for ' + route.cgt + ' routes');
+  }
+  const sellingCosts = salePrice * sellingCostsPct;
+  const heldOver12Months = yearFrac(contractDate, saleDate) >= 1;
+  const heldOver12MonthsAt2027 = yearFrac(contractDate, DEEMED_DATE_ISO) >= 1;
+
+  let cgt, detail;
+  const flags = {};
+  if (route.cgt === 'OLD') {
+    detail = calcOldRegimeCGT({
+      salePrice, sellingCosts, acquisitionCosts,
+      div43Claimed: div43Claimed + div43ClaimedPost,
+      capitalLosses, quarantinePool, marginalRate, heldOver12Months,
+    });
+    cgt = detail.tax;
+  } else if (route.cgt === 'BEST_OF') {
+    detail = calcNewBuildOptimizer({
+      acquisitionCosts, salePrice, saleDate, sellingCosts, deemedValue,
+      div43ClaimedPre: div43Claimed, div43ClaimedPost, cpiRate, marginalRate,
+      capitalLosses, quarantinePool,
+      discountPct: dwellingType === 'affordableHousing' ? 0.6 : 0.5,
+      heldOver12Months, heldOver12MonthsAt2027,
+    });
+    cgt = detail.winner === 'A' ? detail.optionA.tax : detail.optionB.totalCGT;
+    flags.newBuildDefinitionPending = true;
+    flags.deemedValueIsEstimate = deemedValueIsEstimate;
+  } else {
+    detail = calcDualEraCGT({
+      deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre: div43Claimed,
+      div43ClaimedPost, salePrice, saleDate, sellingCosts, cpiRate, marginalRate,
+      capitalLosses, quarantinePool, heldOver12MonthsAt2027, deemedValueIsEstimate,
+    });
+    cgt = detail.totalCGT;
+    flags.deemedValueIsEstimate = deemedValueIsEstimate;
+  }
+
+  const netProceeds = salePrice - sellingCosts - remainingLoan;
+  return { regime: route.cgt, ngRegime: route.ng,
+           salesCosts: sellingCosts, cgt, detail, netProceeds,
+           trueCashReturn: netProceeds - cgt, flags };
 }
 
 // ── Sale-timing comparison (spec §7 — HERO FEATURE) ──────────────────────
@@ -418,7 +492,7 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
   const { contractDate, dwellingType, acquisitionCosts, valuationDate,
           currentValueEstimate, growthAssumption, marginalRate,
           sellingCostsPct, annualNetRental, loanBalance, cpiRate,
-          capitalLosses = 0, div43Claimed = 0,
+          capitalLosses = 0, div43Claimed = 0, div43ClaimedPost = 0,
           purchasePrice = null, purchaseCosts = 0, loanAmount = null,
           benchmarkReturn = null, benchmarkFeeDrag = 0.001,
           dcaHoldingContributions = false } = inputs;
@@ -427,6 +501,9 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
   const growthYears = yearFrac(valuationDate, saleDate);
   const salePrice = currentValueEstimate * Math.pow(1 + growthAssumption, growthYears);
   const sellingCosts = salePrice * sellingCostsPct;
+  // Derived the same way calcReformSale does, so both routers agree.
+  const heldOver12Months = yearFrac(contractDate, saleDate) >= 1;
+  const heldOver12MonthsAt2027 = yearFrac(contractDate, DEEMED_DATE_ISO) >= 1;
 
   // Holding cash flows valuation → sale, with NG treatment per routing.
   const annualResults = proRateAnnualResults(valuationDate, saleDate, annualNetRental);
@@ -447,9 +524,9 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
   let cgt, detail, deemedValue = null, flags = {};
   if (route.cgt === 'OLD') {
     detail = calcOldRegimeCGT({
-      salePrice, sellingCosts, acquisitionCosts, div43Claimed,
+      salePrice, sellingCosts, acquisitionCosts, div43Claimed: div43Claimed + div43ClaimedPost,
       capitalLosses, quarantinePool: sched.poolAtSale, marginalRate,
-      heldOver12Months: yearFrac(contractDate, saleDate) >= 1,
+      heldOver12Months,
     });
     cgt = detail.tax;
   } else {
@@ -460,9 +537,10 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
     if (route.cgt === 'BEST_OF') {
       const opt = calcNewBuildOptimizer({
         acquisitionCosts, salePrice, saleDate, sellingCosts, deemedValue,
-        div43ClaimedPre: div43Claimed, cpiRate, marginalRate,
+        div43ClaimedPre: div43Claimed, div43ClaimedPost, cpiRate, marginalRate,
         capitalLosses, quarantinePool: sched.poolAtSale,
         discountPct: dwellingType === 'affordableHousing' ? 0.6 : 0.5,
+        heldOver12Months, heldOver12MonthsAt2027,
       });
       detail = opt;
       cgt = opt.winner === 'A' ? opt.optionA.tax : opt.optionB.totalCGT;
@@ -470,9 +548,10 @@ function runSaleScenario(inputs, saleDate, deemedValueOverride) {
     } else {
       const dual = calcDualEraCGT({
         deemedValue, oldCostBase: acquisitionCosts, div43ClaimedPre: div43Claimed,
+        div43ClaimedPost,
         salePrice, saleDate, sellingCosts, cpiRate, marginalRate,
         capitalLosses, quarantinePool: sched.poolAtSale,
-        heldOver12MonthsAt2027: yearFrac(contractDate, DEEMED_DATE_ISO) >= 1,
+        heldOver12MonthsAt2027,
         deemedValueIsEstimate: flags.deemedValueIsEstimate === true,
       });
       detail = dual;
@@ -738,6 +817,8 @@ const DISCLAIMERS = {
   apportionPending: 'The official apportioning method has not yet been legislated; the time-based split shown is a placeholder.',
   cpiAssumption: 'Future cost-base indexation uses a projected CPI assumption, not actual CPI.',
   benchmarkHistorical: 'Benchmark presets are historical, before-tax figures — not a forecast.',
+  reformScope: 'Models the Treasury Laws Amendment (Tax Reform No. 1) Act 2026. Some details — the new-build definition and the official apportioning method — are still pending, and are flagged where they apply.',
+  forwardLooking: 'This calculator assumes you\'re buying after 12 May 2026, so the 2027 negative-gearing and CGT changes apply. If you bought earlier, your negative gearing and CGT are grandfathered and this will overstate your tax.',
 };
 
 // ── Node export guard ────────────────────────────────────────────────────
@@ -746,12 +827,12 @@ if (typeof module !== 'undefined' && module.exports) {
     stateDefaults, BUILDING_PEST, LOAN_ESTABLISHMENT,
     formatCurrency, calcStampDuty, calcDepreciation, legacySaleOutcome,
     BUDGET_NIGHT_ISO, BOUNDARY_ISO, DEEMED_DATE_ISO,
-    daysBetween, yearFrac, cpiFactor, fyStartYear,
+    daysBetween, yearFrac, cpiFactor, fyStartYear, addYearsISO,
     routeRegimes,
     applyOffsets, calcOldRegimeCGT, interpolateDeemedValue,
     calcDualEraCGT, calcTimeApportionedCGT,
     buildQuarantineSchedule, proRateAnnualResults,
-    calcNewBuildOptimizer,
+    calcNewBuildOptimizer, calcReformSale,
     runSaleScenario, compareSaleTiming,
     annualizedReturn, irrFromCashflows, calcEquityReturns,
     calcBenchmark, BENCHMARK_PRESETS,
