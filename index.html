@@ -4433,7 +4433,7 @@
           + row('Total Deductibles', p.totalDeductible)
           + row('Net Rental Position', p.netRental)
           + row('Est. Tax Benefit', p.taxBenefit)
-          + (p.taxBenefitNote ? row('', p.taxBenefitNote) : '')
+          + (p.taxBenefitNote ? '<tr><td colspan="2" style="padding:1pt 3pt 3pt;font-size:7pt;color:#888;font-style:italic;text-align:left">' + _esc(p.taxBenefitNote) + '</td></tr>' : '')
         ) + '<p style="font-size:7pt;color:#888;margin:-8pt 0 0 0;font-style:italic">Note: Est. Tax Benefit is not included in Annual Cash Flow as it depends heavily on your individual tax situation.</p>';
         var projHtml = projTable(p.p5, p.p10, p.p15);
         var chartHtml = p.chartSvg
