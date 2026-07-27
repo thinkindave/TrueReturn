@@ -38,7 +38,10 @@ Keep the module; do **not** hide it. Relocate its explanation to sit with the fi
   > "Quarantined: under the old rules this would have been about **$X** back. It's added to your quarantined losses instead, claimable at sale."
 
   `$X` = that year's loss × marginal rate (the refund the old rules would have produced).
-- **Pre-quarantine year** (income year starting before 1 July 2027): unchanged — real benefit figure, no note.
+- **Pre-quarantine loss year (v2.7, PO decision 2026-07-27)** — quarantine applies to this property (established / `ngQuarantined`), the year is a loss, but its income year starts *before* 1 July 2027 (projection year 1 = FY2026-27 for a purchase today). The benefit figure is **real** and shown as-is, but it now carries a note so it doesn't read as negative gearing surviving:
+  > "Negative gearing on established properties applies only until 30 June 2027; after that, these losses are quarantined."
+
+  **Self-expiring by construction:** the note is gated on the year's income year being before the boundary, so once "today" is on/after 1 July 2027 no projection year maps to a pre-boundary income year and the note simply never fires — no date logic to maintain or remove later. It reuses the same `#resTaxBenefitNote` element as the quarantined-year note (a given snapshot year is one era or the other, never both).
 - **Profitable year** (net rental result positive → tax payable, negative "benefit"): unchanged, no note.
 
 The note must render **adjacent to `#resTaxBenefit`**, inside the same section, visible without expanding anything else. `#resQuarantineNote` in its current location is removed.
@@ -52,7 +55,9 @@ One new row in the existing 5/10/15-year grid, alongside Value / CGT / True Retu
 | **Quarantined losses** | $A | $B | $C |
 
 - Value per period = the quarantine pool accumulated to that period's sale year, i.e. the existing `quarantinePoolAtYear(n)` / `buildEntryQuarantinePool` result. This is the **net** pool — it already accounts for absorption by profitable rental years, so no itemisation of "recovered along the way" is needed.
-- Help-tip: "Rental losses that no longer reduce your salary tax. They build up and offset your capital gain when you sell — worth roughly **$V** in tax at your marginal rate."  `$V` = the measured pool benefit at sale (re-run the sale with `quarantinePool: 0` and difference the CGT — do not estimate).
+- Help-tip: "Rental losses that no longer reduce your salary tax. They build up while the property runs at a loss, get used up against rental profits once it turns profitable, and whatever's left offsets your capital gain at sale — worth roughly **$V** in tax at your marginal rate."  `$V` = the measured pool benefit at sale (re-run the sale with `quarantinePool: 0` and difference the CGT — do not estimate).
+
+  **The tip must name both consumption paths** (rental profits *and* sale), because the pool is **not monotonic** — it rises while the property loses money, peaks, then falls as profitable years absorb it. Measured on the default property: $62,780 at 5yr → $87,190 at 10yr → $31,958 at 15yr. The taxable rental result turns positive in year 10, and the profits from years 11–15 sum to $55,232 — exactly the drop. A tip mentioning only the sale makes that decline look like a bug, when it is in fact relief arriving *earlier* than at sale.
 - **Visibility:** the row is shown only when quarantine actually applies AND the pool is greater than zero. Hidden entirely for new builds (NG-exempt) and for properties that never run a loss. Follow the arithmetic, not the dwelling type.
 
 **Why the pool and not the tax value** (PO decision): the row shows the **losses** ($31,958), not what they're worth ($11,825). "Losses" cannot be misread as cash coming back, whereas a "tax saved" row reads as a win. The tax value lives in the tip.
