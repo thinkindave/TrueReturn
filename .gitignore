@@ -1,1 +1,6 @@
 .DS_Store
+
+# Local artifacts — not part of the app (spec/export PDFs, debug screenshots).
+# Track a specific one with `git add -f <file>` if ever needed.
+*.pdf
+*.jpg
