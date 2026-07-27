@@ -239,7 +239,13 @@
       font-size: 1rem;
       line-height: 1;
       cursor: pointer;
-      padding: 0 0.15rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0;
+      margin: -0.15rem -0.35rem -0.15rem 0;
     }
     .reform-banner-dismiss:hover {
       color: var(--text-primary);
@@ -1305,6 +1311,24 @@
       position: relative;
       flex-shrink: 0;
       transition: all var(--transition-fast);
+    }
+
+    /* Invisible hit-zone: enlarges the tap/click target beyond the visible
+       16px "?" without changing the inline label layout or visual size. */
+    .help-tip::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 24px;
+      height: 24px;
+      transform: translate(-50%, -50%);
+    }
+
+    .help-tip:focus-visible {
+      outline: 2px solid var(--accent, #10B981);
+      outline-offset: 2px;
+      border-radius: 50%;
     }
 
     .help-tip:hover {
@@ -2565,6 +2589,7 @@
       flex: 0 0 100%;
       order: 3;
       padding: 0.25rem 0;
+      min-height: 44px;
     }
     /* Hide advanced fields in simple+mobile by default */
     body[data-mode="simple"] .mobile-card-view .advanced-only.prop-col {
@@ -3758,6 +3783,7 @@
           entry.parentNode.insertBefore(clone, entry.nextSibling);
           updateDeleteButtonState();
           selectEntry(clone);
+          window.TrueReturn.initTipA11y && window.TrueReturn.initTipA11y();
           return;
         }
         const focusBtn = e.target.closest('.focus-row-btn');
@@ -3824,6 +3850,7 @@
       document.querySelector('.property-rows').appendChild(newEntry);
       updateDeleteButtonState();
       selectEntry(newEntry);
+      window.TrueReturn.initTipA11y && window.TrueReturn.initTipA11y();
     }
 
     function initProjectionSections() {
@@ -5815,20 +5842,20 @@
 
     window.addEventListener('load', function() { initGraphs(); });
 
-    // JS-positioned tooltip (fixed — never clipped by overflow)
+    // Tooltip: hover (mouse), focus (keyboard), and tap (touch) — with
+    // screen-reader access via each tip's aria-label. (#12)
     (function() {
       var tip = document.getElementById('globalTooltip');
-      document.addEventListener('mouseover', function(e) {
-        var el = e.target.closest('.help-tip');
-        if (!el) return;
+      var activeEl = null;
+      function showTip(el) {
         var text = el.getAttribute('data-tip');
         if (!text) return;
         tip.textContent = text;
+        tip.setAttribute('aria-hidden', 'false');
         tip.style.display = 'block';
         var r = el.getBoundingClientRect();
         var left = r.left + r.width / 2;
         var top = r.top - 8;
-        // Clamp horizontally so tooltip stays in viewport
         tip.style.left = '0px';
         tip.style.top = '0px';
         tip.style.transform = 'none';
@@ -5836,9 +5863,54 @@
         left = Math.max(8, Math.min(left - tw / 2, window.innerWidth - tw - 8));
         tip.style.left = left + 'px';
         tip.style.top = (top - tip.offsetHeight) + 'px';
+        activeEl = el;
+      }
+      function hideTip() {
+        tip.style.display = 'none';
+        tip.setAttribute('aria-hidden', 'true');
+        activeEl = null;
+      }
+      // Give every help-tip keyboard focus + a screen-reader name carrying
+      // the explanation. Done in JS so we don't edit 50 markup sites; cloned
+      // property rows inherit these via cloneNode, and initTipA11y() re-runs
+      // after a row is added to be safe.
+      function initTipA11y() {
+        document.querySelectorAll('.help-tip').forEach(function(el) {
+          if (el.dataset.a11yReady) return;
+          el.setAttribute('tabindex', '0');
+          el.setAttribute('role', 'button');
+          el.setAttribute('aria-label', el.getAttribute('data-tip') || 'More information');
+          el.dataset.a11yReady = '1';
+        });
+      }
+      initTipA11y();
+      window.TrueReturn = window.TrueReturn || {};
+      window.TrueReturn.initTipA11y = initTipA11y;
+
+      document.addEventListener('mouseover', function(e) {
+        var el = e.target.closest('.help-tip'); if (el) showTip(el);
       });
       document.addEventListener('mouseout', function(e) {
-        if (e.target.closest('.help-tip')) tip.style.display = 'none';
+        if (e.target.closest('.help-tip')) hideTip();
+      });
+      document.addEventListener('focusin', function(e) {
+        var el = e.target.closest && e.target.closest('.help-tip'); if (el) showTip(el);
+      });
+      document.addEventListener('focusout', function(e) {
+        if (e.target.closest && e.target.closest('.help-tip')) hideTip();
+      });
+      // Tap / click toggles (mobile: hover never fires there)
+      document.addEventListener('click', function(e) {
+        var el = e.target.closest('.help-tip');
+        if (el) { e.preventDefault(); if (activeEl === el) hideTip(); else showTip(el); }
+        else if (activeEl) { hideTip(); }
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && activeEl) { hideTip(); return; }
+        var el = e.target.closest && e.target.closest('.help-tip');
+        if (el && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault(); if (activeEl === el) hideTip(); else showTip(el);
+        }
       });
     })();
 
