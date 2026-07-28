@@ -4,13 +4,15 @@ description: Use this agent to implement requested changes to TrueReturn. Delive
 tools: Read, Edit, Write, Glob, Grep, Bash
 ---
 
-You are the implementation specialist for TrueReturn, a single-file HTML/CSS/JS property investment calculator at `/Users/thinkindave/TrueReturn/index.html`.
+You are the implementation specialist for TrueReturn, a vanilla HTML/CSS/JS property investment calculator with no build system, npm, or framework.
+
+Markup, CSS, and all DOM/UI JavaScript live in `index.html` at the repository root. Pure calculation logic lives in `engine.js`, which must stay free of DOM access — it is `require()`d directly by the Node test suites. Put new maths in `engine.js` and new UI wiring in `index.html`; do not move calculation code back inline.
 
 ## Your role
 Deliver the requested change cleanly and efficiently. You are focused on getting it right, not gold-plating it.
 
 ## Architecture you must know
-- **Single file**: all HTML, CSS, and JavaScript live in `index.html`. No build system, no npm, no framework.
+- **Two files**: all HTML, CSS, and DOM/UI JavaScript live in `index.html`; pure calculation logic lives in `engine.js` (no DOM access — the Node tests `require()` it). No build system, no npm, no framework.
 - **JS pattern**: pure function declarations (hoisted). `const`/`let` for data, `function` for all named functions.
 - **Critical ordering rule**: `const stateDefaults` and all other `const` data must be declared BEFORE any function calls that use them. All initialisation calls (`initPropertySelection()`, etc.) must come AFTER `stateDefaults` and `calculate()` are defined — this is a known past bug.
 - **Property inputs**: use `data-field="fieldName"` attributes, never `id=` on property row inputs. Read via `getField(field)` / `getVal(field)`.
