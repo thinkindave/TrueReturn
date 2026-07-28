@@ -4916,9 +4916,14 @@
           const noPoolOutcome = calcReformSale(Object.assign({}, saleArgs, { quarantinePool: 0 }));
           const poolWorth = Math.max(0, noPoolOutcome.cgt - cgt);
           if (quarTipEl) {
-            quarTipEl.setAttribute('data-tip',
+            const quarTipText =
               'Rental losses that no longer reduce your salary tax. They build up while the property runs at a loss, get used up against rental profits once it turns profitable, and whatever\'s left offsets your capital gain at sale — worth roughly ' +
-              formatCurrency(poolWorth) + ' in tax at your marginal rate.');
+              formatCurrency(poolWorth) + ' in tax at your marginal rate.';
+            quarTipEl.setAttribute('data-tip', quarTipText);
+            // Keep the screen-reader name in sync — this data-tip is rebuilt
+            // with a live $ figure on every recalc, and aria-label is what SR
+            // users hear (the visual tooltip is aria-hidden). (#12 review)
+            quarTipEl.setAttribute('aria-label', quarTipText);
           }
           // Stranding is per-period (redesign §2.3): a property can strand at
           // 5 years (small gain) and not at 15 (larger gain), so this is
