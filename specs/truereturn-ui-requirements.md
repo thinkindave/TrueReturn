@@ -157,11 +157,17 @@ Responsive to mobile (scenario cards stack; verdict strip stays on top). Keyboar
 
 **The leverage clause is conditional (v2.8, rule corrected at v2.9).** Everything from the em dash onward — "— the difference is leverage (~M× here)" *and* the help-tip that explains leverage — renders **only when leverage is genuinely what put the gap there**. Otherwise the sentence stops after the cash figure and takes a full stop. Three renderings:
 
-> *Leverage explains the gap (growth up):* At the **6.0%** a year growth you assumed, your cash returned **11.3%** — the difference is leverage (~**4.2×** here). `?`
+All three below are measured on the shipped default property (650k, 20% deposit, $650/wk, QLD, 6.72%), 15-year period, except where noted — they reproduce exactly as printed:
+
+> *Leverage explains the gap (growth up):* At the **6.0%** a year growth you assumed, your cash returned **12.2%** — the difference is leverage (~**4.2×** here). `?`
 >
-> *Leverage explains the gap (growth down):* At the **−2.0%** a year growth you assumed, your cash fell **6.4%** — the difference is leverage (~**2.0×** here). `?`
+> *Leverage explains the gap (growth down, 50% deposit):* At the **-2.0%** a year growth you assumed, your cash fell **6.4%** — the difference is leverage (~**1.9×** here). `?`
 >
-> *It does not:* At the **1.5%** a year growth you assumed, your cash fell **2.0%**.
+> *It does not — costs and tax ate the gap:* At the **1.0%** a year growth you assumed, your cash fell **1.8%**.
+>
+> *It does not — no gap survives display precision:* At the **1.5%** a year growth you assumed, your cash returned **1.5%**. (Raw 1.45% against 1.5%; both print 1.5, so the clause would claim a difference the reader cannot see.)
+
+On this property the two figures cross between **1.5% and 2%** assumed growth — below that, holding costs and tax outrun the leveraged gain.
 
 **Rule — direction-aware.** Leverage pushes the cash return further from zero in *growth's own direction*, so the clause shows when the gap runs that way and hides when it runs against it:
 
