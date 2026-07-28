@@ -132,7 +132,7 @@ const requiredIds = [
   'minTaxFootnote', 'reformBanner',
   // New-build CGT treatment line (UI spec §1.4)
   'proj5CgtTreatment', 'proj10CgtTreatment', 'projLifeCgtTreatment',
-  // Leverage line — 15-year projection card only (UI spec §9 v2.7, issue #14).
+  // Leverage line — 15-year projection card only (UI spec §9 v2.9, issue #14).
   // The four children matter more than the container: the render guards the
   // container with `if (leverageEl)` and then dereferences the children
   // unguarded, so losing one throws mid-calculate() and silently stops the

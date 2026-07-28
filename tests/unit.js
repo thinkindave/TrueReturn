@@ -2273,7 +2273,7 @@ test('loop starts at year 1 — property turning positive in Year 1 is reported 
 });
 
 // ---------------------------------------------------------------------------
-// calcLeverageLine tests (UI spec §9 v2.7, issue #14)
+// calcLeverageLine tests (UI spec §9 v2.9, issue #14)
 // ---------------------------------------------------------------------------
 
 console.log('\ncalcLeverageLine');
@@ -2388,11 +2388,14 @@ test('multiple of exactly 1.05 shows — pins the comparison operator', () => {
 });
 
 // -- leverageExplainsGap: the "the difference is leverage" clause is only
-// true when the cash return actually EXCEEDS the assumed growth. When it
-// falls below, the gap is holding costs and tax — leverage on positive
-// growth cannot produce a negative cash return — so the clause has to be
-// suppressed rather than misattribute the cause. Units differ: expectedGrowth
-// is a fraction, annualisedReturn is already a percentage. ---------------
+// true when the gap runs in the SAME direction as growth, because that is
+// the only direction leverage can push. Under positive growth leverage
+// lifts the cash return above it; under negative growth it drags the cash
+// return below it. A gap running the other way has a different cause —
+// holding costs and tax when growth is positive, rental income when growth
+// is negative — so the clause is suppressed rather than misattributed.
+// Units differ: expectedGrowth is a fraction, annualisedReturn is already
+// a percentage. ----------------------------------------------------------
 
 test('leverageExplainsGap is true when cash return exceeds assumed growth', () => {
   const r = calcLeverageLine({
@@ -2412,11 +2415,57 @@ test('leverageExplainsGap is false when cash return falls below assumed growth',
   assert.strictEqual(r.leverageExplainsGap, false);
 });
 
+test('positive growth, cash return positive but below it: costs and tax, not leverage', () => {
+  // Also guards the fraction → percentage conversion on expectedGrowth: with
+  // the `* 100` dropped, 0.06 would compare as 0.06 and a 3.0% return would
+  // read as beating it, flipping this case to true.
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: 0.06, annualisedReturn: 3.0,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
+test('negative growth, cash return below it: leverage amplifying the fall', () => {
+  // 50% deposit, $650/wk rent, −2% growth in the live app. Leverage pushes
+  // the cash return further from zero in growth's own direction, so a
+  // downward gap under negative growth IS leverage — the clause must show.
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: -0.02, annualisedReturn: -6.4,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, true);
+});
+
+test('negative growth, cash return above it: rental income offsetting the fall', () => {
+  // 80% deposit, $1200/wk rent, −2% growth. No leverage multiple applied to
+  // −2% produces +2.8%; the gap is rent, so the clause must stay hidden.
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: -0.02, annualisedReturn: 2.8,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
 test('leverageExplainsGap is false when the two are exactly equal', () => {
   // No difference to attribute, so there is nothing for the clause to explain.
   const r = calcLeverageLine({
     purchasePrice: 650000, totalUpfront: 130000,
     expectedGrowth: 0.04, annualisedReturn: 4.0,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
+test('leverageExplainsGap is false when the two are exactly equal and negative', () => {
+  // Same reasoning on the negative side — the direction-aware rule must keep
+  // strict inequality there too, not flip equality into a claim.
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: -0.02, annualisedReturn: -2.0,
   });
   assert.strictEqual(r.show, true);
   assert.strictEqual(r.leverageExplainsGap, false);
@@ -2431,10 +2480,51 @@ test('leverageExplainsGap is false at the -100% floor', () => {
   assert.strictEqual(r.leverageExplainsGap, false);
 });
 
+test('leverageExplainsGap is false at the -100% floor under negative growth', () => {
+  // The floor rule has to be its own suppression, not a side effect of the
+  // positive-growth branch: here the direction test alone would say true
+  // (−100 is below −2), but annualisedReturn is clamped at −100 (issue #13),
+  // so a multiple printed beside it invites arithmetic that cannot reconcile.
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: -0.02, annualisedReturn: -100,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
 test('leverageExplainsGap is true just above the crossover', () => {
   const r = calcLeverageLine({
     purchasePrice: 650000, totalUpfront: 130000,
     expectedGrowth: 0.025, annualisedReturn: 3.8,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, true);
+});
+
+// -- displayed precision: both figures render via toFixed(1), so the gap has
+// to be judged on what the reader will actually see. A raw-value comparison
+// claims a difference that is invisible on screen — the same failure mode
+// that pushed the leverage-multiple threshold from 1.01 to 1.05. The reverse
+// case (return just below growth, both printing alike) needs no rule: the
+// short form makes no claim. --------------------------------------------
+
+test('leverageExplainsGap is false when the gap vanishes at display precision', () => {
+  // 6.04 and 6.0 both print "6.0" — the sentence would read
+  // "6.0% … returned 6.0% — the difference is leverage".
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: 0.06, annualisedReturn: 6.04,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
+test('leverageExplainsGap is true when the gap survives display precision', () => {
+  // 6.06 prints "6.1" against growth's "6.0" — a difference the reader sees.
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: 0.06, annualisedReturn: 6.06,
   });
   assert.strictEqual(r.show, true);
   assert.strictEqual(r.leverageExplainsGap, true);

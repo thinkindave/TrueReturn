@@ -5115,7 +5115,7 @@
           hReturnOnCashEl.className = 'period-headline-value ' + (annualisedReturn >= 0 ? 'positive' : 'negative');
         }
 
-        // Leverage line — 15-year period only (UI spec §9 v2.7, issue #14).
+        // Leverage line — 15-year period only (UI spec §9 v2.9, issue #14).
         // annualisedReturn is passed in, never recomputed, so the shipped
         // "Annual Cash Return" figure cannot move.
         const leverageEl = document.getElementById(`${prefix}Leverage`);

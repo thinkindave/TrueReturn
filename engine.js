@@ -821,7 +821,7 @@ const DISCLAIMERS = {
   forwardLooking: 'This calculator assumes you\'re buying after 12 May 2026, so the 2027 negative-gearing and CGT changes apply. If you bought earlier, your negative gearing and CGT are grandfathered and this will overstate your tax.',
 };
 
-// ── Leverage line (UI spec §9 v2.7, issue #14) ───────────────────────────
+// ── Leverage line (UI spec §9 v2.9, issue #14) ───────────────────────────
 // Presentation helper for the 15-year projection line. It does NOT compute
 // return on cash — it RECEIVES the figure index.html already renders as
 // "Annual Cash Return", so that shipped number cannot move (the inline
@@ -860,22 +860,49 @@ function calcLeverageLine({ purchasePrice, totalUpfront, expectedGrowth,
   // difference that doesn't exist — so the gate has to hide it. Revisit
   // this number if the render precision (currently toFixed(1)) changes.
   if (leverageMultiple < 1.05) return { show: false };
+  // Hoisted so the predicate below reads against the two fields the line
+  // actually displays, and so the fraction -> percentage conversion exists
+  // once. Note the units: expectedGrowth is a fraction, annualisedReturn is
+  // already a percentage.
+  const assetGrowthPct = expectedGrowth * 100;
+  const cashReturnPct = annualisedReturn;
+  // Whether the "the difference is leverage" clause is actually TRUE.
+  //
+  // Leverage multiplies the growth landing on the cash stake, so it can only
+  // push the cash return further from zero in growth's OWN direction. The
+  // rule is therefore direction-aware, not "return beats growth":
+  //   growth >= 0, return above  -> leverage
+  //   growth >= 0, return below  -> holding costs and tax
+  //   growth <  0, return below  -> leverage amplifying the fall
+  //   growth <  0, return above  -> rental income offsetting the fall
+  // The third row is the one a naive `return > growth` test gets wrong: at
+  // -2% growth on a 2x stake the cash return sits BELOW the growth rate
+  // precisely BECAUSE of leverage, and that is the only case where the
+  // help-tip ("multiplies gains and losses equally") earns its place.
+  // Strict inequality both ways, so exact equality takes the short form —
+  // there is no difference to attribute.
+  //
+  // Judged on the ROUNDED figures because both render via toFixed(1): a raw
+  // 6.04 against 6.0 growth prints "6.0% ... 6.0% - the difference is
+  // leverage", claiming a difference the reader cannot see. Same discipline
+  // as the 1.05 multiple threshold above; revisit both if that precision
+  // changes. The reverse (return just below growth, both printing alike) is
+  // harmless — the short form makes no claim.
+  const shownGrowth = Number(assetGrowthPct.toFixed(1));
+  const shownReturn = Number(cashReturnPct.toFixed(1));
+  // At the -100% floor, never claim leverage: annualisedReturn is clamped
+  // there (issue #13), so a multiple stated beside a clamped figure invites
+  // arithmetic that cannot reconcile. Tested on the displayed figure, since
+  // anything printing as "100.0%" reads to the reader as the floor.
+  const atFloor = shownReturn <= -100;
   return {
     show: true,
-    assetGrowthPct: expectedGrowth * 100,
-    cashReturnPct: annualisedReturn,
+    assetGrowthPct,
+    cashReturnPct,
     leverageMultiple,
-    // Whether the "the difference is leverage" clause is actually TRUE.
-    // Leverage only explains the gap when the cash return beats the assumed
-    // growth. Below the crossover (on the default property, somewhere between
-    // 2% and 2.5% growth) the cash return falls short of the growth rate, and
-    // that gap is holding costs and tax — leverage on +1.5% growth cannot
-    // produce a -2% cash return. Attributing it to leverage would state a
-    // false cause, so the renderer suppresses the clause and its help-tip.
-    // Equal is false too: there is no difference to attribute.
-    // Note the units — expectedGrowth is a fraction, annualisedReturn is
-    // already a percentage.
-    leverageExplainsGap: annualisedReturn > expectedGrowth * 100,
+    leverageExplainsGap: !atFloor && (shownGrowth >= 0
+      ? shownReturn > shownGrowth
+      : shownReturn < shownGrowth),
   };
 }
 
