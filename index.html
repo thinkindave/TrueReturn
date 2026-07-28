@@ -5123,21 +5123,27 @@
           const lev = calcLeverageLine({
             purchasePrice, totalUpfront, expectedGrowth, annualisedReturn,
           });
-          leverageEl.hidden = !lev.show;
+          const growthEl = document.getElementById(`${prefix}LeverageGrowth`);
+          const verbEl = document.getElementById(`${prefix}LeverageVerb`);
+          const roeEl = document.getElementById(`${prefix}LeverageRoe`);
+          const multEl = document.getElementById(`${prefix}LeverageMult`);
+          // Populate before unhiding, and blank on hide — matches the
+          // sensitivity band and stranded note above, and means a throw
+          // mid-populate can never leave stale figures on screen.
           if (lev.show) {
-            const growthEl = document.getElementById(`${prefix}LeverageGrowth`);
             growthEl.textContent = lev.assetGrowthPct.toFixed(1) + '%';
             growthEl.className = lev.assetGrowthPct < 0 ? 'negative' : '';
-
-            document.getElementById(`${prefix}LeverageVerb`).textContent =
-              lev.cashReturnPct >= 0 ? 'returned' : 'fell';
-
-            const roeEl = document.getElementById(`${prefix}LeverageRoe`);
+            verbEl.textContent = lev.cashReturnPct >= 0 ? 'returned' : 'fell';
             roeEl.textContent = Math.abs(lev.cashReturnPct).toFixed(1) + '%';
             roeEl.className = lev.cashReturnPct < 0 ? 'negative' : '';
-
-            document.getElementById(`${prefix}LeverageMult`).textContent =
-              lev.leverageMultiple.toFixed(1) + '×';
+            multEl.textContent = lev.leverageMultiple.toFixed(1) + '×';
+            leverageEl.hidden = false;
+          } else {
+            growthEl.textContent = '';
+            verbEl.textContent = '';
+            roeEl.textContent = '';
+            multEl.textContent = '';
+            leverageEl.hidden = true;
           }
         }
       });
