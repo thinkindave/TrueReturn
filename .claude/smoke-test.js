@@ -53,7 +53,9 @@ const requiredIds = [
   'proj5Sensitivity', 'proj10Sensitivity', 'projLifeSensitivity',
   'minTaxFootnote', 'reformBanner',
   // New-build CGT treatment line (UI spec §1.4)
-  'proj5CgtTreatment', 'proj10CgtTreatment', 'projLifeCgtTreatment'
+  'proj5CgtTreatment', 'proj10CgtTreatment', 'projLifeCgtTreatment',
+  // Leverage line — 15-year projection card only (UI spec §9 v2.7, issue #14)
+  'projLifeLeverage'
 ];
 let idsFailed = false;
 requiredIds.forEach(id => {
@@ -160,6 +162,29 @@ if (inlineHandlers && inlineHandlers.length > 0) {
     fail('rocEl.textContent assignment not found — has the Investment Performance block been removed or renamed?');
   } else if (wrongCount === 0) {
     ok(`ReturnOnCash accordion highlight writes annualisedReturn (CAGR) at all ${assignCount} site(s)`);
+  }
+})();
+
+// 9. Leverage line must never recompute its own ROE figure. engine.js also
+//    exposes calcEquityReturns, which computes a similar-looking figure but
+//    differs on principalRepaid handling. If calcLeverageLine were rewired to
+//    that (or to any fresh computation) instead of the existing inline
+//    annualisedReturn, the shipped "Annual Cash Return" figure would move for
+//    every existing user. This check pins both halves of that contract.
+(function checkLeverageLineUsesExistingAnnualisedReturn() {
+  const roeBaseLine = 'const roeBase = totalUpfront > 0 ? 1 + totalProfit / totalUpfront : 0;';
+  const hasRoeBase = html.includes(roeBaseLine);
+  if (!hasRoeBase) {
+    fail('Inline roeBase computation not found or altered — expected: ' + roeBaseLine);
+  }
+
+  const passesAnnualisedReturn = /calcLeverageLine\(\{[\s\S]{0,200}annualisedReturn/.test(html);
+  if (!passesAnnualisedReturn) {
+    fail('calcLeverageLine is not being passed the existing annualisedReturn — leverage line may be recomputing its own ROE');
+  }
+
+  if (hasRoeBase && passesAnnualisedReturn) {
+    ok('Leverage line uses the existing inline annualisedReturn, not a recomputed figure');
   }
 })();
 
