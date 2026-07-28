@@ -199,7 +199,7 @@ In the **15-year period only** (the block containing `projLifeHeadlineReturnOnCa
 
 ```html
           <div class="proj-line leverage-line" id="projLifeLeverage" hidden>
-            At the <strong id="projLifeLeverageGrowth"></strong> a year growth you assumed, your cash <span id="projLifeLeverageVerb"></span> <strong id="projLifeLeverageRoe"></strong> — the difference is leverage (~<strong id="projLifeLeverageMult"></strong> here).<span class="help-tip" data-tip="Your deposit and costs bought a much larger asset, so the property's growth lands on your smaller cash stake. Leverage multiplies gains and losses equally.">?</span>
+            At the <strong id="projLifeLeverageGrowth"></strong> a year growth you assumed, your cash <span id="projLifeLeverageVerb"></span> <strong id="projLifeLeverageRoe"></strong> — the difference is leverage (~<strong id="projLifeLeverageMult"></strong> here).&nbsp;<span class="help-tip" data-tip="Your deposit and costs bought a much larger asset, so the property's growth lands on your smaller cash stake. Leverage multiplies gains and losses equally.">?</span>
           </div>
 ```
 
