@@ -141,7 +141,7 @@ function calcLeverageLine({ purchasePrice, totalUpfront, expectedGrowth,
                             annualisedReturn }) {
   if (!(purchasePrice > 0) || !(totalUpfront > 0)) return { show: false };
   const leverageMultiple = purchasePrice / totalUpfront;
-  if (leverageMultiple < 1.01) return { show: false };
+  if (leverageMultiple < 1.05) return { show: false };
   return {
     show: true,
     assetGrowthPct: expectedGrowth * 100,
@@ -367,7 +367,8 @@ Replace everything from the `## 9. Return-on-your-cash block (leverage / ROE dis
 **The asset figure is an assumption, not a finding.** It is `expectedGrowth` as typed by the user, so the copy attributes it ("the growth you assumed") rather than reporting it ("the property grew"). Presenting an input back as a modelled discovery is precisely the self-deception this product exists to counter.
 
 **Suppression** — hide the whole line when there is no leverage gap to explain:
-- leverage multiple below 1.01 (cash purchase — the two rates converge and the line would assert a difference that does not exist)
+- leverage multiple below 1.05 — the threshold is tied to the display precision: the multiple renders via `toFixed(1)`, so anything below 1.05 would print "~1.0× here" while the sentence claims a difference exists. A cash purchase sits below 1 (acquisition costs push `totalUpfront` above `purchasePrice`); the band between is reachable at roughly a 91–94% deposit. If the display precision ever changes, revisit this number.
+- `expectedGrowth` or `annualisedReturn` non-finite — guards against the `NaN%` class of bug from issue #13, and against `engine.annualizedReturn`'s `null` return rendering as a silently wrong "0.0"
 - non-positive `purchasePrice` or `totalUpfront`
 
 Suppress on the arithmetic, never on a proxy input, so the rule stays correct if the inputs change (same discipline as v2.6's degenerate sensitivity band).

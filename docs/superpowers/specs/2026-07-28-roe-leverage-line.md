@@ -97,7 +97,8 @@ Both reuse the existing `roeBase > 0` guard shape so degenerate cases behave ide
 | Loss exceeds cash invested | Return floors at −100% p.a., per the #13 fix. Line still renders. |
 | `purchasePrice <= 0` | Hide the line. |
 | Zero growth exactly | Renders "grew 0.0% a year"; no special case. The negative net figure carries the message. |
-| Both figures equal (no leverage, cash purchase) | `leverageMultiple` is 1.0× and the two rates converge; hide the line — it would assert a difference that does not exist. |
+| Little or no leverage (multiple below 1.05) | Hide the line — it would assert a difference that does not exist. Threshold raised from 1.01 after code review (2026-07-28): the multiple renders via `toFixed(1)`, so the 1.01–1.05 band printed "~1.0× here" alongside a sentence claiming a difference. Reachable at roughly a 91–94% deposit. |
+| `expectedGrowth` or `annualisedReturn` non-finite | Hide the line. Added after code review: guards the `NaN%` class of bug from #13, and stops `engine.annualizedReturn`'s `null` return rendering as a silently wrong "0.0". |
 
 The last row is the same discipline as v2.6's degenerate-sensitivity-band suppression (§3): suppress on the arithmetic, not on a proxy input, so it stays correct if the inputs change.
 
@@ -116,7 +117,7 @@ Unit tests in `tests/unit.js`:
 2. `leverageMultiple` is 5.0× for 520k / 104k.
 3. Declining property yields both figures negative, with cash return more negative than asset growth.
 4. Zero growth yields 0.0% asset growth and a negative cash return.
-5. `totalUpfront <= 0` and the 1.0× no-leverage case both suppress the line.
+5. `totalUpfront <= 0` and the below-1.05 no-leverage case both suppress the line, with fixtures bracketing the threshold so the constant cannot drift untested.
 6. The shipped Annual Cash Return figure is **unchanged** by this slice — a regression guard on Finding A's warning, asserted for all three periods.
 
 Test 6 is the one that matters most; it is the guard against the §4 risk.
