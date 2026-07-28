@@ -826,16 +826,38 @@ const DISCLAIMERS = {
 // return on cash — it RECEIVES the figure index.html already renders as
 // "Annual Cash Return", so that shipped number cannot move (the inline
 // computation and calcEquityReturns differ on principalRepaid handling).
+// The `annualisedReturn` param spells "annualised" the UK way deliberately,
+// mirroring the local variable at index.html:5051 — engine.js's own
+// annualizedReturn() nearby uses the US spelling; that's a different thing.
 // assetGrowthPct is the user's own expectedGrowth input: futureValue is
 // purchasePrice * (1+expectedGrowth)^years, so the annualised asset growth
 // is identically that input — deriving it would be a no-op round trip.
 // Hidden when there is no leverage gap to explain: a cash purchase has
 // totalUpfront >= purchasePrice, giving a multiple at or below 1.
+// Returns a discriminated { show } object rather than the engine's usual
+// null-on-inapplicable, because this function's consumer is a renderer, not
+// a downstream calculation — { show: false } is a display instruction, not
+// a "no result" sentinel. Don't copy this shape into a calculation helper,
+// and don't revert to null here.
 function calcLeverageLine({ purchasePrice, totalUpfront, expectedGrowth,
                             annualisedReturn }) {
   if (!(purchasePrice > 0) || !(totalUpfront > 0)) return { show: false };
+  if (!Number.isFinite(expectedGrowth) || !Number.isFinite(annualisedReturn)) {
+    // Guards against NaN (issue #13's shape) and also against null, which
+    // engine.annualizedReturn returns when cashInvested <= 0 — null would
+    // otherwise sail through every other guard and render as a silently
+    // wrong "0.0" via Math.abs(null).toFixed(1).
+    return { show: false };
+  }
+  // leverageMultiple is purchasePrice / totalUpfront, i.e. it's pinned to
+  // the "Cash Invested" figure this same card already shows. Contrast
+  // calcEquityReturns' own leverageMultiple field, which is based on
+  // depositCashInvested — a different base. Don't assume the two match.
   const leverageMultiple = purchasePrice / totalUpfront;
-  if (leverageMultiple < 1.01) return { show: false };
+  // Below 1.05 the renderer's toFixed(1) prints "~1.0x", which asserts a
+  // difference that doesn't exist — so the gate has to hide it. Revisit
+  // this number if the render precision (currently toFixed(1)) changes.
+  if (leverageMultiple < 1.05) return { show: false };
   return {
     show: true,
     assetGrowthPct: expectedGrowth * 100,

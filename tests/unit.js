@@ -2278,28 +2278,27 @@ test('loop starts at year 1 — property turning positive in Year 1 is reported 
 
 console.log('\ncalcLeverageLine');
 
+// Shared fixture: 520k purchase on 104k upfront (5.0x), 6% growth, 11.7%
+// cash return. Reused verbatim by the three tests below — hoisted to avoid
+// drift if one copy is edited and the others aren't.
+const LEVERAGE_BASE_INPUT = {
+  purchasePrice: 520000, totalUpfront: 104000,
+  expectedGrowth: 0.06, annualisedReturn: 11.7,
+};
+
 test('asset growth is the expectedGrowth input, not a derived figure', () => {
-  const r = calcLeverageLine({
-    purchasePrice: 520000, totalUpfront: 104000,
-    expectedGrowth: 0.06, annualisedReturn: 11.7,
-  });
+  const r = calcLeverageLine(LEVERAGE_BASE_INPUT);
   assert.strictEqual(r.show, true);
   approxEqual(r.assetGrowthPct, 6.0, 0.0001);
 });
 
 test('leverage multiple is 5.0x for 520k on 104k', () => {
-  const r = calcLeverageLine({
-    purchasePrice: 520000, totalUpfront: 104000,
-    expectedGrowth: 0.06, annualisedReturn: 11.7,
-  });
+  const r = calcLeverageLine(LEVERAGE_BASE_INPUT);
   approxEqual(r.leverageMultiple, 5.0, 0.001);
 });
 
 test('passes the supplied cash return through untouched', () => {
-  const r = calcLeverageLine({
-    purchasePrice: 520000, totalUpfront: 104000,
-    expectedGrowth: 0.06, annualisedReturn: 11.7,
-  });
+  const r = calcLeverageLine(LEVERAGE_BASE_INPUT);
   assert.strictEqual(r.cashReturnPct, 11.7);
 });
 
@@ -2331,9 +2330,16 @@ test('hides when there is no leverage to explain (cash purchase)', () => {
   assert.strictEqual(r.show, false);
 });
 
-test('hides when totalUpfront is zero or negative', () => {
+test('hides when totalUpfront is zero', () => {
   assert.strictEqual(calcLeverageLine({
     purchasePrice: 520000, totalUpfront: 0,
+    expectedGrowth: 0.06, annualisedReturn: 11.7,
+  }).show, false);
+});
+
+test('hides when totalUpfront is negative', () => {
+  assert.strictEqual(calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: -50000,
     expectedGrowth: 0.06, annualisedReturn: 11.7,
   }).show, false);
 });
@@ -2343,6 +2349,66 @@ test('hides when purchasePrice is zero', () => {
     purchasePrice: 0, totalUpfront: 104000,
     expectedGrowth: 0.06, annualisedReturn: 11.7,
   }).show, false);
+});
+
+// -- threshold: below 1.05 renders as "~1.0x" (toFixed(1) in the renderer),
+// which would assert a difference that doesn't exist, so the gate must hide
+// it; 1.05 and above renders as "~1.1x" or higher, a real difference. -----
+
+test('multiple of 1.04x (just below the 1.05 threshold): hides', () => {
+  // 520000 / 500000 = 1.04 exactly.
+  const r = calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 500000,
+    expectedGrowth: 0.06, annualisedReturn: 4.2,
+  });
+  assert.strictEqual(r.show, false);
+});
+
+test('multiple of 1.06x (just above the 1.05 threshold): shows', () => {
+  // 530000 / 500000 = 1.06 exactly.
+  const r = calcLeverageLine({
+    purchasePrice: 530000, totalUpfront: 500000,
+    expectedGrowth: 0.06, annualisedReturn: 4.2,
+  });
+  assert.strictEqual(r.show, true);
+  approxEqual(r.leverageMultiple, 1.06, 0.0001);
+});
+
+// -- validation: the two figures the line displays must be finite numbers,
+// otherwise the renderer prints "NaN%" (issue #13's shape) or, worse,
+// engine.annualizedReturn's null (returned when cashInvested <= 0) survives
+// every other guard and renders as a silently wrong "0.0". --------------
+
+test('hides when annualisedReturn is null', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 104000,
+    expectedGrowth: 0.06, annualisedReturn: null,
+  });
+  assert.strictEqual(r.show, false);
+});
+
+test('hides when annualisedReturn is undefined', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 104000,
+    expectedGrowth: 0.06, annualisedReturn: undefined,
+  });
+  assert.strictEqual(r.show, false);
+});
+
+test('hides when annualisedReturn is NaN', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 104000,
+    expectedGrowth: 0.06, annualisedReturn: NaN,
+  });
+  assert.strictEqual(r.show, false);
+});
+
+test('hides when expectedGrowth is NaN', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 104000,
+    expectedGrowth: NaN, annualisedReturn: 11.7,
+  });
+  assert.strictEqual(r.show, false);
 });
 
 // ---------------------------------------------------------------------------
