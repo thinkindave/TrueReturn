@@ -821,6 +821,29 @@ const DISCLAIMERS = {
   forwardLooking: 'This calculator assumes you\'re buying after 12 May 2026, so the 2027 negative-gearing and CGT changes apply. If you bought earlier, your negative gearing and CGT are grandfathered and this will overstate your tax.',
 };
 
+// ── Leverage line (UI spec §9 v2.7, issue #14) ───────────────────────────
+// Presentation helper for the 15-year projection line. It does NOT compute
+// return on cash — it RECEIVES the figure index.html already renders as
+// "Annual Cash Return", so that shipped number cannot move (the inline
+// computation and calcEquityReturns differ on principalRepaid handling).
+// assetGrowthPct is the user's own expectedGrowth input: futureValue is
+// purchasePrice * (1+expectedGrowth)^years, so the annualised asset growth
+// is identically that input — deriving it would be a no-op round trip.
+// Hidden when there is no leverage gap to explain: a cash purchase has
+// totalUpfront >= purchasePrice, giving a multiple at or below 1.
+function calcLeverageLine({ purchasePrice, totalUpfront, expectedGrowth,
+                            annualisedReturn }) {
+  if (!(purchasePrice > 0) || !(totalUpfront > 0)) return { show: false };
+  const leverageMultiple = purchasePrice / totalUpfront;
+  if (leverageMultiple < 1.01) return { show: false };
+  return {
+    show: true,
+    assetGrowthPct: expectedGrowth * 100,
+    cashReturnPct: annualisedReturn,
+    leverageMultiple,
+  };
+}
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -836,6 +859,7 @@ if (typeof module !== 'undefined' && module.exports) {
     runSaleScenario, compareSaleTiming,
     annualizedReturn, irrFromCashflows, calcEquityReturns,
     calcBenchmark, BENCHMARK_PRESETS,
+    calcLeverageLine,
     DISCLAIMERS,
   };
 }

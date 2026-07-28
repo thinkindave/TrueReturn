@@ -3,7 +3,7 @@
 // Run with: node /Users/thinkindave/TrueReturn/tests/unit.js
 
 const { assert, test, approxEqual, summary } = require('./harness.js');
-const { formatCurrency, calcStampDuty, calcDepreciation, stateDefaults } = require('../engine.js');
+const { formatCurrency, calcStampDuty, calcDepreciation, stateDefaults, calcLeverageLine } = require('../engine.js');
 
 // ---------------------------------------------------------------------------
 // formatCurrency tests
@@ -2270,6 +2270,79 @@ test('loop starts at year 1 — property turning positive in Year 1 is reported 
     managementFeePct, insurance, councilFees, annualLoanPayment
   );
   assert.strictEqual(result, 1, `Expected 1 (loop starts at year 1), got ${result}`);
+});
+
+// ---------------------------------------------------------------------------
+// calcLeverageLine tests (UI spec §9 v2.7, issue #14)
+// ---------------------------------------------------------------------------
+
+console.log('\ncalcLeverageLine');
+
+test('asset growth is the expectedGrowth input, not a derived figure', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 104000,
+    expectedGrowth: 0.06, annualisedReturn: 11.7,
+  });
+  assert.strictEqual(r.show, true);
+  approxEqual(r.assetGrowthPct, 6.0, 0.0001);
+});
+
+test('leverage multiple is 5.0x for 520k on 104k', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 104000,
+    expectedGrowth: 0.06, annualisedReturn: 11.7,
+  });
+  approxEqual(r.leverageMultiple, 5.0, 0.001);
+});
+
+test('passes the supplied cash return through untouched', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 104000,
+    expectedGrowth: 0.06, annualisedReturn: 11.7,
+  });
+  assert.strictEqual(r.cashReturnPct, 11.7);
+});
+
+test('declining property: both figures negative, cash falls further', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 104000,
+    expectedGrowth: -0.016, annualisedReturn: -21.6,
+  });
+  assert.strictEqual(r.show, true);
+  assert(r.assetGrowthPct < 0, 'asset growth should be negative');
+  assert(r.cashReturnPct < r.assetGrowthPct, 'cash return should fall further than the asset');
+});
+
+test('zero growth still shows, with a negative cash return', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 104000,
+    expectedGrowth: 0, annualisedReturn: -7.5,
+  });
+  assert.strictEqual(r.show, true);
+  approxEqual(r.assetGrowthPct, 0, 0.0001);
+  assert(r.cashReturnPct < 0);
+});
+
+test('hides when there is no leverage to explain (cash purchase)', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 545000,
+    expectedGrowth: 0.06, annualisedReturn: 4.2,
+  });
+  assert.strictEqual(r.show, false);
+});
+
+test('hides when totalUpfront is zero or negative', () => {
+  assert.strictEqual(calcLeverageLine({
+    purchasePrice: 520000, totalUpfront: 0,
+    expectedGrowth: 0.06, annualisedReturn: 11.7,
+  }).show, false);
+});
+
+test('hides when purchasePrice is zero', () => {
+  assert.strictEqual(calcLeverageLine({
+    purchasePrice: 0, totalUpfront: 104000,
+    expectedGrowth: 0.06, annualisedReturn: 11.7,
+  }).show, false);
 });
 
 // ---------------------------------------------------------------------------
