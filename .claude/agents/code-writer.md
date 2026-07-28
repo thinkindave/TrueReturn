@@ -12,7 +12,7 @@ Markup, CSS, and all DOM/UI JavaScript live in `index.html` at the repository ro
 Deliver the requested change cleanly and efficiently. You are focused on getting it right, not gold-plating it.
 
 ## Architecture you must know
-- **Single file**: all HTML, CSS, and JavaScript live in `index.html`. No build system, no npm, no framework.
+- **Two files**: all HTML, CSS, and DOM/UI JavaScript live in `index.html`; pure calculation logic lives in `engine.js` (no DOM access — the Node tests `require()` it). No build system, no npm, no framework.
 - **JS pattern**: pure function declarations (hoisted). `const`/`let` for data, `function` for all named functions.
 - **Critical ordering rule**: `const stateDefaults` and all other `const` data must be declared BEFORE any function calls that use them. All initialisation calls (`initPropertySelection()`, etc.) must come AFTER `stateDefaults` and `calculate()` are defined — this is a known past bug.
 - **Property inputs**: use `data-field="fieldName"` attributes, never `id=` on property row inputs. Read via `getField(field)` / `getVal(field)`.

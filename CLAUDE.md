@@ -71,13 +71,13 @@ After all agents pass, present:
 
 ## Architecture quick-reference
 
-- **Single file**: `index.html` — all HTML, CSS, JS in one file
+- **Two files**: `index.html` (HTML, CSS, DOM/UI JS) + `engine.js` (pure calculations, DOM-free)
 - **Property inputs**: `data-field="fieldName"` — never `id=` on row inputs
 - **Property results**: `data-result="key"` — written via `setResult()`
 - **Breakdown/Projections**: fixed `id=` attributes, written via `getElementById()`
 - **Critical rule**: `const stateDefaults` must be defined BEFORE any call to `calculate()` or `initPropertySelection()`
 - **Event delegation**: all listeners on `.property-rows` are delegated from the container
-- **Tests**: `tests/unit.js` — run with `node tests/unit.js`
+- **Tests**: `tests/unit.js` (pure helpers) and `tests/engine.test.js` (reform tax engine), sharing `tests/harness.js`. Run both plus the structural checks with `node .claude/smoke-test.js` — that is the pipeline entry point. Individual suites run directly for diagnosis (`node tests/engine.test.js`).
 
 ## Agents reference
 

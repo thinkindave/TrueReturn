@@ -24,7 +24,7 @@ Audit the recent changes thoroughly. You do not write code — you produce a str
 - All initialisation calls must come after `stateDefaults` and `calculate()` are fully defined in the script.
 - No new global variables should be introduced without strong justification.
 - Functions should be declarations (`function foo() {}`) not arrow assignments (`const foo = () => {}`) so they hoist correctly.
-- No third-party dependencies: no CDN links, npm packages, or build steps. The only local script `index.html` loads is `engine.js`; any *additional* `<script src>` or `<link rel="stylesheet">` tag needs explicit user approval.
+- Dependencies are frozen: no npm, no build step. `index.html` loads exactly two scripts — Chart.js 4.4.4 from jsDelivr (pinned, with an SRI `integrity` hash — the one approved third-party dependency) and the local `engine.js`. Any *additional* `<script src>` or `<link rel="stylesheet">` tag needs explicit user approval, as does unpinning or removing the SRI hash on the existing one.
 - `engine.js` must remain DOM-free and must keep its `module.exports` guard — the Node test suites `require()` it directly, so a stray `document` reference breaks every test.
 
 ### Efficiency & longevity

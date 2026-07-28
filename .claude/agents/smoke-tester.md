@@ -25,6 +25,9 @@ main check: the script covers everything.
    - `tests/unit.js` — pure helpers (formatCurrency, stamp duty, depreciation, cash flow)
    - `tests/engine.test.js` — the 2026-27 reform tax engine (dual-era CGT, NG
      quarantine, regime router, new-build optimizer; spec cases T1–T6)
+2b. Suite-list drift guard — every `.js` file in `tests/` (except `harness.js`)
+   must be registered in `TEST_SUITES`. A new suite that nobody wired up fails
+   the smoke test instead of silently never running.
 3. Required fixed IDs (32 IDs — note: `expectedGrowth` is intentionally absent, it is a `data-field` not a fixed ID)
 4. Required `data-field` attributes (10 fields including `expectedGrowth`)
 5. Script execution order (`stateDefaults` before `initPropertySelection()`)
@@ -32,7 +35,13 @@ main check: the script covers everything.
 7. HeadlineReturnOnCash and the ReturnOnCash accordion both write
    `annualisedReturn` (CAGR), not `returnOnCash` (total %)
 
-A suite line reads `✓ tests/engine.test.js: 116 passed, 0 failed`. On failure the
+Each suite also carries a `minTests` ratchet: a suite reporting fewer tests than
+its floor fails even if none of them failed, so a suite that gets truncated or
+disabled cannot pass vacuously. Adding tests is fine; raise the floor when a
+suite grows substantially.
+
+A suite line reads `✓ tests/engine.test.js: 116 passed, 0 failed` (counts are
+current at time of writing, not fixed expectations). On failure the
 individual failing assertions are printed beneath the suite line, and a suite that
 crashes before printing a summary is reported as `crashed on load?` with the tail
 of its output. Because suites run as child processes, one failing suite does not
