@@ -5114,6 +5114,32 @@
           hReturnOnCashEl.textContent = annualisedReturn.toFixed(2) + '%';
           hReturnOnCashEl.className = 'period-headline-value ' + (annualisedReturn >= 0 ? 'positive' : 'negative');
         }
+
+        // Leverage line — 15-year period only (UI spec §9 v2.7, issue #14).
+        // annualisedReturn is passed in, never recomputed, so the shipped
+        // "Annual Cash Return" figure cannot move.
+        const leverageEl = document.getElementById(`${prefix}Leverage`);
+        if (leverageEl) {
+          const lev = calcLeverageLine({
+            purchasePrice, totalUpfront, expectedGrowth, annualisedReturn,
+          });
+          leverageEl.hidden = !lev.show;
+          if (lev.show) {
+            const growthEl = document.getElementById(`${prefix}LeverageGrowth`);
+            growthEl.textContent = lev.assetGrowthPct.toFixed(1) + '%';
+            growthEl.className = lev.assetGrowthPct < 0 ? 'negative' : '';
+
+            document.getElementById(`${prefix}LeverageVerb`).textContent =
+              lev.cashReturnPct >= 0 ? 'returned' : 'fell';
+
+            const roeEl = document.getElementById(`${prefix}LeverageRoe`);
+            roeEl.textContent = Math.abs(lev.cashReturnPct).toFixed(1) + '%';
+            roeEl.className = lev.cashReturnPct < 0 ? 'negative' : '';
+
+            document.getElementById(`${prefix}LeverageMult`).textContent =
+              lev.leverageMultiple.toFixed(1) + '×';
+          }
+        }
       });
 
       // ── Deemed-value informational line (UI spec v2.6 §2) ──
