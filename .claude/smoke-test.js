@@ -61,7 +61,8 @@ const requiredIds = [
   // deemed-value chip, min-tax footnote, reform banner and Property
   // Highlights from updating.
   'projLifeLeverage', 'projLifeLeverageGrowth', 'projLifeLeverageVerb',
-  'projLifeLeverageRoe', 'projLifeLeverageMult'
+  'projLifeLeverageRoe', 'projLifeLeverageMult',
+  'projLifeLeverageClause', 'projLifeLeverageEnd'
 ];
 let idsFailed = false;
 requiredIds.forEach(id => {

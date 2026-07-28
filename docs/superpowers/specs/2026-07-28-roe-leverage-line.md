@@ -1,6 +1,7 @@
 # Return-on-cash leverage line (issue #14, phase 2b-2)
 
 **Status:** Design proposal, 2026-07-28. Direction approved verbally by PO; awaiting written-spec review. Amends UI spec §9.
+**Amended 2026-07-29 (PO-approved copy fix, UI spec v2.8):** the leverage clause is **conditional** — see "The leverage clause is conditional" in §2. The examples below were written before that rule and are corrected in place.
 **Tracking:** GitHub issue #14. Branches from local `main` (`486ab4e`).
 **Companion specs:** `specs/truereturn-ui-requirements.md` §9 (v2.6 → v2.7 on implementation), `specs/truereturn-tax-engine-requirements.md` §11. The tax spec stays authoritative for calculation; nothing here changes `engine.js`.
 
@@ -44,9 +45,13 @@ The asset figure is attributed as an assumption, not reported as a finding. This
 
 > At the **6.0%** a year growth you assumed, your cash returned **11.7%** — the difference is leverage (~5× here).
 
-The same renderer, unmodified, on a declining assumption:
+The same renderer, unmodified, on a declining assumption (clause suppressed — see below):
 
-> At the **−1.6%** a year growth you assumed, your cash fell **21.6%** — the difference is leverage (~5× here).
+> At the **−1.6%** a year growth you assumed, your cash fell **21.6%**.
+
+**The leverage clause is conditional (amended 2026-07-29, UI spec v2.8).** Everything from the em dash onward — the clause *and* the help-tip — renders **only when the cash return exceeds the assumed growth** (`cashReturnPct > assetGrowthPct`, strictly greater). Otherwise the sentence stops after the cash figure and takes a full stop.
+
+Leverage can only push the cash return further from zero in the *same* direction as growth, so it only ever explains a gap that runs upward. When the cash return sits *below* the growth rate the gap is holding costs and tax: on the default property (650k, 20% deposit, QLD) 1.5% growth yields −2.0% on cash, and no multiple applied to +1.5% produces −2%. The v2.7 wording therefore stated a false cause on every input below the crossover (between 2% and 2.5% growth on that property). Equality shows the short form too — there is no difference to attribute. The decision lives in `calcLeverageLine` as `leverageExplainsGap`, not in the renderer, so it is unit-testable; the help-tip sits inside the clause's wrapper span so it hides with it.
 
 Verb selection is by sign on the cash figure only (`returned`/`fell`); the asset figure renders its own sign and needs no verb branch. No other branching, no commentary, no colour beyond TrueReturn's existing negative convention on the two figures. Tax spec §11's constraint is explicit: never annotate the amplification as good or bad, and never suppress it when growth is weak. Measured behaviour of the shared renderer across growth assumptions, from `engine.js` (test case T7 inputs):
 

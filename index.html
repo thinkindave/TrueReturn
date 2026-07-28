@@ -3495,7 +3495,7 @@
             </div>
           </div>
           <div class="proj-line leverage-line" id="projLifeLeverage" hidden>
-            At the <strong id="projLifeLeverageGrowth"></strong> a year growth you assumed, your cash <span id="projLifeLeverageVerb"></span> <strong id="projLifeLeverageRoe"></strong> — the difference is leverage (~<strong id="projLifeLeverageMult"></strong> here).&nbsp;<span class="help-tip" data-tip="Your deposit and costs bought a much larger asset, so the property's growth lands on your smaller cash stake. Leverage multiplies gains and losses equally.">?</span>
+            At the <strong id="projLifeLeverageGrowth"></strong> a year growth you assumed, your cash <span id="projLifeLeverageVerb"></span> <strong id="projLifeLeverageRoe"></strong><span id="projLifeLeverageClause"> — the difference is leverage (~<strong id="projLifeLeverageMult"></strong> here).&nbsp;<span class="help-tip" data-tip="Your deposit and costs bought a much larger asset, so the property's growth lands on your smaller cash stake. Leverage multiplies gains and losses equally.">?</span></span><span id="projLifeLeverageEnd" hidden>.</span>
           </div>
           <div class="proj-line sensitivity-band" id="projLifeSensitivity" hidden></div>
           <div class="proj-line sensitivity-band" id="projLifeCgtTreatment" hidden>
@@ -5127,6 +5127,12 @@
           const verbEl = document.getElementById(`${prefix}LeverageVerb`);
           const roeEl = document.getElementById(`${prefix}LeverageRoe`);
           const multEl = document.getElementById(`${prefix}LeverageMult`);
+          // Exactly one of these two is ever visible: the clause (with its
+          // help-tip, which must hide with it — a tip explaining leverage
+          // next to a sentence that no longer mentions leverage is worse
+          // than no tip) or the bare full stop that ends the short form.
+          const clauseEl = document.getElementById(`${prefix}LeverageClause`);
+          const endEl = document.getElementById(`${prefix}LeverageEnd`);
           // Populate before unhiding, and blank on hide — matches the
           // sensitivity band and stranded note above, and means a throw
           // mid-populate can never leave stale figures on screen.
@@ -5136,13 +5142,20 @@
             verbEl.textContent = lev.cashReturnPct >= 0 ? 'returned' : 'fell';
             roeEl.textContent = Math.abs(lev.cashReturnPct).toFixed(1) + '%';
             roeEl.className = lev.cashReturnPct < 0 ? 'negative' : '';
-            multEl.textContent = lev.leverageMultiple.toFixed(1) + '×';
+            // Only claim leverage when leverage is genuinely the explanation.
+            multEl.textContent = lev.leverageExplainsGap
+              ? lev.leverageMultiple.toFixed(1) + '×'
+              : '';
+            clauseEl.hidden = !lev.leverageExplainsGap;
+            endEl.hidden = lev.leverageExplainsGap;
             leverageEl.hidden = false;
           } else {
             growthEl.textContent = '';
             verbEl.textContent = '';
             roeEl.textContent = '';
             multEl.textContent = '';
+            clauseEl.hidden = false;
+            endEl.hidden = true;
             leverageEl.hidden = true;
           }
         }

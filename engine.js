@@ -865,6 +865,17 @@ function calcLeverageLine({ purchasePrice, totalUpfront, expectedGrowth,
     assetGrowthPct: expectedGrowth * 100,
     cashReturnPct: annualisedReturn,
     leverageMultiple,
+    // Whether the "the difference is leverage" clause is actually TRUE.
+    // Leverage only explains the gap when the cash return beats the assumed
+    // growth. Below the crossover (on the default property, somewhere between
+    // 2% and 2.5% growth) the cash return falls short of the growth rate, and
+    // that gap is holding costs and tax — leverage on +1.5% growth cannot
+    // produce a -2% cash return. Attributing it to leverage would state a
+    // false cause, so the renderer suppresses the clause and its help-tip.
+    // Equal is false too: there is no difference to attribute.
+    // Note the units — expectedGrowth is a fraction, annualisedReturn is
+    // already a percentage.
+    leverageExplainsGap: annualisedReturn > expectedGrowth * 100,
   };
 }
 

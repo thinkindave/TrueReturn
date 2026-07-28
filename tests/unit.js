@@ -2387,6 +2387,59 @@ test('multiple of exactly 1.05 shows — pins the comparison operator', () => {
   approxEqual(r.leverageMultiple, 1.05, 0.0001);
 });
 
+// -- leverageExplainsGap: the "the difference is leverage" clause is only
+// true when the cash return actually EXCEEDS the assumed growth. When it
+// falls below, the gap is holding costs and tax — leverage on positive
+// growth cannot produce a negative cash return — so the clause has to be
+// suppressed rather than misattribute the cause. Units differ: expectedGrowth
+// is a fraction, annualisedReturn is already a percentage. ---------------
+
+test('leverageExplainsGap is true when cash return exceeds assumed growth', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: 0.06, annualisedReturn: 11.3,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, true);
+});
+
+test('leverageExplainsGap is false when cash return falls below assumed growth', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: 0.015, annualisedReturn: -2.0,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
+test('leverageExplainsGap is false when the two are exactly equal', () => {
+  // No difference to attribute, so there is nothing for the clause to explain.
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: 0.04, annualisedReturn: 4.0,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
+test('leverageExplainsGap is false at the -100% floor', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: 0, annualisedReturn: -100,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
+test('leverageExplainsGap is true just above the crossover', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: 0.025, annualisedReturn: 3.8,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, true);
+});
+
 // -- validation: the two figures the line displays must be finite numbers,
 // otherwise the renderer prints "NaN%" (issue #13's shape) or, worse,
 // engine.annualizedReturn's null (returned when cashInvested <= 0) survives
