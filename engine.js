@@ -833,7 +833,9 @@ const DISCLAIMERS = {
 // purchasePrice * (1+expectedGrowth)^years, so the annualised asset growth
 // is identically that input — deriving it would be a no-op round trip.
 // Hidden when there is no leverage gap to explain: a cash purchase has
-// totalUpfront >= purchasePrice, giving a multiple at or below 1.
+// totalUpfront >= purchasePrice, giving a multiple at or below 1 — but the
+// gate below is stricter still, and also hides a band of genuinely
+// leveraged purchases (roughly a 91-95% deposit). See it for why.
 // Returns a discriminated { show } object rather than the engine's usual
 // null-on-inapplicable, because this function's consumer is a renderer, not
 // a downstream calculation — { show: false } is a display instruction, not

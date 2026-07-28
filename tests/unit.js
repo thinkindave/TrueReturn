@@ -2279,12 +2279,13 @@ test('loop starts at year 1 — property turning positive in Year 1 is reported 
 console.log('\ncalcLeverageLine');
 
 // Shared fixture: 520k purchase on 104k upfront (5.0x), 6% growth, 11.7%
-// cash return. Reused verbatim by the three tests below — hoisted to avoid
-// drift if one copy is edited and the others aren't.
-const LEVERAGE_BASE_INPUT = {
+// cash return. Shared by several tests below — hoisted to avoid drift if
+// one copy is edited and the others aren't. Frozen so a future mutation
+// fails loudly here rather than breaking sibling tests order-dependently.
+const LEVERAGE_BASE_INPUT = Object.freeze({
   purchasePrice: 520000, totalUpfront: 104000,
   expectedGrowth: 0.06, annualisedReturn: 11.7,
-};
+});
 
 test('asset growth is the expectedGrowth input, not a derived figure', () => {
   const r = calcLeverageLine(LEVERAGE_BASE_INPUT);
@@ -2372,6 +2373,18 @@ test('multiple of 1.06x (just above the 1.05 threshold): shows', () => {
   });
   assert.strictEqual(r.show, true);
   approxEqual(r.leverageMultiple, 1.06, 0.0001);
+});
+
+test('multiple of exactly 1.05 shows — pins the comparison operator', () => {
+  // 525000 / 500000 = 1.05 exactly, and the guard is `< 1.05`, so this must
+  // show. Without this case, changing `<` to `<=` would pass the suite while
+  // silently hiding the line at the boundary.
+  const r = calcLeverageLine({
+    purchasePrice: 525000, totalUpfront: 500000,
+    expectedGrowth: 0.06, annualisedReturn: 4.2,
+  });
+  assert.strictEqual(r.show, true);
+  approxEqual(r.leverageMultiple, 1.05, 0.0001);
 });
 
 // -- validation: the two figures the line displays must be finite numbers,
