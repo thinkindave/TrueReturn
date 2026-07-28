@@ -900,9 +900,16 @@ function calcLeverageLine({ purchasePrice, totalUpfront, expectedGrowth,
     assetGrowthPct,
     cashReturnPct,
     leverageMultiple,
-    leverageExplainsGap: !atFloor && (shownGrowth >= 0
-      ? shownReturn > shownGrowth
-      : shownReturn < shownGrowth),
+    // Three arms, not two. Zero growth is its own case: leverage multiplies
+    // growth, and any multiple of zero is zero, so at 0% nothing in the gap
+    // is leverage — it is rent, principal repayment and costs. A two-arm
+    // `>= 0` also swallows signed zero (Number((-0.04).toFixed(1)) is -0,
+    // and -0 >= 0 is true), silently routing small negative growth through
+    // the upward branch. `shownGrowth === 0` is true for both +0 and -0.
+    leverageExplainsGap: !atFloor && (
+      shownGrowth === 0 ? false
+        : shownGrowth > 0 ? shownReturn > shownGrowth
+          : shownReturn < shownGrowth),
   };
 }
 

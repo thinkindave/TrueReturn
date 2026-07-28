@@ -2530,6 +2530,52 @@ test('leverageExplainsGap is true when the gap survives display precision', () =
   assert.strictEqual(r.leverageExplainsGap, true);
 });
 
+// -- zero growth is its own arm. Leverage multiplies growth, and any multiple
+// of zero is zero, so at 0% nothing in the gap is leverage — it is rent,
+// principal repayment and costs. These pin the branch SELECTOR: with a
+// two-arm `shownGrowth >= 0` the whole suite passed either way. ----------
+
+test('leverageExplainsGap is false at exactly zero growth, positive return', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: 0, annualisedReturn: 3.2,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
+test('leverageExplainsGap is false at exactly zero growth, negative return', () => {
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: 0, annualisedReturn: -7.5,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
+test('leverageExplainsGap handles signed zero: growth of -0.04% is not "upward"', () => {
+  // Number((-0.04).toFixed(1)) is -0, and -0 >= 0 is true in JS, so a two-arm
+  // selector routed this through the upward branch and returned true.
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: -0.0004, annualisedReturn: 3.2,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
+test('the growth side is rounded too, not just the return', () => {
+  // 5.96 and 5.98 both print "6.0". Comparing raw values here would report a
+  // difference the reader cannot see — the growth side needs the same
+  // treatment as the return side.
+  const r = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 130000,
+    expectedGrowth: 0.0596, annualisedReturn: 5.98,
+  });
+  assert.strictEqual(r.show, true);
+  assert.strictEqual(r.leverageExplainsGap, false);
+});
+
 // -- validation: the two figures the line displays must be finite numbers,
 // otherwise the renderer prints "NaN%" (issue #13's shape) or, worse,
 // engine.annualizedReturn's null (returned when cashInvested <= 0) survives
