@@ -10,7 +10,7 @@
 **The whole-journey calculator is the landing view.** TrueReturn's identity (per the launch essay) is: "enter your purchase price, costs, rent, holding period, expected growth, tax rate; see what the real return actually is." The 2027 comparison is the headline feature *within* that tool, not the front door. Structure:
 
 1. **Landing view: the whole-journey calculator** — the existing single-sale TrueReturn calculator, upgraded with:
-   - the **"Return on your cash"** block (§9) — leverage/ROE is first-class on the landing experience;
+   - the **leverage line** (§9) — the gap between assumed growth and return on the cash actually invested is named explicitly, not left for the reader to infer;
    - the **opportunity-cost benchmark** (§2/§3 additions) — optional, collapsed by default;
    - the **downside growth range and quick-sets** (§2);
    - the dual-era engine invisibly (a post-2027 sale date now routes to the new calculation with no user action needed).
@@ -54,7 +54,7 @@ Progressive disclosure in three groups. Do not present all inputs at once.
 
 ## 3. Output display (whole-journey calculator)
 
-The calculator's results keep TrueReturn's existing output style: the after-tax net figure as the hero, the Return-on-your-cash block (§9) beneath it, the benchmark line when enabled (§9), and the existing collapsible breakdown — now itemising the dual-era split when a post-2027 sale routes there (pre-2027 component, post-2027 component, minimum-tax top-up if it bound), the deemed-value chip (§2), and the quarantine pool line (§4) where applicable.
+The calculator's results keep TrueReturn's existing output style: the after-tax net figure as the hero, the headline strip's Annual Cash Return cell, the leverage line (§9) on the 15-year period, the benchmark line when enabled (§9, deferred), and the existing collapsible breakdown — now itemising the dual-era split when a post-2027 sale routes there (pre-2027 component, post-2027 component, minimum-tax top-up if it bound), the deemed-value chip (§2), and the quarantine pool line (§4) where applicable.
 
 **Deemed-value sensitivity band (mandatory wherever a dual-era figure is shown):** a one-line range: "If the 30 June 2027 value is 10% lower/higher than estimated, this outcome ranges from $A to $B." Implemented as engine re-runs at ±10% on `deemedValue20270630`, holding every other input (including the Div 43 split and quarantine pool) constant. If the band width exceeds 15% of the net-proceeds figure, add: "This estimate matters a lot for your result — consider getting a real valuation in mid-2027." It may not be hidden behind a toggle — the band must be visible whenever its figure is (a period's collapsed detail does not count as visible; place it in the always-visible headline strip).
 
@@ -129,7 +129,7 @@ Then the running figure — "Quarantined losses by sale: $Z" — with the *later
 
 ## 6. Copy guidelines
 
-Plain verbs, sentence case, TrueReturn's existing voice (candid, numerate, lightly wry — match the essays). Name things by what the user recognises: "value at 30 June 2027," not "deemed reacquisition market value." Every jargon term used in results (quarantined, indexation, minimum tax, leverage multiple, return on equity, IRR) gets a hover/tap definition of one sentence. Reuse the essay's framings where they already exist: "the cash you actually put in", "with none of the holding costs, tenants, or time." Errors state what to fix: "Sale date 1 must be before 1 July 2027 — that's the whole comparison." / "Add a loan amount to see your return on the cash you put in."
+Plain verbs, sentence case, TrueReturn's existing voice (candid, numerate, lightly wry — match the essays). Name things by what the user recognises: "value at 30 June 2027," not "deemed reacquisition market value." Every jargon term used in results (quarantined, indexation, minimum tax, leverage multiple, return on equity) gets a hover/tap definition of one sentence. IRR is deliberately absent from that list — it is not surfaced (§9). Reuse the essay's framings where they already exist: "the cash you actually put in", "with none of the holding costs, tenants, or time." Errors state what to fix: "Sale date 1 must be before 1 July 2027 — that's the whole comparison." / "Add a loan amount to see your return on the cash you put in."
 
 ## 7. Explicitly not in v1
 
