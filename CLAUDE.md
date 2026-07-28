@@ -1,7 +1,18 @@
 # TrueReturn — Claude Code Workflow
 
 ## Project overview
-Single-file HTML/CSS/JS property investment calculator. All code lives in `index.html`. No build system, no npm, no framework.
+Vanilla HTML/CSS/JS property investment calculator. No build system, no npm, no framework — files are served as-is.
+
+- `index.html` — the calculator: all markup, CSS, and DOM/UI JavaScript.
+- `engine.js` — the pure calculation engine. No DOM access. Loaded by `index.html`
+  as a classic script (declarations land in global lexical scope) and `require()`d
+  by the Node tests via a `module.exports` guard at the foot of the file.
+- `about.html`, `contact.html`, `privacy.html`, `thank-you.html` — standalone
+  static pages linked from the calculator. They do not load `engine.js`.
+
+Calculation logic belongs in `engine.js`; anything touching the DOM belongs in
+`index.html`. Keep that split — the test suites depend on the engine being
+importable without a DOM.
 
 ## Mandatory change pipeline
 

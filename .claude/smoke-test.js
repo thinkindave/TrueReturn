@@ -7,9 +7,18 @@
 
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
 const HTML_PATH = path.join(__dirname, '../index.html');
-const TESTS_PATH = path.join(__dirname, '../tests/unit.js');
+
+// Every test suite that must run. Each is executed in its own child process so
+// that (a) the shared module-level counters in tests/harness.js don't pool into
+// one running total, and (b) a failing suite's summary() process.exit(1) can't
+// abort the rest of the smoke test.
+const TEST_SUITES = [
+  { label: 'tests/unit.js', file: path.join(__dirname, '../tests/unit.js') },
+  { label: 'tests/engine.test.js', file: path.join(__dirname, '../tests/engine.test.js') }
+];
 
 let passed = 0;
 let failed = 0;
@@ -29,13 +38,35 @@ try {
   fail('JS syntax error: ' + e.message);
 }
 
-// 2. Unit tests
-try {
-  require(TESTS_PATH);
-  ok('Unit tests passed');
-} catch(e) {
-  fail('Unit tests failed: ' + e.message);
-}
+// 2. Unit tests — each suite reported separately so a failure is attributable
+//    to the right file.
+TEST_SUITES.forEach(suite => {
+  if (!fs.existsSync(suite.file)) {
+    fail(`${suite.label}: suite file not found`);
+    return;
+  }
+
+  const run = spawnSync(process.execPath, [suite.file], { encoding: 'utf8' });
+  const output = (run.stdout || '') + (run.stderr || '');
+
+  // harness.js summary() prints "N passed, M failed" as its final line.
+  const counts = output.match(/(\d+) passed, (\d+) failed/g);
+  const lastCount = counts ? counts[counts.length - 1] : null;
+
+  if (run.status === 0 && lastCount && /, 0 failed/.test(lastCount)) {
+    ok(`${suite.label}: ${lastCount}`);
+    return;
+  }
+
+  fail(`${suite.label}: ${lastCount || 'suite did not report a summary (crashed on load?)'}`);
+  // Surface the individual failing assertions so the cause is visible.
+  const failingLines = output.split('\n').filter(l => l.includes('✗'));
+  if (failingLines.length) {
+    failingLines.forEach(l => console.error('   ' + l.trim()));
+  } else if (output.trim()) {
+    console.error(output.trim().split('\n').slice(-15).map(l => '   ' + l).join('\n'));
+  }
+});
 
 // 3. Required fixed IDs
 // Note: expectedGrowth was intentionally removed (moved to per-property data-field)

@@ -1,6 +1,6 @@
 // tests/unit.js
-// Unit tests for pure functions in TrueReturn/index.html.
-// Run with: node /Users/thinkindave/TrueReturn/tests/unit.js
+// Unit tests for the pure functions exported from engine.js.
+// Run with: node tests/unit.js  (from the repository root)
 
 const { assert, test, approxEqual, summary } = require('./harness.js');
 const { formatCurrency, calcStampDuty, calcDepreciation, stateDefaults } = require('../engine.js');
