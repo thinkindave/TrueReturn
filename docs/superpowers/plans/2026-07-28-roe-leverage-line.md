@@ -317,7 +317,7 @@ Append as a new numbered check, following the style of the existing checks in th
 // made deliberately under golden-file tests, not as a side effect.
 if (!html.includes('const roeBase = totalUpfront > 0 ? 1 + totalProfit / totalUpfront : 0;')) {
   fail('Inline ROE computation changed — Annual Cash Return may have moved');
-} else if (!/calcLeverageLine\(\{[\s\S]{0,200}annualisedReturn/.test(html)) {
+} else if (!/calcLeverageLine\(\{[\s\S]{0,200}\bannualisedReturn\s*[,}]/.test(html)) {
   fail('calcLeverageLine is not being passed the existing annualisedReturn');
 } else {
   ok('Leverage line consumes the shipped ROE rather than recomputing it');

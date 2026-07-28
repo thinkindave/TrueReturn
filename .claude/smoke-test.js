@@ -178,9 +178,14 @@ if (inlineHandlers && inlineHandlers.length > 0) {
     fail('Inline roeBase computation not found or altered — expected: ' + roeBaseLine);
   }
 
-  const passesAnnualisedReturn = /calcLeverageLine\(\{[\s\S]{0,200}annualisedReturn/.test(html);
+  // Requires the SHORTHAND property `annualisedReturn,` — i.e. the existing
+  // local variable. Matching the bare name would also accept
+  // `annualisedReturn: calcEquityReturns(...).roeSimple`, which is precisely
+  // the rewiring this guard exists to prevent, so the trailing [,}] matters.
+  const passesAnnualisedReturn =
+    /calcLeverageLine\(\{[\s\S]{0,200}\bannualisedReturn\s*[,}]/.test(html);
   if (!passesAnnualisedReturn) {
-    fail('calcLeverageLine is not being passed the existing annualisedReturn — leverage line may be recomputing its own ROE');
+    fail('calcLeverageLine is not being passed the existing annualisedReturn local — leverage line may be recomputing its own ROE');
   }
 
   if (hasRoeBase && passesAnnualisedReturn) {
