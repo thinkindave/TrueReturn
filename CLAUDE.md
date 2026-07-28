@@ -1,7 +1,18 @@
 # TrueReturn — Claude Code Workflow
 
 ## Project overview
-Single-file HTML/CSS/JS property investment calculator. All code lives in `index.html`. No build system, no npm, no framework.
+Vanilla HTML/CSS/JS property investment calculator. No build system, no npm, no framework — files are served as-is.
+
+- `index.html` — the calculator: all markup, CSS, and DOM/UI JavaScript.
+- `engine.js` — the pure calculation engine. No DOM access. Loaded by `index.html`
+  as a classic script (declarations land in global lexical scope) and `require()`d
+  by the Node tests via a `module.exports` guard at the foot of the file.
+- `about.html`, `contact.html`, `privacy.html`, `thank-you.html` — standalone
+  static pages linked from the calculator. They do not load `engine.js`.
+
+Calculation logic belongs in `engine.js`; anything touching the DOM belongs in
+`index.html`. Keep that split — the test suites depend on the engine being
+importable without a DOM.
 
 ## Mandatory change pipeline
 
@@ -60,13 +71,13 @@ After all agents pass, present:
 
 ## Architecture quick-reference
 
-- **Single file**: `index.html` — all HTML, CSS, JS in one file
+- **Two files**: `index.html` (HTML, CSS, DOM/UI JS) + `engine.js` (pure calculations, DOM-free)
 - **Property inputs**: `data-field="fieldName"` — never `id=` on row inputs
 - **Property results**: `data-result="key"` — written via `setResult()`
 - **Breakdown/Projections**: fixed `id=` attributes, written via `getElementById()`
 - **Critical rule**: `const stateDefaults` must be defined BEFORE any call to `calculate()` or `initPropertySelection()`
 - **Event delegation**: all listeners on `.property-rows` are delegated from the container
-- **Tests**: `tests/unit.js` — run with `node tests/unit.js`
+- **Tests**: `tests/unit.js` (pure helpers) and `tests/engine.test.js` (reform tax engine), sharing `tests/harness.js`. Run both plus the structural checks with `node .claude/smoke-test.js` — that is the pipeline entry point. Individual suites run directly for diagnosis (`node tests/engine.test.js`).
 
 ## Agents reference
 
