@@ -4000,7 +4000,7 @@
         taxRate: document.getElementById('marginalTaxRateSelect').value,
         properties: entries.map(function(entry) {
           var obj = {};
-          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate'].forEach(function(f) {
+          ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','benchmark'].forEach(function(f) {
             var el = entry.querySelector('[data-field="' + f + '"]');
             obj[f] = el ? (el.type === 'checkbox' ? el.checked : el.value) : '';
           });
@@ -4014,7 +4014,7 @@
       var rows = document.querySelector('.property-rows');
       var template = rows.querySelector('.property-entry');
       if (!template) return;
-      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate'];
+      var fields = ['name','purchasePrice','depositPct','loanType','loanTerm','state','interestRate','managementFee','weeklyRent','expectedGrowth','propertyAge','marginalTaxRate','benchmark'];
       var fallbackTaxRate = state.taxRate || '0.37';
       var newEntries = state.properties.slice(0, 8).map(function(prop) {
         var clone = template.cloneNode(true);
@@ -5200,6 +5200,67 @@
             clauseEl.hidden = false;
             endEl.hidden = true;
             leverageEl.hidden = true;
+          }
+        }
+
+        // Benchmark line — all three periods (UI spec §9 v3.0, issue #14).
+        // annualisedReturn is passed in, never recomputed, so the shipped
+        // "Annual Cash Return" figure cannot move. Unlike the leverage line
+        // this renders on every period: the benchmark's after-tax return
+        // varies by holding period because CGT is paid once at sale.
+        const benchmarkEl = document.getElementById(`${prefix}Benchmark`);
+        if (benchmarkEl) {
+          const bench = calcBenchmarkLine({
+            depositCashInvested: totalUpfront,
+            contractDate, years, purchasePrice,
+            benchmarkKey: getField('benchmark'),
+            marginalRate: marginalTaxRate,
+            annualisedReturn,
+          });
+          const bNameEl = document.getElementById(`${prefix}BenchmarkName`);
+          const bRoeEl = document.getElementById(`${prefix}BenchmarkRoe`);
+          const bPropEl = document.getElementById(`${prefix}BenchmarkPropertyRoe`);
+          // Populate before unhiding, and blank on hide — matches the
+          // leverage line and sensitivity band above, so a throw mid-populate
+          // can never leave stale figures on screen.
+          if (bench.show) {
+            bNameEl.textContent = bench.shortLabel;
+            bRoeEl.textContent = bench.benchmarkRoePct.toFixed(1) + '%';
+            bRoeEl.className = bench.benchmarkRoePct < 0 ? 'negative' : '';
+            bPropEl.textContent = bench.propertyReturnPct.toFixed(1) + '%';
+            bPropEl.className = bench.propertyReturnPct < 0 ? 'negative' : '';
+            benchmarkEl.hidden = false;
+          } else {
+            bNameEl.textContent = '';
+            bRoeEl.textContent = '';
+            bPropEl.textContent = '';
+            benchmarkEl.hidden = true;
+          }
+
+          // The note is stated ONCE per property, not per period. Rendered
+          // from the 15-year pass because the leverage multiple and the
+          // preset metadata are identical across all three.
+          if (prefix === 'projLife') {
+            const noteEl = document.getElementById('benchmarkNote');
+            const noteLevEl = document.getElementById('benchmarkNoteLeverage');
+            const noteRegimeEl = document.getElementById('benchmarkNoteRegime');
+            const noteNameEl = document.getElementById('benchmarkNoteName');
+            const noteAsAtEl = document.getElementById('benchmarkNoteAsAt');
+            if (bench.show && bench.leverageMultiple > 0) {
+              noteLevEl.textContent = bench.leverageMultiple.toFixed(1) + '×';
+              noteNameEl.textContent = bench.shortLabel;
+              noteAsAtEl.textContent = bench.asAtLabel;
+              // Gated on the arithmetic (the regime the engine actually
+              // routed), never assumed from the contract date.
+              noteRegimeEl.hidden = bench.regime !== 'DUAL_ERA';
+              noteEl.hidden = false;
+            } else {
+              noteLevEl.textContent = '';
+              noteNameEl.textContent = '';
+              noteAsAtEl.textContent = '';
+              noteRegimeEl.hidden = false;
+              noteEl.hidden = true;
+            }
           }
         }
       });
