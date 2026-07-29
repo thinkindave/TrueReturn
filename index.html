@@ -603,6 +603,7 @@
     .benchmark-control-label {
       font-size: 0.8125rem;
       color: var(--text-secondary);
+      white-space: nowrap;
     }
     .benchmark-select {
       font-size: 0.8125rem;
@@ -611,6 +612,12 @@
       border: 1px solid var(--border-subtle);
       background: var(--input-bg, transparent);
       color: var(--text-primary);
+      /* Selects elsewhere in this app are full-width form fields; this one is
+         an inline control beside its label, so the global width must be
+         overridden or it fills the row and wraps onto its own line. */
+      width: auto;
+      flex: 0 1 auto;
+      min-width: 12rem;
       max-width: 100%;
     }
 
