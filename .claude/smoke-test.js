@@ -150,7 +150,10 @@ const requiredIds = [
   'proj10Benchmark', 'proj10BenchmarkName', 'proj10BenchmarkRoe', 'proj10BenchmarkPropertyRoe',
   'projLifeBenchmark', 'projLifeBenchmarkName', 'projLifeBenchmarkRoe', 'projLifeBenchmarkPropertyRoe',
   'benchmarkNote', 'benchmarkNoteLeverageSentence', 'benchmarkNoteLeverage',
-  'benchmarkNoteRegime', 'benchmarkNoteName', 'benchmarkNoteAsAt'
+  'benchmarkNoteRegime', 'benchmarkNoteName', 'benchmarkNoteAsAt',
+  // The visible comparator control lives in the Projections module; the
+  // per-property value is a hidden data-field="benchmark" in the row.
+  'benchmarkSelect'
 ];
 let idsFailed = false;
 requiredIds.forEach(id => {

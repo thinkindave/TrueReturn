@@ -593,6 +593,26 @@
       font-weight: 600;
       font-variant-numeric: tabular-nums;
     }
+    .benchmark-control-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin: 0.5rem 0 1rem;
+    }
+    .benchmark-control-label {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+    .benchmark-select {
+      font-size: 0.8125rem;
+      padding: 0.3rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: var(--input-bg, transparent);
+      color: var(--text-primary);
+      max-width: 100%;
+    }
 
     .split-panel .projections-grid {
       grid-template-columns: 1fr;
@@ -2947,14 +2967,11 @@
                     <option value="old">Established, 20+ years</option>
                   </select>
                 </div>
-                <div class="prop-col advanced-only" data-label="Compare with">
-                  <select data-field="benchmark">
-                    <option value="" selected>None</option>
-                    <option value="vas">VAS (Australian shares)</option>
-                    <option value="vgs">VGS (international shares)</option>
-                    <option value="hisa">High-interest savings</option>
-                  </select>
-                </div>
+                <!-- Backing store for the Projections module's "Compare to
+                     benchmark" select, mirroring marginalTaxRate: the visible
+                     control lives in that module, the per-property value lives
+                     here so it persists and copies with the row. -->
+                <input type="hidden" data-field="benchmark" value="">
                 <input type="hidden" data-field="marginalTaxRate" value="0.37">
                 <div class="prop-col prop-col-delete">
                   <button class="copy-row-btn" title="Duplicate property">
@@ -3213,6 +3230,16 @@
     <div class="card projections-card">
       <h2>Projections</h2>
       <p class="snapshot-property-name" id="projectionsPropertyLabel">Property 1</p>
+
+      <div class="benchmark-control-row">
+        <label class="benchmark-control-label" for="benchmarkSelect">Compare to benchmark</label>
+        <select id="benchmarkSelect" class="benchmark-select">
+          <option value="" selected>– Select –</option>
+          <option value="vas">VAS (Australian shares)</option>
+          <option value="vgs">VGS (international shares)</option>
+          <option value="hisa">High-interest savings</option>
+        </select>
+      </div>
 
       <div class="deemed-value-chip" id="deemedValueChip" hidden>
         <span>Estimated value at 30 June 2027: <strong id="deemedValueDisplay">-</strong>&nbsp;<span class="help-tip" data-tip="The 2027 tax change splits your gain at this date. This is our projection from your purchase price at your growth rate.">?</span></span>
@@ -3767,8 +3794,18 @@
       var taxField = entry.querySelector('[data-field="marginalTaxRate"]');
       var taxSelect = document.getElementById('marginalTaxRateSelect');
       if (taxField && taxSelect) taxSelect.value = taxField.value || SIMPLE_MODE_TAX;
+      syncBenchmarkSelect(entry);
       updateSectionLabels(entry);
       calculate();
+    }
+
+    // The benchmark comparator is per-property but its control lives in the
+    // Projections module, so the visible select has to follow the selection —
+    // same arrangement as marginalTaxRateSelect above.
+    function syncBenchmarkSelect(entry) {
+      var field = entry && entry.querySelector('[data-field="benchmark"]');
+      var sel = document.getElementById('benchmarkSelect');
+      if (sel) sel.value = field ? (field.value || '') : '';
     }
 
     function updateDeleteButtonState() {
@@ -5916,6 +5953,17 @@
         if (field) field.value = this.value;
       }
       localStorage.setItem('truereturn_taxrate', this.value);
+      calculate();
+    });
+
+    // Writes through to the selected property's hidden data-field, so the
+    // comparator persists, copies with the row, and can differ per property.
+    document.getElementById('benchmarkSelect').addEventListener('change', function() {
+      var entry = getSelectedEntry();
+      if (entry) {
+        var field = entry.querySelector('[data-field="benchmark"]');
+        if (field) field.value = this.value;
+      }
       calculate();
     });
 

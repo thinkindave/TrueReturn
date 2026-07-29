@@ -214,11 +214,20 @@ Suppress on the arithmetic, never on a proxy input, so the rule stays correct if
 
 Implements tax spec §12. Consumes the leverage line's outputs: the property's return on cash supplies the X.X%, the leverage multiple supplies the M× in the note.
 
-**Control.** A per-property `data-field="benchmark"` select — **None** (default), VAS, VGS, high-interest savings. None means nothing renders and the cards are byte-identical to before the feature. Strictly opt-in.
+**Control — at the top of the Projections module** (PO decision, 2026-07-29), not in the property row:
 
-Two plumbing facts, both verified rather than assumed:
-- **Copy-property needs no change** — `index.html` copies every `select[data-field]` value to the clone generically.
-- **Persistence does.** `serializeState` and `deserializeState` iterate a **hardcoded field-name array**, not `[data-field]` generally, so `'benchmark'` must appear in both. Adding a `data-field` input to this app does *not* automatically persist it.
+> Compare to benchmark  [ **– Select –** · VAS (Australian shares) · VGS (international shares) · High-interest savings ]
+
+"– Select –" is the default and means off: nothing renders and the cards are byte-identical to before the feature. Strictly opt-in. It sits directly under the property-name label, above the deemed-value chip — the control belongs beside the output it governs, and the property row was already dense.
+
+**The value is per-property, the control is not.** This mirrors `marginalTaxRateSelect` exactly: the visible `<select id="benchmarkSelect">` lives in the module, while the value is stored on the selected property as a **hidden** `data-field="benchmark"`. `selectEntry()` calls `syncBenchmarkSelect()` so the control follows the selection, and the select's own `change` handler writes back through to the selected entry.
+
+The consequence is deliberate and matches the tax-rate control: switching properties changes what the dropdown shows, because the comparator belongs to the property. Verified — Property 1 on VGS, Property 2 on "– Select –", switching back restores VGS and its note.
+
+Three plumbing facts, all verified rather than assumed:
+- **Copy-property needs no change** — `index.html` copies every `select[data-field]` to the clone generically, and the hidden input is covered by the same field-value copy path.
+- **Persistence needs an explicit change.** `serializeState` and `deserializeState` iterate a **hardcoded field-name array**, not `[data-field]` generally, so `'benchmark'` must appear in both. Adding a `data-field` input to this app does *not* automatically persist it.
+- **A new row defaults to off** — `addPropertyRow` clears every `[data-field]` to `''`, which is the "– Select –" value.
 
 **One line per period card, on all three.** Unlike the leverage line, which sits on the 15-year card alone. That decision rested on leverage being *identical* across periods, so repeating it read as padding. The benchmark's after-tax return is not identical: CGT is paid once at sale, so a longer hold defers it and the annualised return climbs toward the gross. Measured on the shipped default property (as §9 above; cash invested $154,575, leverage 4.21×):
 
