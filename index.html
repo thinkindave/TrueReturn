@@ -569,6 +569,31 @@
     }
     .leverage-line strong.negative { color: var(--negative); }
 
+    /* Benchmark line — all three projection cards (UI spec §9 v3.0, #14) */
+    .benchmark-line {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 0.5rem 0 0.375rem;
+    }
+    .benchmark-line strong {
+      color: var(--text-primary);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .benchmark-line strong.negative { color: var(--negative); }
+    .benchmark-note {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 0.75rem 0 0;
+    }
+    .benchmark-note strong {
+      color: var(--text-primary);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
     .split-panel .projections-grid {
       grid-template-columns: 1fr;
       gap: 0.75rem;
@@ -2922,6 +2947,14 @@
                     <option value="old">Established, 20+ years</option>
                   </select>
                 </div>
+                <div class="prop-col advanced-only" data-label="Compare with">
+                  <select data-field="benchmark">
+                    <option value="" selected>None</option>
+                    <option value="vas">VAS (Australian shares)</option>
+                    <option value="vgs">VGS (international shares)</option>
+                    <option value="hisa">High-interest savings</option>
+                  </select>
+                </div>
                 <input type="hidden" data-field="marginalTaxRate" value="0.37">
                 <div class="prop-col prop-col-delete">
                   <button class="copy-row-btn" title="Duplicate property">
@@ -3210,6 +3243,9 @@
           <div class="proj-line sensitivity-band" id="proj5CgtTreatment" hidden>
             <span id="proj5CgtTreatmentText"></span>
           </div>
+          <div class="proj-line benchmark-line" id="proj5Benchmark" hidden>
+            The same cash in <strong id="proj5BenchmarkName"></strong> over the same period would have returned about <strong id="proj5BenchmarkRoe"></strong> a year after tax, with none of the holding costs, tenants, or time. Your property returned <strong id="proj5BenchmarkPropertyRoe"></strong>.
+          </div>
           <div class="period-body">
 
           <div class="proj-section">
@@ -3353,6 +3389,9 @@
           <div class="proj-line sensitivity-band" id="proj10Sensitivity" hidden></div>
           <div class="proj-line sensitivity-band" id="proj10CgtTreatment" hidden>
             <span id="proj10CgtTreatmentText"></span>
+          </div>
+          <div class="proj-line benchmark-line" id="proj10Benchmark" hidden>
+            The same cash in <strong id="proj10BenchmarkName"></strong> over the same period would have returned about <strong id="proj10BenchmarkRoe"></strong> a year after tax, with none of the holding costs, tenants, or time. Your property returned <strong id="proj10BenchmarkPropertyRoe"></strong>.
           </div>
           <div class="period-body">
 
@@ -3501,6 +3540,9 @@
           <div class="proj-line leverage-line" id="projLifeLeverage" hidden>
             At the <strong id="projLifeLeverageGrowth"></strong> a year growth you assumed, your cash <span id="projLifeLeverageVerb"></span> <strong id="projLifeLeverageRoe"></strong><span id="projLifeLeverageClause"> — the difference is leverage (~<strong id="projLifeLeverageMult"></strong> here).&nbsp;<span class="help-tip" data-tip="Your deposit and costs bought a much larger asset, so the property's growth lands on your smaller cash stake. Leverage multiplies gains and losses equally.">?</span></span><span id="projLifeLeverageEnd" hidden>.</span>
           </div>
+          <div class="proj-line benchmark-line" id="projLifeBenchmark" hidden>
+            The same cash in <strong id="projLifeBenchmarkName"></strong> over the same period would have returned about <strong id="projLifeBenchmarkRoe"></strong> a year after tax, with none of the holding costs, tenants, or time. Your property returned <strong id="projLifeBenchmarkPropertyRoe"></strong>.
+          </div>
           <div class="period-body">
 
           <div class="proj-section">
@@ -3623,6 +3665,7 @@
       </div>
       <p class="projections-disclaimer">This tool provides general information only and does not constitute financial advice. You should consider your own circumstances and seek professional advice.</p>
       <p class="projections-disclaimer" id="minTaxFootnote" hidden></p>
+      <p class="benchmark-note" id="benchmarkNote" hidden>Your property figures are leveraged (~<strong id="benchmarkNoteLeverage"></strong> here); the benchmark is not.<span id="benchmarkNoteRegime"> The same 2027 CGT changes apply to shares too — reflected here.</span> <span id="benchmarkNoteName"></span> returns are historical figures as at <strong id="benchmarkNoteAsAt"></strong>, before tax — not a forecast.</p>
     </div>
     </div>
 
