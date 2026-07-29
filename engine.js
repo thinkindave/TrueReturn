@@ -750,12 +750,24 @@ function calcEquityReturns({ purchasePrice, purchaseCosts = 0, loanAmount,
 // value on that date. NG quarantine never applies (not residential rental).
 // Assumes acquisition before 1 July 2027, like the dual-era property
 // module; post-boundary acquisitions are out of scope for v1.
-// Preset values are CONFIG — historical, before tax, not a forecast
-// (figures as at July 2026; update from source when refreshed).
+// Preset values are CONFIG — historical, before tax, not a forecast.
+// Each carries its own `asAt` and `source`: .claude/smoke-test.js FAILS when
+// any asAt is more than 12 months old, so drift becomes a decision someone
+// has to make rather than a wrong number nobody notices. When refreshing,
+// update BOTH annualReturn and asAt, and re-check the source URL below.
+//   VAS  — https://www.vanguard.com.au/personal/invest-with-us/etf?portId=8205&tab=performance
+//   VGS  — https://www.vanguard.com.au/personal/invest-with-us/etf?portId=8212&tab=performance
+//   HISA — https://www.finder.com.au/savings-accounts/interest-rate
 const BENCHMARK_PRESETS = {
-  vas:  { label: 'VAS (Australian shares)',   annualReturn: 0.088 },
-  vgs:  { label: 'VGS (international shares)', annualReturn: 0.115 },
-  hisa: { label: 'High-interest savings',      annualReturn: 0.045 },
+  vas:  { label: 'VAS (Australian shares)',    annualReturn: 0.088,
+          asAt: '2026-07-15',
+          source: 'Vanguard Australia — VAS ETF performance, retrieved 15 July 2026' },
+  vgs:  { label: 'VGS (international shares)', annualReturn: 0.115,
+          asAt: '2026-07-15',
+          source: 'Vanguard Australia — VGS ETF performance, retrieved 15 July 2026' },
+  hisa: { label: 'High-interest savings',      annualReturn: 0.048,
+          asAt: '2026-07-29',
+          source: 'finder.com.au savings account interest rates, retrieved 29 July 2026' },
 };
 
 function calcBenchmark({ depositCashInvested, contractDate, saleDate,

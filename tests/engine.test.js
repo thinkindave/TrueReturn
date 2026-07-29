@@ -775,11 +775,20 @@ test('fee drag default 0.10% p.a. reduces the compounded value', () => {
   approxEqual(withDrag.valueAtSale, 100000 * Math.pow(1.089, 5), 1);
 });
 
-test('benchmark presets exist as config with the disclaimer flag', () => {
+test('benchmark presets exist as config with provenance and the disclaimer flag', () => {
   for (const key of ['vas', 'vgs', 'hisa']) {
     const p = E.BENCHMARK_PRESETS[key];
     assert(p && typeof p.annualReturn === 'number' && p.label,
       `preset ${key} must be config with label + annualReturn`);
+    // Provenance (issue #14): these are historical figures that go stale.
+    // .claude/smoke-test.js FAILS when asAt is over 12 months old, so both
+    // fields must exist and asAt must be a parseable ISO date.
+    assert(typeof p.asAt === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.asAt),
+      `preset ${key} must carry an ISO asAt date, got ${JSON.stringify(p.asAt)}`);
+    assert(!isNaN(new Date(p.asAt + 'T00:00:00Z').getTime()),
+      `preset ${key}.asAt must be a real date, got ${p.asAt}`);
+    assert(typeof p.source === 'string' && p.source.length > 0,
+      `preset ${key} must record a non-empty source`);
   }
   const r = E.calcBenchmark({
     depositCashInvested: 100000,
@@ -787,6 +796,10 @@ test('benchmark presets exist as config with the disclaimer flag', () => {
     benchmarkReturn: E.BENCHMARK_PRESETS.vas.annualReturn, marginalRate: 0.39,
   });
   assert.strictEqual(r.flags.historicalNotForecast, true);
+});
+
+test('HISA preset carries the refreshed 4.8% rate', () => {
+  approxEqual(E.BENCHMARK_PRESETS.hisa.annualReturn, 0.048, 1e-9);
 });
 
 // ── Negative & zero growth (spec §13) ────────────────────────────────────
