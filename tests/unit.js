@@ -2693,6 +2693,36 @@ test('leverage multiple agrees with calcLeverageLine on the same inputs', () => 
   approxEqual(b.leverageMultiple, l.leverageMultiple, 1e-9);
 });
 
+test('leverage is not material on a cash purchase', () => {
+  // Acquisition costs push cash invested ABOVE the purchase price, so the
+  // multiple is below 1. The note must not claim "your property figures are
+  // leveraged (~1.0× here)" on a property with no borrowing at all.
+  const r = calcBenchmarkLine({
+    ...BENCHMARK_BASE_INPUT, purchasePrice: 650000, depositCashInvested: 675000,
+  });
+  assert.strictEqual(r.show, true, 'the line itself still renders');
+  assert.strictEqual(r.leverageIsMaterial, false);
+});
+
+test('leverage materiality uses the same threshold as calcLeverageLine', () => {
+  // Bracketing fixtures around 1.05. If these two gates ever drift, the note
+  // would claim leverage in a band where the leverage line stays hidden —
+  // which is exactly the defect this pins.
+  const at = (mult) => {
+    const cash = 650000 / mult;
+    const b = calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, purchasePrice: 650000, depositCashInvested: cash });
+    const l = calcLeverageLine({ purchasePrice: 650000, totalUpfront: cash, expectedGrowth: 0.06, annualisedReturn: 11.27 });
+    return { bench: b.leverageIsMaterial, lev: l.show };
+  };
+  const below = at(1.04), boundary = at(1.05), above = at(1.06);
+  assert.strictEqual(below.bench, false);
+  assert.strictEqual(below.lev, false);
+  assert.strictEqual(boundary.bench, true);
+  assert.strictEqual(boundary.lev, true);
+  assert.strictEqual(above.bench, true);
+  assert.strictEqual(above.lev, true);
+});
+
 test('regime is DUAL_ERA for a sale after the 2027 boundary', () => {
   const r = calcBenchmarkLine(BENCHMARK_BASE_INPUT);
   assert.strictEqual(r.regime, 'DUAL_ERA');

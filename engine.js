@@ -820,6 +820,16 @@ function calcBenchmark({ depositCashInvested, contractDate, saleDate,
   };
 }
 
+// Below this multiple, a renderer's toFixed(1) prints "~1.0×", which asserts
+// an amplification that doesn't exist. Shared by calcLeverageLine (which hides
+// its whole clause) and calcBenchmarkLine (which drops the note's leverage
+// sentence), so the two can never drift apart. A cash purchase sits below 1
+// (acquisition costs push cash invested above the purchase price); the band
+// between is reachable at roughly a 91–95% deposit.
+// TIED TO THE RENDER PRECISION: if either renderer stops using toFixed(1),
+// revisit this number in the same change.
+const LEVERAGE_DISPLAY_MIN = 1.05;
+
 // ── Opportunity-cost benchmark line (UI spec §9 v3.0, issue #14) ─────────
 // Presentation helper for the benchmark line on each projection period card.
 // Like calcLeverageLine it returns a discriminated { show } object rather than
@@ -884,6 +894,13 @@ function calcBenchmarkLine({ depositCashInvested, contractDate, years,
     // unit test so the note and the leverage line cannot print different
     // multiples for one property.
     leverageMultiple: purchasePrice > 0 ? purchasePrice / depositCashInvested : null,
+    // Whether the note may CLAIM leverage. Gated on the same threshold as
+    // calcLeverageLine's whole clause: on a cash purchase the multiple prints
+    // "~1.0×" and the sentence "your property figures are leveraged" is simply
+    // false. The note's remaining sentences (the 2027 clause and the staleness
+    // disclaimer) still render — those are required regardless of leverage.
+    leverageIsMaterial: purchasePrice > 0
+      && (purchasePrice / depositCashInvested) >= LEVERAGE_DISPLAY_MIN,
     regime: b.regime,
   };
 }
@@ -936,10 +953,9 @@ function calcLeverageLine({ purchasePrice, totalUpfront, expectedGrowth,
   // calcEquityReturns' own leverageMultiple field, which is based on
   // depositCashInvested — a different base. Don't assume the two match.
   const leverageMultiple = purchasePrice / totalUpfront;
-  // Below 1.05 the renderer's toFixed(1) prints "~1.0x", which asserts a
-  // difference that doesn't exist — so the gate has to hide it. Revisit
-  // this number if the render precision (currently toFixed(1)) changes.
-  if (leverageMultiple < 1.05) return { show: false };
+  // See LEVERAGE_DISPLAY_MIN: below it the renderer's toFixed(1) prints
+  // "~1.0x", which asserts a difference that doesn't exist.
+  if (leverageMultiple < LEVERAGE_DISPLAY_MIN) return { show: false };
   // Hoisted so the predicate below reads against the two fields the line
   // actually displays, and so the fraction -> percentage conversion exists
   // once. Note the units: expectedGrowth is a fraction, annualisedReturn is

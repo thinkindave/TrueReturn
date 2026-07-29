@@ -3665,7 +3665,7 @@
       </div>
       <p class="projections-disclaimer">This tool provides general information only and does not constitute financial advice. You should consider your own circumstances and seek professional advice.</p>
       <p class="projections-disclaimer" id="minTaxFootnote" hidden></p>
-      <p class="benchmark-note" id="benchmarkNote" hidden>Your property figures are leveraged (~<strong id="benchmarkNoteLeverage"></strong> here); the benchmark is not.<span id="benchmarkNoteRegime"> The same 2027 CGT changes apply to shares too — reflected here.</span> <span id="benchmarkNoteName"></span> returns are historical figures as at <strong id="benchmarkNoteAsAt"></strong>, before tax — not a forecast.</p>
+      <p class="benchmark-note" id="benchmarkNote" hidden><span id="benchmarkNoteLeverageSentence">Your property figures are leveraged (~<strong id="benchmarkNoteLeverage"></strong> here); the benchmark is not. </span><span id="benchmarkNoteRegime">The same 2027 CGT changes apply to shares too — reflected here. </span><span id="benchmarkNoteName"></span> returns are historical figures as at <strong id="benchmarkNoteAsAt"></strong>, before tax — not a forecast.</p>
     </div>
     </div>
 
@@ -5242,12 +5242,21 @@
           // preset metadata are identical across all three.
           if (prefix === 'projLife') {
             const noteEl = document.getElementById('benchmarkNote');
+            const noteLevSentenceEl = document.getElementById('benchmarkNoteLeverageSentence');
             const noteLevEl = document.getElementById('benchmarkNoteLeverage');
             const noteRegimeEl = document.getElementById('benchmarkNoteRegime');
             const noteNameEl = document.getElementById('benchmarkNoteName');
             const noteAsAtEl = document.getElementById('benchmarkNoteAsAt');
-            if (bench.show && bench.leverageMultiple > 0) {
-              noteLevEl.textContent = bench.leverageMultiple.toFixed(1) + '×';
+            if (bench.show) {
+              // The leverage sentence is dropped entirely on an unleveraged
+              // purchase — "your property figures are leveraged (~1.0× here)"
+              // is false on a cash buy, and the multiple prints as 1.0 anyway.
+              // The remaining sentences still render: the 2027 clause and the
+              // staleness disclaimer are required regardless of leverage.
+              noteLevEl.textContent = bench.leverageIsMaterial
+                ? bench.leverageMultiple.toFixed(1) + '×'
+                : '';
+              noteLevSentenceEl.hidden = !bench.leverageIsMaterial;
               noteNameEl.textContent = bench.shortLabel;
               noteAsAtEl.textContent = bench.asAtLabel;
               // Gated on the arithmetic (the regime the engine actually
@@ -5258,6 +5267,7 @@
               noteLevEl.textContent = '';
               noteNameEl.textContent = '';
               noteAsAtEl.textContent = '';
+              noteLevSentenceEl.hidden = false;
               noteRegimeEl.hidden = false;
               noteEl.hidden = true;
             }

@@ -149,8 +149,8 @@ const requiredIds = [
   'proj5Benchmark', 'proj5BenchmarkName', 'proj5BenchmarkRoe', 'proj5BenchmarkPropertyRoe',
   'proj10Benchmark', 'proj10BenchmarkName', 'proj10BenchmarkRoe', 'proj10BenchmarkPropertyRoe',
   'projLifeBenchmark', 'projLifeBenchmarkName', 'projLifeBenchmarkRoe', 'projLifeBenchmarkPropertyRoe',
-  'benchmarkNote', 'benchmarkNoteLeverage', 'benchmarkNoteRegime',
-  'benchmarkNoteName', 'benchmarkNoteAsAt'
+  'benchmarkNote', 'benchmarkNoteLeverageSentence', 'benchmarkNoteLeverage',
+  'benchmarkNoteRegime', 'benchmarkNoteName', 'benchmarkNoteAsAt'
 ];
 let idsFailed = false;
 requiredIds.forEach(id => {
