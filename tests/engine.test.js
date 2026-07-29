@@ -1275,7 +1275,7 @@ function reformImpactFixture(years, salePrice, pool, overrides) {
 
 test('the CGT-only delta is negative at 5 years — the trap this module avoids', () => {
   const saleArgs = reformImpactFixture(5, 869846.63, 62779.64);
-  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 5, marginalRate: 0.37 });
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 5 });
   // New-rules CGT is LOWER than old-rules CGT: the pool offsets a still-small
   // gain by more than the lost 50% discount costs. Shipping this figure alone
   // would claim the reform SAVED the investor money.

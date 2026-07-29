@@ -1025,14 +1025,20 @@ function calcLeverageLine({ purchasePrice, totalUpfront, expectedGrowth,
 // Deliberately NOT a net-outcome comparison: the caller's cumulative cash
 // flow is pre-tax on both sides and has never counted refunds, so there is
 // no shipped figure a "net outcome" row could agree with.
-function calcReformImpact({ saleArgs, quarantineRows = [], years, marginalRate }) {
+function calcReformImpact({ saleArgs, quarantineRows = [], years }) {
+  // Read the rate from saleArgs rather than taking it as a second parameter:
+  // calcReformSale reads it from there for the new-rules side, and two
+  // sources could disagree, attributing a rate difference to the reform.
+  const marginalRate = saleArgs.marginalRate;
   const newOutcome = calcReformSale(saleArgs);
 
   // Old-rules side: 50% discount on the whole gain, no pool, and the full
   // pre+post Div 43 sum reducing a single cost base (there is no era split
   // under the old law) — matching calcReformSale's own OLD branch.
-  const sellingCosts = saleArgs.salePrice *
-    (saleArgs.sellingCostsPct === undefined ? 0.03 : saleArgs.sellingCostsPct);
+  // Reuse the figure calcReformSale already resolved rather than repeating
+  // its 0.03 default here — a second copy could drift and would price the
+  // two rulebooks with different selling costs, silently.
+  const sellingCosts = newOutcome.salesCosts;
   const oldDetail = calcOldRegimeCGT({
     salePrice: saleArgs.salePrice,
     sellingCosts,
@@ -1042,24 +1048,33 @@ function calcReformImpact({ saleArgs, quarantineRows = [], years, marginalRate }
     quarantinePool: 0,
     marginalRate,
     heldOver12Months: yearFrac(saleArgs.contractDate, saleArgs.saleDate) >= 1,
+    // Must match the discount calcReformSale would apply on its Option A
+    // path — Option A IS the old-law calculation, so a mismatch would show
+    // a saving where the two rulebooks are in fact identical.
+    discountPct: saleArgs.dwellingType === 'affordableHousing' ? 0.6 : 0.5,
   });
 
   // Refunds along the way. Quarantine applies only to income years starting
   // on/after 1 July 2027, so pre-boundary loss years are deductible under
   // BOTH rulebooks and cancel out of the delta — but they are still shown,
   // so the new-rules refund column is not falsely zero.
-  let preBoundaryRefunds = 0;
+  let deductibleRefunds = 0;
   let quarantinedRefunds = 0;
   for (let i = 0; i < years && i < quarantineRows.length; i++) {
     const row = quarantineRows[i];
     if (row.quarantined > 0) {
       quarantinedRefunds += row.quarantined * marginalRate;
-    } else if (row.fyStartISO < BOUNDARY_ISO && row.netResult < 0) {
-      preBoundaryRefunds += (-row.netResult) * marginalRate;
+    } else {
+      // buildQuarantineSchedule already applied the era test (which includes
+      // the ngRegime half, not just the date) and computed the refund. Using
+      // its figure keeps one source of truth for the rule; re-deriving it
+      // here dropped every post-boundary loss year for properties whose NG
+      // is never quarantined.
+      deductibleRefunds += row.refund || 0;
     }
   }
-  const newRefunds = preBoundaryRefunds;
-  const oldRefunds = preBoundaryRefunds + quarantinedRefunds;
+  const newRefunds = deductibleRefunds;
+  const oldRefunds = deductibleRefunds + quarantinedRefunds;
 
   const newTotalTax = newOutcome.cgt - newRefunds;
   const oldTotalTax = oldDetail.tax - oldRefunds;
