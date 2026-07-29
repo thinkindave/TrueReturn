@@ -36,7 +36,7 @@ Identical dollar outcome; less than half the return. A user comparing those rows
 
 ## 2. The design
 
-One always-visible line, on the **15-year period only** (`projLife`), beneath the headline strip and above the existing sensitivity bands. Reading order: what happened → why → caveats.
+One always-visible line, on the **15-year period only** (`projLife`), **below** the existing sensitivity bands — last of the always-visible lines, immediately above the collapsible detail. Reading order: what happened → its caveats → what explains it. (Originally specified above the bands; moved on PO review of the preview, 2026-07-29.)
 
 **Copy — one template, both directions:**
 
