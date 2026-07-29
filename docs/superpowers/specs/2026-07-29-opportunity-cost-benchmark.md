@@ -139,9 +139,22 @@ following the existing `data-field` convention for row inputs (never `id=`):
 Default **None**. With None selected nothing renders and the cards are
 unchanged from what ships today. Strictly opt-in.
 
-Per-property rather than global because it lives in the property row and rides
-the existing state/serialisation path with every other `data-field` input —
-including the Copy-property button, so a duplicated row keeps its comparator.
+Per-property rather than global because it belongs to the property, not the
+view.
+
+**Two plumbing facts, verified rather than assumed:**
+
+- **Copy-property needs no change.** `index.html:3795` generically copies every
+  `select[data-field]` value to the clone, so a duplicated row keeps its
+  comparator for free.
+- **Persistence DOES need a change.** `serializeState` (`index.html:3960`) and
+  `deserializeState` (`index.html:3974`) iterate a **hardcoded field-name
+  array**, not `[data-field]` generally. `'benchmark'` must be added to both
+  arrays or the selection is silently dropped on reload. This is exactly the
+  kind of "it rides the existing path" assumption that is wrong here.
+
+`addPropertyRow` (`index.html:3842`) clears every `[data-field]` to `''` on a
+new row, which selects the None option — the correct default, no change needed.
 
 ---
 
