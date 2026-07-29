@@ -820,6 +820,74 @@ function calcBenchmark({ depositCashInvested, contractDate, saleDate,
   };
 }
 
+// ── Opportunity-cost benchmark line (UI spec §9 v3.0, issue #14) ─────────
+// Presentation helper for the benchmark line on each projection period card.
+// Like calcLeverageLine it returns a discriminated { show } object rather than
+// the engine's usual null-on-inapplicable, because its consumer is a renderer,
+// not a downstream calculation. Don't copy this shape into a calculation
+// helper, and don't revert it to null here.
+//
+// `annualisedReturn` is RECEIVED, never recomputed — the parameter is named to
+// match calcLeverageLine's identical input (and index.html's local at
+// index.html:5067, the figure rendered as "Annual Cash Return"). engine.js
+// also exposes calcEquityReturns, whose roeSimple folds principalRepaid into
+// its base; rewiring to that would move a shipped number for every existing
+// user. The structural check in .claude/smoke-test.js pins this, and requires
+// the shorthand property specifically so the rewiring can't slip past.
+// It is re-exposed on the result as `propertyReturnPct` because at the render
+// site "property return" is what distinguishes it from the benchmark's.
+//
+// The line renders on ALL THREE periods, unlike the leverage line. Leverage is
+// fixed at purchase and identical across periods, so repeating it read as
+// padding; the benchmark's after-tax return is NOT — CGT is paid once at sale,
+// so a longer hold defers it and the annualised return climbs toward the gross
+// (VGS: 8.64 / 8.90 / 9.19% at 5/10/15y). A unit test pins that ordering.
+const BENCHMARK_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
+
+function calcBenchmarkLine({ depositCashInvested, contractDate, years,
+                             benchmarkKey, marginalRate, annualisedReturn,
+                             purchasePrice }) {
+  const preset = BENCHMARK_PRESETS[benchmarkKey];
+  if (!preset) return { show: false };
+  if (!(depositCashInvested > 0) || !(years > 0)) return { show: false };
+  // Guards NaN (issue #13's shape) and null, which annualizedReturn returns
+  // when cash <= 0 — null would otherwise render as a silently wrong "0.0".
+  if (!Number.isFinite(annualisedReturn)) return { show: false };
+
+  const b = calcBenchmark({
+    depositCashInvested, contractDate,
+    saleDate: addYearsISO(contractDate, years),
+    benchmarkReturn: preset.annualReturn,
+    marginalRate,
+  });
+  if (!Number.isFinite(b.benchmarkRoe)) return { show: false };
+
+  // asAt is 'YYYY-MM-DD'; split by field rather than parsed as a Date so the
+  // label can't shift a month across timezones.
+  const [asAtYear, asAtMonth] = String(preset.asAt || '').split('-');
+  const asAtName = BENCHMARK_MONTHS[Number(asAtMonth) - 1];
+  const asAtLabel = (asAtName && asAtYear) ? `${asAtName} ${asAtYear}` : '';
+
+  return {
+    show: true,
+    label: preset.label,
+    // 'VGS (international shares)' -> 'VGS'; a preset with no parenthetical is
+    // left alone. The copy reads "The same cash in VGS over the same period",
+    // where the full label would be unwieldy mid-sentence.
+    shortLabel: preset.label.replace(/\s*\(.*\)\s*$/, ''),
+    asAt: preset.asAt,
+    asAtLabel,
+    benchmarkRoePct: b.benchmarkRoe * 100,
+    propertyReturnPct: annualisedReturn,
+    // Same definition as calcLeverageLine's leverageMultiple — pinned by a
+    // unit test so the note and the leverage line cannot print different
+    // multiples for one property.
+    leverageMultiple: purchasePrice > 0 ? purchasePrice / depositCashInvested : null,
+    regime: b.regime,
+  };
+}
+
 // ── Required disclaimers (spec §10) — single source for Phase 2 UI ───────
 const DISCLAIMERS = {
   generalInfo: 'General information only, not tax or financial advice. Models the Treasury Laws Amendment (Tax Reform No. 1) Act 2026.',
@@ -939,7 +1007,7 @@ if (typeof module !== 'undefined' && module.exports) {
     calcNewBuildOptimizer, calcReformSale,
     runSaleScenario, compareSaleTiming,
     annualizedReturn, irrFromCashflows, calcEquityReturns,
-    calcBenchmark, BENCHMARK_PRESETS,
+    calcBenchmark, BENCHMARK_PRESETS, calcBenchmarkLine,
     calcLeverageLine,
     DISCLAIMERS,
   };

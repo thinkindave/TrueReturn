@@ -3,7 +3,8 @@
 // Run with: node tests/unit.js  (from the repository root)
 
 const { assert, test, approxEqual, summary } = require('./harness.js');
-const { formatCurrency, calcStampDuty, calcDepreciation, stateDefaults, calcLeverageLine } = require('../engine.js');
+const { formatCurrency, calcStampDuty, calcDepreciation, stateDefaults, calcLeverageLine,
+        calcBenchmarkLine, calcBenchmark, BENCHMARK_PRESETS, addYearsISO } = require('../engine.js');
 
 // ---------------------------------------------------------------------------
 // formatCurrency tests
@@ -2611,6 +2612,122 @@ test('hides when expectedGrowth is NaN', () => {
     expectedGrowth: NaN, annualisedReturn: 11.7,
   });
   assert.strictEqual(r.show, false);
+});
+
+// ---------------------------------------------------------------------------
+// calcBenchmarkLine tests (UI spec §9 v3.0, issue #14)
+// ---------------------------------------------------------------------------
+
+console.log('\ncalcBenchmarkLine');
+
+// Shared fixture: the shipped default property's cash base and marginal rate.
+// Frozen so a future mutation fails loudly here rather than breaking sibling
+// tests order-dependently — same discipline as LEVERAGE_BASE_INPUT above.
+const BENCHMARK_BASE_INPUT = Object.freeze({
+  depositCashInvested: 154575,
+  contractDate: '2026-07-29',
+  years: 15,
+  benchmarkKey: 'vgs',
+  marginalRate: 0.37,
+  annualisedReturn: 11.27,
+  purchasePrice: 650000,
+});
+
+test('returns the benchmark ROE as a percentage, matching calcBenchmark', () => {
+  const r = calcBenchmarkLine(BENCHMARK_BASE_INPUT);
+  assert.strictEqual(r.show, true);
+  const direct = calcBenchmark({
+    depositCashInvested: BENCHMARK_BASE_INPUT.depositCashInvested,
+    contractDate: BENCHMARK_BASE_INPUT.contractDate,
+    saleDate: addYearsISO(BENCHMARK_BASE_INPUT.contractDate, 15),
+    benchmarkReturn: BENCHMARK_PRESETS.vgs.annualReturn,
+    marginalRate: BENCHMARK_BASE_INPUT.marginalRate,
+  });
+  // calcBenchmark returns a FRACTION; the line must expose a PERCENTAGE.
+  approxEqual(r.benchmarkRoePct, direct.benchmarkRoe * 100, 1e-9);
+});
+
+test('passes the supplied property return through untouched', () => {
+  const r = calcBenchmarkLine(BENCHMARK_BASE_INPUT);
+  // Pinning pass-through: recomputing this figure would move the shipped
+  // "Annual Cash Return" for every existing user.
+  assert.strictEqual(r.propertyReturnPct, 11.27);
+});
+
+test('benchmark ROE rises with holding period (deferred CGT)', () => {
+  const y5  = calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, years: 5 });
+  const y10 = calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, years: 10 });
+  const y15 = calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, years: 15 });
+  // CGT is paid once at sale, so a longer hold defers it and the annualised
+  // after-tax return climbs toward the gross. This is WHY the line renders on
+  // all three period cards rather than the 15-year card alone.
+  assert(y5.benchmarkRoePct < y10.benchmarkRoePct,
+    `expected 5y (${y5.benchmarkRoePct}) < 10y (${y10.benchmarkRoePct})`);
+  assert(y10.benchmarkRoePct < y15.benchmarkRoePct,
+    `expected 10y (${y10.benchmarkRoePct}) < 15y (${y15.benchmarkRoePct})`);
+});
+
+test('exposes a short label with the parenthetical stripped', () => {
+  const r = calcBenchmarkLine(BENCHMARK_BASE_INPUT);
+  assert.strictEqual(r.shortLabel, 'VGS');
+});
+
+test('short label leaves a preset with no parenthetical alone', () => {
+  const r = calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, benchmarkKey: 'hisa' });
+  assert.strictEqual(r.shortLabel, 'High-interest savings');
+});
+
+test('exposes the as-at month for display', () => {
+  const r = calcBenchmarkLine(BENCHMARK_BASE_INPUT);
+  assert.strictEqual(r.asAtLabel, 'July 2026');
+});
+
+test('leverage multiple agrees with calcLeverageLine on the same inputs', () => {
+  const b = calcBenchmarkLine(BENCHMARK_BASE_INPUT);
+  const l = calcLeverageLine({
+    purchasePrice: 650000, totalUpfront: 154575,
+    expectedGrowth: 0.06, annualisedReturn: 11.27,
+  });
+  // Both are purchasePrice / cash-invested. If these ever diverge, the note
+  // and the leverage line would print different multiples for one property.
+  approxEqual(b.leverageMultiple, l.leverageMultiple, 1e-9);
+});
+
+test('regime is DUAL_ERA for a sale after the 2027 boundary', () => {
+  const r = calcBenchmarkLine(BENCHMARK_BASE_INPUT);
+  assert.strictEqual(r.regime, 'DUAL_ERA');
+});
+
+test('regime is OLD for a sale before the 2027 boundary', () => {
+  const r = calcBenchmarkLine({
+    ...BENCHMARK_BASE_INPUT, contractDate: '2020-01-01', years: 5,
+  });
+  // Gates the note's "2027 CGT changes apply to shares too" sentence. It is
+  // read off the arithmetic, never assumed from the contract date.
+  assert.strictEqual(r.regime, 'OLD');
+});
+
+test('hidden when no benchmark key is selected', () => {
+  assert.strictEqual(calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, benchmarkKey: '' }).show, false);
+});
+
+test('hidden for an unknown benchmark key', () => {
+  assert.strictEqual(calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, benchmarkKey: 'btc' }).show, false);
+});
+
+test('hidden when cash invested is zero or negative', () => {
+  assert.strictEqual(calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, depositCashInvested: 0 }).show, false);
+  assert.strictEqual(calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, depositCashInvested: -1 }).show, false);
+});
+
+test('hidden when years is zero', () => {
+  assert.strictEqual(calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, years: 0 }).show, false);
+});
+
+test('hidden when the property return is not finite', () => {
+  // Issue #13's shape: NaN sailing through into a "NaN%" render.
+  assert.strictEqual(calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, annualisedReturn: NaN }).show, false);
+  assert.strictEqual(calcBenchmarkLine({ ...BENCHMARK_BASE_INPUT, annualisedReturn: null }).show, false);
 });
 
 // ---------------------------------------------------------------------------
