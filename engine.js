@@ -1009,6 +1009,92 @@ function calcLeverageLine({ purchasePrice, totalUpfront, expectedGrowth,
   };
 }
 
+// ── 2027 reform impact (UI spec §3a v3.1, issue #17) ─────────────────────
+// The user's own modelled sale priced under both rulebooks: identical sale
+// date, growth and holding costs, only the tax law differs.
+//
+// Measures TOTAL TAX over the hold, not CGT alone. UI spec §3a originally
+// specified the CGT-only regime delta; measured on the shipped build that
+// delta is NEGATIVE at 5 years (-$12,057) and positive at 15 (+$67,703) on
+// the same property, because the quarantine pool offsets a still-small gain
+// by more than the lost 50% discount costs. It only reads as a saving
+// because the foregone negative-gearing refunds sit outside the number —
+// the same failure §4 documents for the pool shown alone. Netting the
+// refunds back in gives the correct sign at every period.
+//
+// Deliberately NOT a net-outcome comparison: the caller's cumulative cash
+// flow is pre-tax on both sides and has never counted refunds, so there is
+// no shipped figure a "net outcome" row could agree with.
+function calcReformImpact({ saleArgs, quarantineRows = [], years, marginalRate }) {
+  const newOutcome = calcReformSale(saleArgs);
+
+  // Old-rules side: 50% discount on the whole gain, no pool, and the full
+  // pre+post Div 43 sum reducing a single cost base (there is no era split
+  // under the old law) — matching calcReformSale's own OLD branch.
+  const sellingCosts = saleArgs.salePrice *
+    (saleArgs.sellingCostsPct === undefined ? 0.03 : saleArgs.sellingCostsPct);
+  const oldDetail = calcOldRegimeCGT({
+    salePrice: saleArgs.salePrice,
+    sellingCosts,
+    acquisitionCosts: saleArgs.acquisitionCosts,
+    div43Claimed: (saleArgs.div43Claimed || 0) + (saleArgs.div43ClaimedPost || 0),
+    capitalLosses: saleArgs.capitalLosses || 0,
+    quarantinePool: 0,
+    marginalRate,
+    heldOver12Months: yearFrac(saleArgs.contractDate, saleArgs.saleDate) >= 1,
+  });
+
+  // Refunds along the way. Quarantine applies only to income years starting
+  // on/after 1 July 2027, so pre-boundary loss years are deductible under
+  // BOTH rulebooks and cancel out of the delta — but they are still shown,
+  // so the new-rules refund column is not falsely zero.
+  let preBoundaryRefunds = 0;
+  let quarantinedRefunds = 0;
+  for (let i = 0; i < years && i < quarantineRows.length; i++) {
+    const row = quarantineRows[i];
+    if (row.quarantined > 0) {
+      quarantinedRefunds += row.quarantined * marginalRate;
+    } else if (row.fyStartISO < BOUNDARY_ISO && row.netResult < 0) {
+      preBoundaryRefunds += (-row.netResult) * marginalRate;
+    }
+  }
+  const newRefunds = preBoundaryRefunds;
+  const oldRefunds = preBoundaryRefunds + quarantinedRefunds;
+
+  const newTotalTax = newOutcome.cgt - newRefunds;
+  const oldTotalTax = oldDetail.tax - oldRefunds;
+  const delta = newTotalTax - oldTotalTax;
+
+  // The dual-era split, for the new-rules column only — the old law has no
+  // era split. BEST_OF Option A IS the old-law calculation, so it has no
+  // split either; only a winning Option B carries one.
+  let split = null;
+  if (newOutcome.regime === 'DUAL_ERA') {
+    split = { taxOnPre: newOutcome.detail.taxOnPre, taxOnPost: newOutcome.detail.taxOnPost };
+  } else if (newOutcome.regime === 'BEST_OF' && newOutcome.detail.winner === 'B') {
+    split = {
+      taxOnPre: newOutcome.detail.optionB.taxOnPre,
+      taxOnPost: newOutcome.detail.optionB.taxOnPost,
+    };
+  }
+
+  return {
+    // Sub-dollar deltas are suppressed on the arithmetic, never on
+    // dwellingType — the rule follows the numbers so it stays correct if the
+    // winning CGT option ever changes. New builds land at exactly 0.
+    show: Math.abs(delta) >= 1,
+    delta,
+    oldCGT: oldDetail.tax,
+    newCGT: newOutcome.cgt,
+    oldRefunds,
+    newRefunds,
+    oldTotalTax,
+    newTotalTax,
+    split,
+    pooledAtSale: saleArgs.quarantinePool || 0,
+  };
+}
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -1024,7 +1110,7 @@ if (typeof module !== 'undefined' && module.exports) {
     runSaleScenario, compareSaleTiming,
     annualizedReturn, irrFromCashflows, calcEquityReturns,
     calcBenchmark, BENCHMARK_PRESETS, calcBenchmarkLine,
-    calcLeverageLine,
+    calcLeverageLine, calcReformImpact,
     DISCLAIMERS,
   };
 }
