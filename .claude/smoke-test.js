@@ -140,7 +140,17 @@ const requiredIds = [
   // Highlights from updating.
   'projLifeLeverage', 'projLifeLeverageGrowth', 'projLifeLeverageVerb',
   'projLifeLeverageRoe', 'projLifeLeverageMult',
-  'projLifeLeverageClause', 'projLifeLeverageEnd'
+  'projLifeLeverageClause', 'projLifeLeverageEnd',
+  // Benchmark line — all three period cards + the shared note (UI spec §9
+  // v3.0, issue #14). Children are pinned as well as containers: the render
+  // guards the container with `if (benchmarkEl)` then dereferences children
+  // unguarded, so losing one throws mid-calculate() and silently stops every
+  // later render step — the same failure the leverage line's review found.
+  'proj5Benchmark', 'proj5BenchmarkName', 'proj5BenchmarkRoe', 'proj5BenchmarkPropertyRoe',
+  'proj10Benchmark', 'proj10BenchmarkName', 'proj10BenchmarkRoe', 'proj10BenchmarkPropertyRoe',
+  'projLifeBenchmark', 'projLifeBenchmarkName', 'projLifeBenchmarkRoe', 'projLifeBenchmarkPropertyRoe',
+  'benchmarkNote', 'benchmarkNoteLeverage', 'benchmarkNoteRegime',
+  'benchmarkNoteName', 'benchmarkNoteAsAt'
 ];
 let idsFailed = false;
 requiredIds.forEach(id => {
@@ -155,7 +165,7 @@ if (!idsFailed) ok('All required IDs present (' + requiredIds.length + ')');
 const requiredFields = [
   'purchasePrice', 'depositPct', 'loanType', 'loanTerm',
   'state', 'interestRate', 'managementFee', 'weeklyRent',
-  'name', 'expectedGrowth'
+  'name', 'expectedGrowth', 'benchmark'
 ];
 let fieldsFailed = false;
 requiredFields.forEach(f => {
@@ -275,6 +285,72 @@ if (inlineHandlers && inlineHandlers.length > 0) {
 
   if (hasRoeBase && passesAnnualisedReturn) {
     ok('Leverage line uses the existing inline annualisedReturn, not a recomputed figure');
+  }
+})();
+
+// 10. Benchmark presets must not go stale silently. They are historical,
+//     before-tax figures with no automatic refresh path, so drift has to
+//     surface as a test failure someone decides about rather than a wrong
+//     number nobody notices. This check is DESIGNED to start failing around
+//     July 2027 — that is the mechanism, not a defect. When it fires, either
+//     refresh the figure from its recorded source and update asAt, or re-date
+//     it deliberately.
+(function checkBenchmarkPresetFreshness() {
+  const MAX_AGE_MONTHS = 12;
+  let engineMod;
+  try {
+    engineMod = require(ENGINE_PATH);
+  } catch (e) {
+    fail('Could not require engine.js for the preset freshness check: ' + e.message);
+    return;
+  }
+  const presets = engineMod.BENCHMARK_PRESETS;
+  if (!presets || typeof presets !== 'object') {
+    fail('BENCHMARK_PRESETS not exported from engine.js');
+    return;
+  }
+  const now = new Date();
+  const cutoff = new Date(Date.UTC(
+    now.getUTCFullYear(), now.getUTCMonth() - MAX_AGE_MONTHS, now.getUTCDate()));
+  let bad = 0;
+  Object.keys(presets).forEach(key => {
+    const p = presets[key];
+    if (!p.asAt) {
+      fail(`BENCHMARK_PRESETS.${key} has no asAt date — provenance is required`);
+      bad++;
+      return;
+    }
+    const d = new Date(p.asAt + 'T00:00:00Z');
+    if (isNaN(d.getTime())) {
+      fail(`BENCHMARK_PRESETS.${key}.asAt is not a parseable ISO date: ${p.asAt}`);
+      bad++;
+      return;
+    }
+    if (d < cutoff) {
+      fail(`BENCHMARK_PRESETS.${key} is STALE: asAt ${p.asAt} is more than ${MAX_AGE_MONTHS} months old. `
+        + `Refresh from: ${p.source || '(no source recorded)'} — then update annualReturn AND asAt.`);
+      bad++;
+    }
+  });
+  if (bad === 0) {
+    ok(`Benchmark presets carry provenance and are within ${MAX_AGE_MONTHS} months (${Object.keys(presets).length} presets)`);
+  }
+})();
+
+// 11. The benchmark line must never recompute its own return figure, for the
+//     same reason as check 9: engine.js exposes calcEquityReturns, whose
+//     roeSimple differs on principalRepaid handling, so rewiring to it would
+//     move the shipped "Annual Cash Return" for every existing user.
+(function checkBenchmarkLineUsesExistingAnnualisedReturn() {
+  // Requires the SHORTHAND property `annualisedReturn,` — the existing local.
+  // Matching the bare name would also accept
+  // `annualisedReturn: calcEquityReturns(...).roeSimple`, which is precisely
+  // the rewiring this guard exists to prevent, so the trailing [,}] matters.
+  const passes = /calcBenchmarkLine\(\{[\s\S]{0,400}\bannualisedReturn\s*[,}]/.test(html);
+  if (passes) {
+    ok('Benchmark line uses the existing inline annualisedReturn, not a recomputed figure');
+  } else {
+    fail('calcBenchmarkLine is not being passed the existing annualisedReturn local — benchmark line may be recomputing its own return');
   }
 })();
 
