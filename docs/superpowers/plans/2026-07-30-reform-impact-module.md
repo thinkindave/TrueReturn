@@ -73,7 +73,17 @@ Append to `tests/engine.test.js`, immediately **before** the final `summary();`:
 console.log('\ncalcReformImpact (2027 reform impact module)');
 
 // Shared builder for the default property's per-period sale arguments.
+// Div 43 MUST be included and MUST be split at the deemed date. A mid-age
+// $650,000 property claims $6,093.75/yr; omitting it inflates the cost base
+// and shrinks the gain, which moves 5-year CGT from $25,025 to $12,776 and
+// the CGT-only delta from -$12,057 to -$18,670. The split matters too: tax
+// spec §5.3 says a post-2027 claim reduces the post-component's element 1
+// before indexation, so folding it into the pre-component understates CGT.
+// This mirrors index.html's own preYears/div43Pre/div43Post construction.
+const REFORM_FIXTURE_DEPR = E.calcDepreciation('mid', 650000);
+
 function reformImpactFixture(years, salePrice, pool, overrides) {
+  const preYears = Math.max(0, Math.min(years, E.yearFrac('2026-07-30', E.DEEMED_DATE_ISO)));
   const base = {
     contractDate: '2026-07-30',
     dwellingType: 'established',
@@ -81,8 +91,8 @@ function reformImpactFixture(years, salePrice, pool, overrides) {
     salePrice: salePrice,
     sellingCostsPct: 0.03,
     acquisitionCosts: 673775,
-    div43Claimed: 0,
-    div43ClaimedPost: 0,
+    div43Claimed: REFORM_FIXTURE_DEPR * preYears,
+    div43ClaimedPost: REFORM_FIXTURE_DEPR * (years - preYears),
     deemedValue: 650000 * Math.pow(1.06, E.yearFrac('2026-07-30', E.DEEMED_DATE_ISO)),
     quarantinePool: pool,
     marginalRate: 0.37,
@@ -98,6 +108,9 @@ test('the CGT-only delta is negative at 5 years — the trap this module avoids'
   // gain by more than the lost 50% discount costs. Shipping this figure alone
   // would claim the reform SAVED the investor money.
   assert(r.newCGT < r.oldCGT, 'precondition: new-rules CGT is lower at 5 years');
+  // These two reproduce the rendered #proj5CGT and its old-rules counterpart.
+  approxEqual(r.newCGT, 25025, 5);
+  approxEqual(r.oldCGT, 37082, 5);
   approxEqual(r.newCGT - r.oldCGT, -12057, 5);
 });
 ```
