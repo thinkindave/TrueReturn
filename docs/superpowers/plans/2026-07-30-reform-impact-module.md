@@ -648,7 +648,6 @@ In `index.html`, insert immediately **after** the sensitivity-band `if (saleOutc
             // the other. The delta is NOT monotonic in growth (it dips near
             // 4% and climbs after), so no "the longer you hold, the worse it
             // gets" phrasing may be introduced here.
-            const verb = impact.delta >= 0 ? 'add' : 'reduce';
             const amount = formatCurrency(Math.abs(impact.delta));
             const period = years + (years === 1 ? ' year' : ' years');
             document.getElementById(`${prefix}ReformImpactText`).innerHTML =
