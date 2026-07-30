@@ -140,6 +140,26 @@ const requiredIds = [
   // Highlights from updating.
   'projLifeLeverage', 'projLifeLeverageGrowth', 'projLifeLeverageVerb',
   'projLifeLeverageRoe', 'projLifeLeverageMult',
+  // Reform impact module — all three cards (UI spec §3a v3.1, issue #17).
+  // Same reasoning as the leverage line above: the render guards only the
+  // container with `if (reformEl)` and then dereferences every child
+  // unguarded, so losing one throws mid-calculate() and silently stops the
+  // later render steps.
+  'proj5ReformImpact', 'proj5ReformImpactText', 'proj5ReformImpactToggle', 'proj5ReformImpactDetail',
+  'proj5ReformOldCgt', 'proj5ReformNewCgt', 'proj5ReformSplitPre', 'proj5ReformSplitPost',
+  'proj5ReformNewPre', 'proj5ReformNewPost', 'proj5ReformOldRefunds', 'proj5ReformNewRefunds',
+  'proj5ReformOldProfitTax', 'proj5ReformNewProfitTax', 'proj5ReformTotalLabel', 'proj5ReformOldTotal',
+  'proj5ReformNewTotal', 'proj5ReformPoolNote',
+  'proj10ReformImpact', 'proj10ReformImpactText', 'proj10ReformImpactToggle', 'proj10ReformImpactDetail',
+  'proj10ReformOldCgt', 'proj10ReformNewCgt', 'proj10ReformSplitPre', 'proj10ReformSplitPost',
+  'proj10ReformNewPre', 'proj10ReformNewPost', 'proj10ReformOldRefunds', 'proj10ReformNewRefunds',
+  'proj10ReformOldProfitTax', 'proj10ReformNewProfitTax', 'proj10ReformTotalLabel', 'proj10ReformOldTotal',
+  'proj10ReformNewTotal', 'proj10ReformPoolNote',
+  'projLifeReformImpact', 'projLifeReformImpactText', 'projLifeReformImpactToggle', 'projLifeReformImpactDetail',
+  'projLifeReformOldCgt', 'projLifeReformNewCgt', 'projLifeReformSplitPre', 'projLifeReformSplitPost',
+  'projLifeReformNewPre', 'projLifeReformNewPost', 'projLifeReformOldRefunds', 'projLifeReformNewRefunds',
+  'projLifeReformOldProfitTax', 'projLifeReformNewProfitTax', 'projLifeReformTotalLabel', 'projLifeReformOldTotal',
+  'projLifeReformNewTotal', 'projLifeReformPoolNote',
   'projLifeLeverageClause', 'projLifeLeverageEnd',
   // Benchmark line — all three period cards + the shared note (UI spec §9
   // v3.0, issue #14). Children are pinned as well as containers: the render
