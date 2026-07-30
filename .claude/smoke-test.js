@@ -20,7 +20,7 @@ const HTML_PATH = path.join(__dirname, '../index.html');
 const TESTS_DIR = path.join(__dirname, '../tests');
 const TEST_SUITES = [
   { label: 'tests/unit.js', file: path.join(TESTS_DIR, 'unit.js'), minTests: 199 },
-  { label: 'tests/engine.test.js', file: path.join(TESTS_DIR, 'engine.test.js'), minTests: 116 }
+  { label: 'tests/engine.test.js', file: path.join(TESTS_DIR, 'engine.test.js'), minTests: 125 }
 ];
 
 // Files in tests/ that are not themselves suites.
@@ -355,6 +355,25 @@ if (inlineHandlers && inlineHandlers.length > 0) {
   } else {
     fail('calcBenchmarkLine is not being passed the existing annualisedReturn local — benchmark line may be recomputing its own return');
   }
+})();
+
+(function checkReformImpactUsesEngineOutput() {
+  // The module must read calcReformImpact's output, not recompute a delta in
+  // the DOM layer. A literal subtraction of two cgt figures in index.html is
+  // exactly the CGT-only delta this feature exists to avoid shipping — it is
+  // negative at 5 years and positive at 15 on the same property, so the two
+  // period cards would contradict each other.
+  const wired = /calcReformImpact\(\{[\s\S]{0,200}\bsaleArgs\s*[,}]/.test(html);
+  if (!wired) {
+    fail('calcReformImpact is not being passed the existing saleArgs — the module may be building its own sale');
+    return;
+  }
+  const recomputes = /ReformImpactText[\s\S]{0,600}?\bcgt\s*-\s*\w*[Oo]ld\w*[Cc]gt\b/.test(html);
+  if (recomputes) {
+    fail('the reform impact sentence appears to recompute a CGT-only delta in index.html');
+    return;
+  }
+  ok('Reform impact module reads calcReformImpact output, not a recomputed CGT delta');
 })();
 
 // Result
