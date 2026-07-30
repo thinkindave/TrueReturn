@@ -5242,6 +5242,85 @@
           sensEl.textContent = '';
         }
 
+        // ── 2027 reform impact module (UI spec §3a v3.1, issue #17) ──
+        // Reads engine output only. saleArgs and quarantineSched are already
+        // in scope and identical to the ones the shipped figures came from,
+        // so the module can never disagree with the card above it.
+        const reformEl = document.getElementById(`${prefix}ReformImpact`);
+        if (reformEl) {
+          const impact = calcReformImpact({
+            saleArgs,
+            quarantineRows: quarantineSched.rows,
+            years,
+          });
+          if (!impact.show) {
+            // Blank on hide so a later throw can never leave stale figures
+            // on screen — same discipline as the sensitivity band above.
+            reformEl.hidden = true;
+            document.getElementById(`${prefix}ReformImpactText`).textContent = '';
+          } else {
+            // Verb swaps on sign; no colour, no ranking, neither side above
+            // the other. The delta is NOT monotonic in growth (it dips near
+            // 4% and climbs after), so no "the longer you hold, the worse it
+            // gets" phrasing may be introduced here.
+            const amount = formatCurrency(Math.abs(impact.delta));
+            const period = years + (years === 1 ? ' year' : ' years');
+            document.getElementById(`${prefix}ReformImpactText`).innerHTML =
+              impact.delta >= 0
+                ? `The 2027 tax changes <strong>add ${amount}</strong> to the tax on this property over ${period}.`
+                : `The 2027 tax changes <strong>reduce</strong> the tax on this property by <strong>${amount}</strong> over ${period}.`;
+
+            document.getElementById(`${prefix}ReformOldCgt`).textContent = formatCurrency(impact.oldCGT);
+            document.getElementById(`${prefix}ReformNewCgt`).textContent = formatCurrency(impact.newCGT);
+
+            // Sub-rows are TAX, not gain, and appear on the new-rules side
+            // only — the old law has no era split.
+            const preRow = document.getElementById(`${prefix}ReformSplitPre`);
+            const postRow = document.getElementById(`${prefix}ReformSplitPost`);
+            if (impact.split) {
+              document.getElementById(`${prefix}ReformNewPre`).textContent = formatCurrency(impact.split.taxOnPre);
+              document.getElementById(`${prefix}ReformNewPost`).textContent = formatCurrency(impact.split.taxOnPost);
+              preRow.hidden = false;
+              postRow.hidden = false;
+            } else {
+              preRow.hidden = true;
+              postRow.hidden = true;
+            }
+
+            // Refunds are money received, so they render as negatives against
+            // the tax bill.
+            document.getElementById(`${prefix}ReformOldRefunds`).textContent = '-' + formatCurrency(impact.oldRefunds);
+            document.getElementById(`${prefix}ReformNewRefunds`).textContent = '-' + formatCurrency(impact.newRefunds);
+
+            // Tax on rental profits. Under the new rules the pool absorbs
+            // profitable years, so this is often $0 on the new side while the
+            // old side pays in full — the one row where the pool works FOR
+            // the investor. Omitting it overstated the reform's cost by
+            // $20,708 at 15 years on the default property.
+            document.getElementById(`${prefix}ReformOldProfitTax`).textContent = formatCurrency(impact.oldProfitTax);
+            document.getElementById(`${prefix}ReformNewProfitTax`).textContent = formatCurrency(impact.newProfitTax);
+
+            document.getElementById(`${prefix}ReformTotalLabel`).textContent = `Total tax over ${period}`;
+            document.getElementById(`${prefix}ReformOldTotal`).textContent = formatCurrency(impact.oldTotalTax);
+            document.getElementById(`${prefix}ReformNewTotal`).textContent = formatCurrency(impact.newTotalTax);
+
+            // The pool's value is already inside the new-rules CGT figure —
+            // saying so is what stops the table double-counting it (§4's
+            // reconciliation discipline applied here).
+            const poolNoteEl = document.getElementById(`${prefix}ReformPoolNote`);
+            if (impact.pooledAtSale > 0) {
+              poolNoteEl.textContent = 'The ' + formatCurrency(impact.pooledAtSale) +
+                ' still pooled at sale is already used up in the tax line above.';
+              poolNoteEl.hidden = false;
+            } else {
+              poolNoteEl.textContent = '';
+              poolNoteEl.hidden = true;
+            }
+
+            reformEl.hidden = false;
+          }
+        }
+
         // ── New-build CGT treatment line (UI spec §1.4, v2.6) ──
         // BEST_OF routes (new builds) let the taxpayer take whichever of the
         // two CGT treatments is cheaper; the engine already picks it
