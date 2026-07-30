@@ -1009,6 +1009,131 @@ function calcLeverageLine({ purchasePrice, totalUpfront, expectedGrowth,
   };
 }
 
+// ── 2027 reform impact (UI spec §3a v3.1, issue #17) ─────────────────────
+// The user's own modelled sale priced under both rulebooks: identical sale
+// date, growth and holding costs, only the tax law differs.
+//
+// Measures TOTAL TAX over the hold, not CGT alone. UI spec §3a originally
+// specified the CGT-only regime delta; measured on the shipped build that
+// delta is NEGATIVE at 5 years (-$12,057) and positive at 15 (+$67,703) on
+// the same property, because the quarantine pool offsets a still-small gain
+// by more than the lost 50% discount costs. It only reads as a saving
+// because the foregone negative-gearing refunds sit outside the number —
+// the same failure §4 documents for the pool shown alone. Netting the
+// refunds back in gives the correct sign at every period.
+//
+// Deliberately NOT a net-outcome comparison: the caller's cumulative cash
+// flow is pre-tax on both sides and has never counted refunds, so there is
+// no shipped figure a "net outcome" row could agree with.
+function calcReformImpact({ saleArgs, quarantineRows = [], years }) {
+  // Read the rate from saleArgs rather than taking it as a second parameter:
+  // calcReformSale reads it from there for the new-rules side, and two
+  // sources could disagree, attributing a rate difference to the reform.
+  const marginalRate = saleArgs.marginalRate;
+  const newOutcome = calcReformSale(saleArgs);
+
+  // Old-rules side: 50% discount on the whole gain, no pool, and the full
+  // pre+post Div 43 sum reducing a single cost base (there is no era split
+  // under the old law) — matching calcReformSale's own OLD branch.
+  // Reuse the figure calcReformSale already resolved rather than repeating
+  // its 0.03 default here — a second copy could drift and would price the
+  // two rulebooks with different selling costs, silently.
+  const sellingCosts = newOutcome.salesCosts;
+  const oldDetail = calcOldRegimeCGT({
+    salePrice: saleArgs.salePrice,
+    sellingCosts,
+    acquisitionCosts: saleArgs.acquisitionCosts,
+    div43Claimed: (saleArgs.div43Claimed || 0) + (saleArgs.div43ClaimedPost || 0),
+    capitalLosses: saleArgs.capitalLosses || 0,
+    quarantinePool: 0,
+    marginalRate,
+    heldOver12Months: yearFrac(saleArgs.contractDate, saleArgs.saleDate) >= 1,
+    // Must match the discount calcReformSale would apply on its Option A
+    // path — Option A IS the old-law calculation, so a mismatch would show
+    // a saving where the two rulebooks are in fact identical.
+    discountPct: saleArgs.dwellingType === 'affordableHousing' ? 0.6 : 0.5,
+  });
+
+  // Refunds along the way. Quarantine applies only to income years starting
+  // on/after 1 July 2027, so pre-boundary loss years are deductible under
+  // BOTH rulebooks and cancel out of the delta — but they are still shown,
+  // so the new-rules refund column is not falsely zero.
+  let deductibleRefunds = 0;
+  let quarantinedRefunds = 0;
+  let newProfitTax = 0;
+  let oldProfitTax = 0;
+  for (let i = 0; i < years && i < quarantineRows.length; i++) {
+    const row = quarantineRows[i];
+    if (row.quarantined > 0) {
+      quarantinedRefunds += row.quarantined * marginalRate;
+    } else {
+      // buildQuarantineSchedule already applied the era test (which includes
+      // the ngRegime half, not just the date) and computed the refund. Using
+      // its figure keeps one source of truth for the rule; re-deriving it
+      // here dropped every post-boundary loss year for properties whose NG
+      // is never quarantined.
+      deductibleRefunds += row.refund || 0;
+    }
+    // Tax on rental profits, which the two rulebooks charge differently.
+    // buildQuarantineSchedule already nets the pool off the new-rules figure
+    // (taxOnProfit = (netResult - absorbed) * rate). The old rules have no
+    // pool, so every profitable year is taxed in full.
+    newProfitTax += row.taxOnProfit || 0;
+    if (row.netResult > 0) oldProfitTax += row.netResult * marginalRate;
+  }
+  const newRefunds = deductibleRefunds;
+  const oldRefunds = deductibleRefunds + quarantinedRefunds;
+
+  // Tax on rental profits. Under the new rules the pool absorbs profitable
+  // years before they are taxed; under the old rules there is no pool and the
+  // profit is taxed in full. Omitting both terms overstated the reform's cost
+  // by $20,708 at 15 years on the default property (21%). This is recovery
+  // channel A in UI spec §4, which rules that an honest module shows it.
+  const newTotalTax = newOutcome.cgt - newRefunds + newProfitTax;
+  const oldTotalTax = oldDetail.tax - oldRefunds + oldProfitTax;
+  const delta = newTotalTax - oldTotalTax;
+
+  // The dual-era split, for the new-rules column only — the old law has no
+  // era split. BEST_OF Option A IS the old-law calculation, so it has no
+  // split either; only a winning Option B carries one.
+  let split = null;
+  if (newOutcome.regime === 'DUAL_ERA') {
+    split = { taxOnPre: newOutcome.detail.taxOnPre, taxOnPost: newOutcome.detail.taxOnPost };
+  } else if (newOutcome.regime === 'BEST_OF' && newOutcome.detail.winner === 'B') {
+    split = {
+      taxOnPre: newOutcome.detail.optionB.taxOnPre,
+      taxOnPost: newOutcome.detail.optionB.taxOnPost,
+    };
+  }
+
+  // poolUsed / strandedPool sit at different depths per regime: directly on
+  // detail for DUAL_ERA and OLD, but under the winning option for BEST_OF.
+  // Resolve here so callers never have to branch on the regime.
+  const newDetail = newOutcome.regime === 'BEST_OF'
+    ? (newOutcome.detail.winner === 'A' ? newOutcome.detail.optionA : newOutcome.detail.optionB)
+    : newOutcome.detail;
+
+  return {
+    // Sub-dollar deltas are suppressed on the arithmetic, never on
+    // dwellingType — the rule follows the numbers so it stays correct if the
+    // winning CGT option ever changes. New builds land at exactly 0.
+    show: Math.abs(delta) >= 1,
+    delta,
+    oldCGT: oldDetail.tax,
+    newCGT: newOutcome.cgt,
+    oldRefunds,
+    newRefunds,
+    oldProfitTax,
+    newProfitTax,
+    oldTotalTax,
+    newTotalTax,
+    split,
+    pooledAtSale: saleArgs.quarantinePool || 0,
+    poolUsedAtSale: newDetail.poolUsed || 0,
+    strandedPool: newDetail.strandedPool || 0,
+  };
+}
+
 // ── Node export guard ────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -1024,7 +1149,7 @@ if (typeof module !== 'undefined' && module.exports) {
     runSaleScenario, compareSaleTiming,
     annualizedReturn, irrFromCashflows, calcEquityReturns,
     calcBenchmark, BENCHMARK_PRESETS, calcBenchmarkLine,
-    calcLeverageLine,
+    calcLeverageLine, calcReformImpact,
     DISCLAIMERS,
   };
 }

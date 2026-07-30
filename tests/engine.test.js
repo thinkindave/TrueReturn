@@ -1238,4 +1238,253 @@ test('established: deemed value does move the outcome — non-zero band', () => 
   assert(Math.abs(hi.trueCashReturn - lo.trueCashReturn) > 1, 'established must show a real spread');
 });
 
+// ── calcReformImpact (UI spec §3a v3.1, issue #17) ──────────────────────
+// Reference figures measured on the shipped build with truereturn_state
+// cleared and cross-checked against the rendered #proj5CGT / #projLifeCGT.
+// Default property: $650,000, 20% deposit, $550/wk, 6% growth, QLD, mid-age,
+// MTR 0.37. Do not "correct" these numbers without re-measuring in-app.
+console.log('\ncalcReformImpact (2027 reform impact module)');
+
+// Div 43 MUST be included and MUST be split at the deemed date. A mid-age
+// $650,000 property claims $6,093.75/yr; omitting it inflates the cost base
+// and shrinks the gain, which moves 5-year CGT from $25,025 to $12,776 and
+// the CGT-only delta from -$12,057 to -$18,670. The split matters too: tax
+// spec §5.3 says a post-2027 claim reduces the post-component's element 1
+// before indexation, so folding it into the pre-component understates CGT.
+// This mirrors index.html's own preYears/div43Pre/div43Post construction.
+const REFORM_FIXTURE_DEPR = E.calcDepreciation('mid', 650000);
+
+function reformImpactFixture(years, salePrice, pool, overrides) {
+  const preYears = Math.max(0, Math.min(years, E.yearFrac('2026-07-30', E.DEEMED_DATE_ISO)));
+  const base = {
+    contractDate: '2026-07-30',
+    dwellingType: 'established',
+    saleDate: E.addYearsISO('2026-07-30', years),
+    salePrice: salePrice,
+    sellingCostsPct: 0.03,
+    acquisitionCosts: 673775,
+    div43Claimed: REFORM_FIXTURE_DEPR * preYears,
+    div43ClaimedPost: REFORM_FIXTURE_DEPR * (years - preYears),
+    deemedValue: 650000 * Math.pow(1.06, E.yearFrac('2026-07-30', E.DEEMED_DATE_ISO)),
+    quarantinePool: pool,
+    marginalRate: 0.37,
+    remainingLoan: 0,
+  };
+  return Object.assign(base, overrides || {});
+}
+
+test('the CGT-only delta is negative at 5 years — the trap this module avoids', () => {
+  const saleArgs = reformImpactFixture(5, 869846.63, 62779.64);
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 5 });
+  // New-rules CGT is LOWER than old-rules CGT: the pool offsets a still-small
+  // gain by more than the lost 50% discount costs. Shipping this figure alone
+  // would claim the reform SAVED the investor money.
+  assert(r.newCGT < r.oldCGT, 'precondition: new-rules CGT is lower at 5 years');
+  // These two reproduce the rendered #proj5CGT and its old-rules counterpart.
+  approxEqual(r.newCGT, 25025, 5);
+  approxEqual(r.oldCGT, 37082, 5);
+  approxEqual(r.newCGT - r.oldCGT, -12057, 5);
+});
+
+test('tax on rental profits is counted, and the pool makes the sides differ', () => {
+  // Years 1-2 are losses; year 3 is profitable. Under the new rules the pool
+  // absorbs the profit (taxOnProfit 0); under the old rules it is taxed in
+  // full. Omitting this term overstated the reform's cost by $20,708 at 15
+  // years on the default property.
+  const rows = [
+    { fyStartISO: '2026-07-01', netResult: -20592, quarantined: 0, refund: 20592 * 0.37, taxOnProfit: 0 },
+    { fyStartISO: '2027-07-01', netResult: -18751, quarantined: 18751, refund: 0, taxOnProfit: 0 },
+    { fyStartISO: '2028-07-01', netResult: 10000, quarantined: 0, refund: 0, taxOnProfit: 0 },
+  ];
+  const r = E.calcReformImpact({
+    saleArgs: reformImpactFixture(3, 650000 * Math.pow(1.06, 3), 8751),
+    quarantineRows: rows, years: 3,
+  });
+  approxEqual(r.newProfitTax, 0, 0.01);
+  approxEqual(r.oldProfitTax, 3700, 0.01);
+  assert(r.oldProfitTax > r.newProfitTax,
+    'the pool absorbing profit is a new-rules advantage and must show as one');
+  // The full identity: every channel accounted for, nothing left implicit.
+  approxEqual(r.delta,
+    (r.newCGT - r.oldCGT) + (r.oldRefunds - r.newRefunds) + (r.newProfitTax - r.oldProfitTax),
+    0.01);
+});
+
+test('total-tax delta is positive at all three periods — sign is corrected', () => {
+  // Refund rows for the default property: FY2026-27 starts pre-boundary and
+  // is deductible under both rulebooks; every later loss year is quarantined
+  // under the new rules only.
+  const rows = [
+    // refund and taxOnProfit are fields buildQuarantineSchedule emits and
+    // calcReformImpact reads directly — a row without them scores zero.
+    { fyStartISO: '2026-07-01', netResult: -20592, quarantined: 0, refund: 20592 * 0.37, taxOnProfit: 0 },
+    { fyStartISO: '2027-07-01', netResult: -19500, quarantined: 19500, refund: 0, taxOnProfit: 0 },
+    { fyStartISO: '2028-07-01', netResult: -18200, quarantined: 18200, refund: 0, taxOnProfit: 0 },
+    { fyStartISO: '2029-07-01', netResult: -16800, quarantined: 16800, refund: 0, taxOnProfit: 0 },
+    { fyStartISO: '2030-07-01', netResult: -8280, quarantined: 8280, refund: 0, taxOnProfit: 0 },
+  ];
+  const periods = [[5, 869846.63, 62779.64], [10, 1164051.00, 87190.03], [15, 1557762.83, 31958.21]];
+  periods.forEach(([years, price, pool]) => {
+    const r = E.calcReformImpact({
+      saleArgs: reformImpactFixture(years, price, pool),
+      quarantineRows: rows, years: years,
+    });
+    assert(r.delta > 0, years + 'yr: the reform must cost, not save, once refunds are counted');
+    assert.strictEqual(r.show, true, years + 'yr must show the module');
+    // The full identity: every channel accounted for, nothing left implicit.
+    approxEqual(r.delta,
+      (r.newCGT - r.oldCGT) + (r.oldRefunds - r.newRefunds) + (r.newProfitTax - r.oldProfitTax),
+      0.01);
+  });
+  // The 5-year case is the one that inverts on a CGT-only reading — assert
+  // the correction explicitly rather than leaving it implied by the loop.
+  const r5 = E.calcReformImpact({
+    saleArgs: reformImpactFixture(5, 869846.63, 62779.64),
+    quarantineRows: rows, years: 5,
+  });
+  assert(r5.newCGT - r5.oldCGT < 0 && r5.delta > 0,
+    'at 5 years the CGT-only delta is negative but the total-tax delta is positive');
+});
+
+test('pre-boundary refunds are identical under both rulebooks', () => {
+  const rows = [
+    { fyStartISO: '2026-07-01', netResult: -20592, quarantined: 0, refund: 20592 * 0.37, taxOnProfit: 0 },
+    { fyStartISO: '2027-07-01', netResult: -19500, quarantined: 19500, refund: 0, taxOnProfit: 0 },
+  ];
+  const r = E.calcReformImpact({
+    saleArgs: reformImpactFixture(5, 869846.63, 62779.64),
+    quarantineRows: rows, years: 5,
+  });
+  // 20592 * 0.37 = 7619.04 — deductible under both rulebooks.
+  approxEqual(r.newRefunds, 7619.04, 0.5);
+  // The old rules additionally refund the quarantined year: + 19500 * 0.37.
+  approxEqual(r.oldRefunds, 7619.04 + 7215, 0.5);
+  assert(r.oldRefunds > r.newRefunds, 'old rules must refund strictly more');
+});
+
+test('new refunds are never zero merely because quarantine applies', () => {
+  const rows = [{ fyStartISO: '2026-07-01', netResult: -20592, quarantined: 0, refund: 20592 * 0.37, taxOnProfit: 0 }];
+  const r = E.calcReformImpact({
+    saleArgs: reformImpactFixture(15, 1557762.83, 31958.21),
+    quarantineRows: rows, years: 15,
+  });
+  assert(r.newRefunds > 0, 'losses before 1 July 2027 stay deductible under the new rules');
+});
+
+test('new build: delta is exactly zero and the module hides itself', () => {
+  // New builds keep full negative gearing (no quarantine, so no rows and no
+  // pool) and may elect the 50% discount on the whole gain — which IS the
+  // old-rules calculation. The reform genuinely does nothing to them.
+  [[5, 869846.63], [10, 1164051.00], [15, 1557762.83]].forEach(([years, price]) => {
+    const saleArgs = reformImpactFixture(years, price, 0, { dwellingType: 'newBuild' });
+    const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years });
+    approxEqual(r.delta, 0, 0.01);
+    assert.strictEqual(r.show, false, years + 'yr new build must hide the module');
+  });
+});
+
+test('sub-dollar deltas are suppressed on the arithmetic, not on dwellingType', () => {
+  const saleArgs = reformImpactFixture(15, 1557762.83, 31958.21);
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 15 });
+  // An established property with a real delta must NOT be suppressed.
+  assert.strictEqual(r.show, true, 'established with a real delta must show');
+  assert.strictEqual(saleArgs.dwellingType, 'established', 'gate is arithmetic, not type');
+});
+
+test('the negative arm is reachable — low growth leaves the property better off', () => {
+  // 3% growth over 15 years: the indexed post-2027 cost base outruns the
+  // gain, so the reform genuinely reduces the tax.
+  const salePrice = 650000 * Math.pow(1.03, 15);
+  const saleArgs = reformImpactFixture(15, salePrice, 31958.21, {
+    deemedValue: 650000 * Math.pow(1.03, E.yearFrac('2026-07-30', E.DEEMED_DATE_ISO)),
+  });
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 15 });
+  assert(r.delta < 0, 'a low-growth hold must be able to produce a negative delta');
+  assert.strictEqual(r.show, true, 'a negative delta still shows — it is not suppressed');
+});
+
+test('split is null on an OLD-route sale and populated on DUAL_ERA', () => {
+  // A sale before 1 July 2027 routes OLD: single era, so no split to show.
+  const oldRoute = reformImpactFixture(0, 650000, 0, { saleDate: '2027-01-30' });
+  const rOld = E.calcReformImpact({
+    saleArgs: oldRoute, quarantineRows: [], years: 0,
+  });
+  assert.strictEqual(rOld.split, null, 'OLD route has no era split');
+
+  const rDual = E.calcReformImpact({
+    saleArgs: reformImpactFixture(15, 1557762.83, 31958.21),
+    quarantineRows: [], years: 15,
+  });
+  assert(rDual.split !== null, 'DUAL_ERA must carry a split');
+  approxEqual(rDual.split.taxOnPre + rDual.split.taxOnPost, rDual.newCGT, 0.01);
+});
+
+test('pool accounting is reported, not assumed — stranded and used are distinct', () => {
+  // A large pool against a small gain strands most of itself. The UI note
+  // must be able to tell "used up" from "never recovered", because the card
+  // says so a few lines above and the two must not contradict.
+  const saleArgs = reformImpactFixture(5, 650000 * Math.pow(0.96, 5), 200000);
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 5 });
+  assert(r.strandedPool > 0, 'a big pool against a shrunken sale price must strand');
+  approxEqual(r.poolUsedAtSale + r.strandedPool, r.pooledAtSale, 0.01);
+});
+
+test('a fully absorbed pool reports nothing stranded', () => {
+  const saleArgs = reformImpactFixture(15, 1557762.83, 31958.21);
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 15 });
+  approxEqual(r.strandedPool, 0, 0.01);
+  approxEqual(r.poolUsedAtSale, r.pooledAtSale, 0.01);
+});
+
+test('the year window slices the schedule — a 5-year card ignores years 6-15', () => {
+  // index.html passes the SAME full 15-row schedule to all three periods, so
+  // this bound is the only thing keeping the cards distinct. Without it the
+  // 5-year card reports fifteen years of refunds.
+  const rows = [];
+  for (let y = 0; y < 15; y++) {
+    const loss = y === 0;
+    rows.push({
+      fyStartISO: (2026 + y) + '-07-01',
+      netResult: loss ? -20592 : 10000,
+      quarantined: 0,
+      refund: loss ? 20592 * 0.37 : 0,
+      taxOnProfit: 0,
+    });
+  }
+  const at5 = E.calcReformImpact({
+    saleArgs: reformImpactFixture(5, 869846.63, 62779.64), quarantineRows: rows, years: 5,
+  });
+  const at15 = E.calcReformImpact({
+    saleArgs: reformImpactFixture(15, 1557762.83, 31958.21), quarantineRows: rows, years: 15,
+  });
+  // Years 2-5 are profitable: 4 years * 10000 * 0.37 = 14800 under old rules.
+  approxEqual(at5.oldProfitTax, 14800, 0.01);
+  // Years 2-15 are profitable: 14 * 10000 * 0.37 = 51800.
+  approxEqual(at15.oldProfitTax, 51800, 0.01);
+  assert(at15.oldProfitTax > at5.oldProfitTax,
+    'a longer hold must count more years, or the window is not being applied');
+});
+
+test('new build at low growth: indexation wins, so the module shows', () => {
+  // New builds elect between the 50% discount -- which IS the old-rules
+  // calculation -- and indexation. Above roughly CPI growth the discount
+  // wins and the reform changes nothing, which is the case the sibling test
+  // above pins. BELOW it, indexation wins and the reform genuinely helps, so
+  // the module must NOT hide. Measured on a $480k VIC new build at 2%
+  // growth: Option A $47,372 vs Option B $39,051, an $8,321 saving.
+  //
+  // This is also the only route to the BEST_OF winner-B split, so it is what
+  // stops that branch being dead code.
+  const saleArgs = reformImpactFixture(15, 480000 * Math.pow(1.02, 15), 0, {
+    dwellingType: 'newBuild',
+    acquisitionCosts: 505570,
+    deemedValue: 480000 * Math.pow(1.02, E.yearFrac('2026-07-30', E.DEEMED_DATE_ISO)),
+  });
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 15 });
+  assert(r.delta < 0, 'indexation must leave a low-growth new build better off');
+  assert.strictEqual(r.show, true, 'a real difference must never be suppressed');
+  assert(r.split !== null, 'a winning Option B carries the dual-era split');
+  approxEqual(r.split.taxOnPre + r.split.taxOnPost, r.newCGT, 0.01);
+});
+
 summary();

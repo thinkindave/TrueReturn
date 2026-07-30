@@ -20,7 +20,7 @@ const HTML_PATH = path.join(__dirname, '../index.html');
 const TESTS_DIR = path.join(__dirname, '../tests');
 const TEST_SUITES = [
   { label: 'tests/unit.js', file: path.join(TESTS_DIR, 'unit.js'), minTests: 199 },
-  { label: 'tests/engine.test.js', file: path.join(TESTS_DIR, 'engine.test.js'), minTests: 116 }
+  { label: 'tests/engine.test.js', file: path.join(TESTS_DIR, 'engine.test.js'), minTests: 128 }
 ];
 
 // Files in tests/ that are not themselves suites.
@@ -140,6 +140,26 @@ const requiredIds = [
   // Highlights from updating.
   'projLifeLeverage', 'projLifeLeverageGrowth', 'projLifeLeverageVerb',
   'projLifeLeverageRoe', 'projLifeLeverageMult',
+  // Reform impact module — all three cards (UI spec §3a v3.1, issue #17).
+  // Same reasoning as the leverage line above: the render guards only the
+  // container with `if (reformEl)` and then dereferences every child
+  // unguarded, so losing one throws mid-calculate() and silently stops the
+  // later render steps.
+  'proj5ReformImpact', 'proj5ReformImpactText', 'proj5ReformImpactToggle', 'proj5ReformImpactDetail',
+  'proj5ReformOldCgt', 'proj5ReformNewCgt', 'proj5ReformSplitPre', 'proj5ReformSplitPost',
+  'proj5ReformNewPre', 'proj5ReformNewPost', 'proj5ReformOldRefunds', 'proj5ReformNewRefunds',
+  'proj5ReformOldProfitTax', 'proj5ReformNewProfitTax', 'proj5ReformTotalLabel', 'proj5ReformOldTotal',
+  'proj5ReformNewTotal', 'proj5ReformPoolNote',
+  'proj10ReformImpact', 'proj10ReformImpactText', 'proj10ReformImpactToggle', 'proj10ReformImpactDetail',
+  'proj10ReformOldCgt', 'proj10ReformNewCgt', 'proj10ReformSplitPre', 'proj10ReformSplitPost',
+  'proj10ReformNewPre', 'proj10ReformNewPost', 'proj10ReformOldRefunds', 'proj10ReformNewRefunds',
+  'proj10ReformOldProfitTax', 'proj10ReformNewProfitTax', 'proj10ReformTotalLabel', 'proj10ReformOldTotal',
+  'proj10ReformNewTotal', 'proj10ReformPoolNote',
+  'projLifeReformImpact', 'projLifeReformImpactText', 'projLifeReformImpactToggle', 'projLifeReformImpactDetail',
+  'projLifeReformOldCgt', 'projLifeReformNewCgt', 'projLifeReformSplitPre', 'projLifeReformSplitPost',
+  'projLifeReformNewPre', 'projLifeReformNewPost', 'projLifeReformOldRefunds', 'projLifeReformNewRefunds',
+  'projLifeReformOldProfitTax', 'projLifeReformNewProfitTax', 'projLifeReformTotalLabel', 'projLifeReformOldTotal',
+  'projLifeReformNewTotal', 'projLifeReformPoolNote',
   'projLifeLeverageClause', 'projLifeLeverageEnd',
   // Benchmark line — all three period cards + the shared note (UI spec §9
   // v3.0, issue #14). Children are pinned as well as containers: the render
@@ -355,6 +375,30 @@ if (inlineHandlers && inlineHandlers.length > 0) {
   } else {
     fail('calcBenchmarkLine is not being passed the existing annualisedReturn local — benchmark line may be recomputing its own return');
   }
+})();
+
+(function checkReformImpactUsesEngineOutput() {
+  // The module must read calcReformImpact's output, not recompute a delta in
+  // the DOM layer. A literal subtraction of two cgt figures in index.html is
+  // exactly the CGT-only delta this feature exists to avoid shipping — it is
+  // negative at 5 years and positive at 15 on the same property, so the two
+  // period cards would contradict each other.
+  const wired = /calcReformImpact\(\{[\s\S]{0,200}\bsaleArgs\s*[,}]/.test(html);
+  if (!wired) {
+    fail('calcReformImpact is not being passed the existing saleArgs — the module may be building its own sale');
+    return;
+  }
+  // The refund and rental-profit terms are what make this a total-tax delta
+  // rather than the CGT-only delta that reads as a saving at 5 years and a
+  // cost at 15 on the same property. They come entirely from the schedule,
+  // so passing an empty array here silently reverts the feature. Assert the
+  // real schedule is wired in.
+  const schedWired = /calcReformImpact\(\{[\s\S]{0,200}quarantineRows:\s*quarantineSched\.rows/.test(html);
+  if (!schedWired) {
+    fail('calcReformImpact is not being passed quarantineSched.rows — the module may have reverted to a CGT-only delta');
+    return;
+  }
+  ok('Reform impact module reads calcReformImpact output with the real quarantine schedule');
 })();
 
 // Result
