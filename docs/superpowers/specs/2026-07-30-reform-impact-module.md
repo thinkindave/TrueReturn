@@ -141,9 +141,10 @@ One sentence, verb swapping on sign, with a `see how` expander:
 
 > The 2027 tax changes **reduce** the tax on this property by **$15,354** over 15 years. *see how*
 
-(The negative-arm figure below predates the rental-profit term and will move
-once it is counted; the branch itself is unaffected, since counting profit tax
-only pushes the delta further negative.)
+(Re-measured in the running app **after** the rental-profit term landed: the
+3% sweep is unchanged at +$11,089 / +$7,085 / −$15,354, because at 3% growth
+the property never turns profitable within 15 years, so the profit-tax term is
+zero on both sides. These figures are current, not pre-v3.1.)
 
 **The negative arm is measured, not hypothetical.** Sweeping `expectedGrowth`
 on the default property in the shipped build (simple mode, MTR pinned to
@@ -267,6 +268,8 @@ in `engine.js`, returning:
   oldTotalTax, newTotalTax,
   split: { taxOnPre, taxOnPost } | null,   // new-rules side; null on OLD route
   pooledAtSale,          // for the note; 0 when no pool
+  poolUsedAtSale,        // what the pool actually absorbed at sale
+  strandedPool,          // what it could not — the note must not claim relief
 }
 ```
 
