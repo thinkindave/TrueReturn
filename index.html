@@ -5155,6 +5155,16 @@
         if (!showQuar) {
           const staleStranded = document.getElementById(`${prefix}StrandedNote`);
           if (staleStranded) { staleStranded.textContent = ''; staleStranded.hidden = true; }
+          // Blank the figure too, not just the note. Hiding the row left the
+          // previous property's pool sitting in the DOM, so editing down to a
+          // property with no pool at sale kept a large stale number one
+          // expand away from the reader — and it contradicted the reform
+          // module, which reads the same pool and correctly reported none.
+          if (quarValEl) quarValEl.textContent = '-';
+          if (quarTipEl) {
+            quarTipEl.setAttribute('data-tip', '');
+            quarTipEl.setAttribute('aria-label', '');
+          }
         }
         if (showQuar) {
           if (quarValEl) quarValEl.textContent = formatCurrency(periodPool);
