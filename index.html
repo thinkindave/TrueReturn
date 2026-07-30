@@ -1405,6 +1405,14 @@
       font-weight: 500;
     }
 
+    /* A class selector beats the UA stylesheet's [hidden] { display: none },
+       so `display: flex` below silently defeated the hidden attribute — the
+       quarantine row stayed on screen whenever it was meant to be hidden.
+       Restore it explicitly. */
+    .line-item[hidden] {
+      display: none;
+    }
+
     .line-item {
       display: flex;
       justify-content: space-between;
