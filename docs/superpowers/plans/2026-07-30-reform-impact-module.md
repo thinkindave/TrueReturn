@@ -180,8 +180,13 @@ function calcReformImpact({ saleArgs, quarantineRows = [], years, marginalRate }
   const newRefunds = preBoundaryRefunds;
   const oldRefunds = preBoundaryRefunds + quarantinedRefunds;
 
-  const newTotalTax = newOutcome.cgt - newRefunds;
-  const oldTotalTax = oldDetail.tax - oldRefunds;
+  // Tax on rental profits. Under the new rules the pool absorbs profitable
+  // years before they are taxed; under the old rules there is no pool and the
+  // profit is taxed in full. Omitting both terms overstated the reform's cost
+  // by $20,708 at 15 years on the default property (21%). This is recovery
+  // channel A in UI spec §4, which rules that an honest module shows it.
+  const newTotalTax = newOutcome.cgt - newRefunds + newProfitTax;
+  const oldTotalTax = oldDetail.tax - oldRefunds + oldProfitTax;
   const delta = newTotalTax - oldTotalTax;
 
   // The dual-era split, for the new-rules column only — the old law has no
@@ -207,6 +212,8 @@ function calcReformImpact({ saleArgs, quarantineRows = [], years, marginalRate }
     newCGT: newOutcome.cgt,
     oldRefunds,
     newRefunds,
+    oldProfitTax,
+    newProfitTax,
     oldTotalTax,
     newTotalTax,
     split,
@@ -271,7 +278,9 @@ test('total-tax delta is positive at all three periods — sign is corrected', (
     assert.strictEqual(r.show, true, years + 'yr must show the module');
     // Pre-boundary refunds are identical on both sides, so they cancel: the
     // delta is (newCGT - oldCGT) + quarantined refunds foregone.
-    approxEqual(r.delta, (r.newCGT - r.oldCGT) + (r.oldRefunds - r.newRefunds), 0.01);
+    approxEqual(r.delta,
+      (r.newCGT - r.oldCGT) + (r.oldRefunds - r.newRefunds) + (r.newProfitTax - r.oldProfitTax),
+      0.01);
   });
   // The 5-year case is the one that inverts on a CGT-only reading — assert
   // the correction explicitly rather than leaving it implied by the loop.
@@ -484,6 +493,7 @@ In `index.html`, insert immediately **after** the closing `</div>` of the `proj5
                   <tr class="reform-sub" id="proj5ReformSplitPre" hidden><td>gain to 30 Jun 2027 (50% discount)</td><td>&mdash;</td><td id="proj5ReformNewPre">-</td></tr>
                   <tr class="reform-sub" id="proj5ReformSplitPost" hidden><td>gain after 30 Jun 2027 (indexed)</td><td>&mdash;</td><td id="proj5ReformNewPost">-</td></tr>
                   <tr><td>Negative-gearing refunds along the way</td><td id="proj5ReformOldRefunds">-</td><td id="proj5ReformNewRefunds">-</td></tr>
+                  <tr><td>Tax on rental profits along the way</td><td id="proj5ReformOldProfitTax">-</td><td id="proj5ReformNewProfitTax">-</td></tr>
                   <tr class="reform-total"><td id="proj5ReformTotalLabel">Total tax</td><td id="proj5ReformOldTotal">-</td><td id="proj5ReformNewTotal">-</td></tr>
                 </tbody>
               </table>
@@ -510,6 +520,7 @@ Insert the identical block after the `proj10Benchmark` block (opening at line 34
                   <tr class="reform-sub" id="proj10ReformSplitPre" hidden><td>gain to 30 Jun 2027 (50% discount)</td><td>&mdash;</td><td id="proj10ReformNewPre">-</td></tr>
                   <tr class="reform-sub" id="proj10ReformSplitPost" hidden><td>gain after 30 Jun 2027 (indexed)</td><td>&mdash;</td><td id="proj10ReformNewPost">-</td></tr>
                   <tr><td>Negative-gearing refunds along the way</td><td id="proj10ReformOldRefunds">-</td><td id="proj10ReformNewRefunds">-</td></tr>
+                  <tr><td>Tax on rental profits along the way</td><td id="proj10ReformOldProfitTax">-</td><td id="proj10ReformNewProfitTax">-</td></tr>
                   <tr class="reform-total"><td id="proj10ReformTotalLabel">Total tax</td><td id="proj10ReformOldTotal">-</td><td id="proj10ReformNewTotal">-</td></tr>
                 </tbody>
               </table>
@@ -536,6 +547,7 @@ Insert after the `projLifeBenchmark` block (opening at line 3577), with the `pro
                   <tr class="reform-sub" id="projLifeReformSplitPre" hidden><td>gain to 30 Jun 2027 (50% discount)</td><td>&mdash;</td><td id="projLifeReformNewPre">-</td></tr>
                   <tr class="reform-sub" id="projLifeReformSplitPost" hidden><td>gain after 30 Jun 2027 (indexed)</td><td>&mdash;</td><td id="projLifeReformNewPost">-</td></tr>
                   <tr><td>Negative-gearing refunds along the way</td><td id="projLifeReformOldRefunds">-</td><td id="projLifeReformNewRefunds">-</td></tr>
+                  <tr><td>Tax on rental profits along the way</td><td id="projLifeReformOldProfitTax">-</td><td id="projLifeReformNewProfitTax">-</td></tr>
                   <tr class="reform-total"><td id="projLifeReformTotalLabel">Total tax</td><td id="projLifeReformOldTotal">-</td><td id="projLifeReformNewTotal">-</td></tr>
                 </tbody>
               </table>
@@ -665,6 +677,14 @@ In `index.html`, insert immediately **after** the sensitivity-band `if (saleOutc
             document.getElementById(`${prefix}ReformOldRefunds`).textContent = '-' + formatCurrency(impact.oldRefunds);
             document.getElementById(`${prefix}ReformNewRefunds`).textContent = '-' + formatCurrency(impact.newRefunds);
 
+            // Tax on rental profits. Under the new rules the pool absorbs
+            // profitable years, so this is often $0 on the new side while the
+            // old side pays in full — the one row where the pool works FOR
+            // the investor. Omitting it overstated the reform's cost by
+            // $20,708 at 15 years on the default property.
+            document.getElementById(`${prefix}ReformOldProfitTax`).textContent = formatCurrency(impact.oldProfitTax);
+            document.getElementById(`${prefix}ReformNewProfitTax`).textContent = formatCurrency(impact.newProfitTax);
+
             document.getElementById(`${prefix}ReformTotalLabel`).textContent = `Total tax over ${period}`;
             document.getElementById(`${prefix}ReformOldTotal`).textContent = formatCurrency(impact.oldTotalTax);
             document.getElementById(`${prefix}ReformNewTotal`).textContent = formatCurrency(impact.newTotalTax);
@@ -729,10 +749,10 @@ Expected, on the default property:
 
 | | 5yr | 10yr | 15yr |
 |---|---|---|---|
-| sentence | add $11,171 | add $37,174 | add $100,235 |
+| sentence | add $11,171 | add $36,902 | add $79,527 |
 | old CGT | $37,082 | $95,514 | $171,802 |
 | new CGT | $25,025 | $100,155 | $239,505 |
-| old total | $6,235 | $55,362 | $131,651 |
+| old total | $6,235 | $55,634 | $152,358 |
 | new total | $17,406 | $92,536 | $231,886 |
 
 Figures within a few dollars are fine (rounding). A **sign** difference or a difference of thousands is a real failure — stop and investigate rather than editing the expectation.

@@ -59,12 +59,13 @@ Counting both channels:
 
 | | 5yr | 10yr | 15yr |
 |---|---|---|---|
-| Total tax, old rules | $6,235 | $55,362 | $131,651 |
+| Total tax, old rules | $6,235 | $55,634 | $152,358 |
 | Total tax, new rules | $17,406 | $92,536 | $231,886 |
-| **Total-tax delta** | **+$11,171** | **+$37,174** | **+$100,235** |
+| **Total-tax delta** | **+$11,171** | **+$36,902** | **+$79,527** |
 
 Correct sign at every period, and the growth over time is the most informative
-thing the module has to say.
+thing the module has to say. (These figures include the rental-profit term
+below; without it the 15-year delta reads $100,235.)
 
 ---
 
@@ -73,8 +74,31 @@ thing the module has to say.
 **Total tax on this property over the holding period, under each rulebook.**
 
 ```
-totalTax = CGT at sale − negative-gearing refunds received along the way
+totalTax = CGT at sale
+         − negative-gearing refunds received along the way
+         + tax paid on rental profits along the way
 ```
+
+**The rental-profit term is not optional (added 2026-07-30, PO approved).** An
+earlier draft used `CGT − refunds` alone. Measured on the default property,
+that omits **$20,708** at 15 years and overstates the reform's cost by 21%.
+
+Once the property turns profitable in year 10, the quarantine pool absorbs
+**every dollar** of profit, so the investor pays no tax on it; under the old
+rules there is no pool and all of it is taxed:
+
+| Year | Net rental | New rules | Old rules |
+|---|---|---|---|
+| 1 | −$20,592 | refund $7,619 | refund $7,619 |
+| 2–9 | losses | quarantined | refunds |
+| 10–15 | +$736 → +$18,637 | pool absorbs, $0 tax | taxed, $20,708 total |
+
+This is recovery channel **A** in UI spec §4 — "recovered along the way: pool
+absorbing profitable rental years" — which §4 already rules an honest module
+must show. The earlier draft counted channels W and V and dropped A. A row
+labelled "Total tax" that omits a whole category of tax is the same species of
+error §2 exists to fix, and it is the one row where the pool works *for* the
+investor, which is what stops the table reading as one-sided.
 
 Old rules: 50% discount on the whole gain, no quarantine pool, every loss year
 deductible.
@@ -117,6 +141,10 @@ One sentence, verb swapping on sign, with a `see how` expander:
 
 > The 2027 tax changes **reduce** the tax on this property by **$15,354** over 15 years. *see how*
 
+(The negative-arm figure below predates the rental-profit term and will move
+once it is counted; the branch itself is unaffected, since counting profit tax
+only pushes the delta further negative.)
+
 **The negative arm is measured, not hypothetical.** Sweeping `expectedGrowth`
 on the default property in the shipped build (simple mode, MTR pinned to
 `SIMPLE_MODE_TAX` = 0.37):
@@ -153,8 +181,9 @@ Capital gains tax at sale                   $171,802     $239,505
    gain to 30 Jun 2027 (50% discount)              —           $0
    gain after 30 Jun 2027 (indexed)                —     $239,505
 Negative-gearing refunds along the way      −$40,152      −$7,619
+Tax on rental profits along the way          $20,708           $0
 ──────────────────────────────────────────────────────────────────
-Total tax over 15 years                     $131,651     $231,886
+Total tax over 15 years                     $152,358     $231,886
 ```
 
 The dual-era sub-rows are **tax**, not gain, and appear on the new-rules side
@@ -234,6 +263,7 @@ in `engine.js`, returning:
   delta,                 // newTotalTax − oldTotalTax; signed
   oldCGT, newCGT,
   oldRefunds, newRefunds,
+  oldProfitTax, newProfitTax,
   oldTotalTax, newTotalTax,
   split: { taxOnPre, taxOnPost } | null,   // new-rules side; null on OLD route
   pooledAtSale,          // for the note; 0 when no pool
