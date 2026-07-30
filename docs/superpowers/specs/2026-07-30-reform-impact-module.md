@@ -236,8 +236,8 @@ Gate on the arithmetic, never on `dwellingType` — the same rule §3 v2.6
 adopted for the degenerate sensitivity band, for the same reason: it stays
 correct if the winning CGT option changes.
 
-**New builds land at exactly $0 and hide themselves.** Measured, all three
-periods:
+**New builds land at exactly $0 and hide themselves — while the discount
+wins.** Measured, all three periods at the default 6% growth:
 
 | | 5yr | 10yr | 15yr |
 |---|---|---|---|
@@ -246,9 +246,25 @@ periods:
 | Delta | $0 | $0 | $0 |
 
 New builds keep full negative gearing (`ng === 'FULL'`) and may elect the 50%
-discount on the whole gain — Option A wins at every period, and Option A *is*
-the old-rules calculation. The reform genuinely does nothing to them. No
-special case is needed to express this.
+discount on the whole gain — at 6% growth Option A wins at every period, and
+Option A *is* the old-rules calculation. The reform genuinely does nothing to
+them. No special case is needed to express this.
+
+**But that is a property of the growth rate, not of new builds.** Below roughly
+CPI growth, Option B (indexation) wins and the reform genuinely helps: a $480k
+VIC new build at 2% growth elects indexation at $39,051 against the discount's
+$47,372, an $8,321 saving, and the module correctly shows a reduction. Measured:
+
+| growth | Option A (50% discount) | Option B (indexation) | winner |
+|---|---|---|---|
+| 2% | $47,372 | **$39,051** | **B** |
+| 4% | **$86,571** | $116,097 | A |
+| 6% | **$137,874** | $217,356 | A |
+
+This is the payoff for gating on arithmetic rather than `dwellingType`: a type
+gate would have suppressed the module in exactly the case where the taxpayer's
+election is worth the most. It is also the only route to the `BEST_OF`
+winner-B split, so that branch is reachable, not dead code.
 
 ---
 

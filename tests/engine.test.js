@@ -1465,4 +1465,26 @@ test('the year window slices the schedule — a 5-year card ignores years 6-15',
     'a longer hold must count more years, or the window is not being applied');
 });
 
+test('new build at low growth: indexation wins, so the module shows', () => {
+  // New builds elect between the 50% discount -- which IS the old-rules
+  // calculation -- and indexation. Above roughly CPI growth the discount
+  // wins and the reform changes nothing, which is the case the sibling test
+  // above pins. BELOW it, indexation wins and the reform genuinely helps, so
+  // the module must NOT hide. Measured on a $480k VIC new build at 2%
+  // growth: Option A $47,372 vs Option B $39,051, an $8,321 saving.
+  //
+  // This is also the only route to the BEST_OF winner-B split, so it is what
+  // stops that branch being dead code.
+  const saleArgs = reformImpactFixture(15, 480000 * Math.pow(1.02, 15), 0, {
+    dwellingType: 'newBuild',
+    acquisitionCosts: 505570,
+    deemedValue: 480000 * Math.pow(1.02, E.yearFrac('2026-07-30', E.DEEMED_DATE_ISO)),
+  });
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 15 });
+  assert(r.delta < 0, 'indexation must leave a low-growth new build better off');
+  assert.strictEqual(r.show, true, 'a real difference must never be suppressed');
+  assert(r.split !== null, 'a winning Option B carries the dual-era split');
+  approxEqual(r.split.taxOnPre + r.split.taxOnPost, r.newCGT, 0.01);
+});
+
 summary();
