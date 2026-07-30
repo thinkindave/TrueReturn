@@ -5289,8 +5289,10 @@
 
             // Refunds are money received, so they render as negatives against
             // the tax bill.
-            document.getElementById(`${prefix}ReformOldRefunds`).textContent = '-' + formatCurrency(impact.oldRefunds);
-            document.getElementById(`${prefix}ReformNewRefunds`).textContent = '-' + formatCurrency(impact.newRefunds);
+            document.getElementById(`${prefix}ReformOldRefunds`).textContent =
+              (impact.oldRefunds > 0 ? '-' : '') + formatCurrency(impact.oldRefunds);
+            document.getElementById(`${prefix}ReformNewRefunds`).textContent =
+              (impact.newRefunds > 0 ? '-' : '') + formatCurrency(impact.newRefunds);
 
             // Tax on rental profits. Under the new rules the pool absorbs
             // profitable years, so this is often $0 on the new side while the

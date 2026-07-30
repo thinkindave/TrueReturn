@@ -368,12 +368,17 @@ if (inlineHandlers && inlineHandlers.length > 0) {
     fail('calcReformImpact is not being passed the existing saleArgs — the module may be building its own sale');
     return;
   }
-  const recomputes = /ReformImpactText[\s\S]{0,600}?\bcgt\s*-\s*\w*[Oo]ld\w*[Cc]gt\b/.test(html);
-  if (recomputes) {
-    fail('the reform impact sentence appears to recompute a CGT-only delta in index.html');
+  // The refund and rental-profit terms are what make this a total-tax delta
+  // rather than the CGT-only delta that reads as a saving at 5 years and a
+  // cost at 15 on the same property. They come entirely from the schedule,
+  // so passing an empty array here silently reverts the feature. Assert the
+  // real schedule is wired in.
+  const schedWired = /calcReformImpact\(\{[\s\S]{0,200}quarantineRows:\s*quarantineSched\.rows/.test(html);
+  if (!schedWired) {
+    fail('calcReformImpact is not being passed quarantineSched.rows — the module may have reverted to a CGT-only delta');
     return;
   }
-  ok('Reform impact module reads calcReformImpact output, not a recomputed CGT delta');
+  ok('Reform impact module reads calcReformImpact output with the real quarantine schedule');
 })();
 
 // Result
