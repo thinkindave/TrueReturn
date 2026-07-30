@@ -1286,4 +1286,28 @@ test('the CGT-only delta is negative at 5 years — the trap this module avoids'
   approxEqual(r.newCGT - r.oldCGT, -12057, 5);
 });
 
+test('tax on rental profits is counted, and the pool makes the sides differ', () => {
+  // Years 1-2 are losses; year 3 is profitable. Under the new rules the pool
+  // absorbs the profit (taxOnProfit 0); under the old rules it is taxed in
+  // full. Omitting this term overstated the reform's cost by $20,708 at 15
+  // years on the default property.
+  const rows = [
+    { fyStartISO: '2026-07-01', netResult: -20592, quarantined: 0, refund: 20592 * 0.37, taxOnProfit: 0 },
+    { fyStartISO: '2027-07-01', netResult: -18751, quarantined: 18751, refund: 0, taxOnProfit: 0 },
+    { fyStartISO: '2028-07-01', netResult: 10000, quarantined: 0, refund: 0, taxOnProfit: 0 },
+  ];
+  const r = E.calcReformImpact({
+    saleArgs: reformImpactFixture(3, 650000 * Math.pow(1.06, 3), 8751),
+    quarantineRows: rows, years: 3,
+  });
+  approxEqual(r.newProfitTax, 0, 0.01);
+  approxEqual(r.oldProfitTax, 3700, 0.01);
+  assert(r.oldProfitTax > r.newProfitTax,
+    'the pool absorbing profit is a new-rules advantage and must show as one');
+  // The full identity: every channel accounted for, nothing left implicit.
+  approxEqual(r.delta,
+    (r.newCGT - r.oldCGT) + (r.oldRefunds - r.newRefunds) + (r.newProfitTax - r.oldProfitTax),
+    0.01);
+});
+
 summary();

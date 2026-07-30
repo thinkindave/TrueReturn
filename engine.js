@@ -1060,6 +1060,8 @@ function calcReformImpact({ saleArgs, quarantineRows = [], years }) {
   // so the new-rules refund column is not falsely zero.
   let deductibleRefunds = 0;
   let quarantinedRefunds = 0;
+  let newProfitTax = 0;
+  let oldProfitTax = 0;
   for (let i = 0; i < years && i < quarantineRows.length; i++) {
     const row = quarantineRows[i];
     if (row.quarantined > 0) {
@@ -1072,12 +1074,23 @@ function calcReformImpact({ saleArgs, quarantineRows = [], years }) {
       // is never quarantined.
       deductibleRefunds += row.refund || 0;
     }
+    // Tax on rental profits, which the two rulebooks charge differently.
+    // buildQuarantineSchedule already nets the pool off the new-rules figure
+    // (taxOnProfit = (netResult - absorbed) * rate). The old rules have no
+    // pool, so every profitable year is taxed in full.
+    newProfitTax += row.taxOnProfit || 0;
+    if (row.netResult > 0) oldProfitTax += row.netResult * marginalRate;
   }
   const newRefunds = deductibleRefunds;
   const oldRefunds = deductibleRefunds + quarantinedRefunds;
 
-  const newTotalTax = newOutcome.cgt - newRefunds;
-  const oldTotalTax = oldDetail.tax - oldRefunds;
+  // Tax on rental profits. Under the new rules the pool absorbs profitable
+  // years before they are taxed; under the old rules there is no pool and the
+  // profit is taxed in full. Omitting both terms overstated the reform's cost
+  // by $20,708 at 15 years on the default property (21%). This is recovery
+  // channel A in UI spec §4, which rules that an honest module shows it.
+  const newTotalTax = newOutcome.cgt - newRefunds + newProfitTax;
+  const oldTotalTax = oldDetail.tax - oldRefunds + oldProfitTax;
   const delta = newTotalTax - oldTotalTax;
 
   // The dual-era split, for the new-rules column only — the old law has no
@@ -1103,6 +1116,8 @@ function calcReformImpact({ saleArgs, quarantineRows = [], years }) {
     newCGT: newOutcome.cgt,
     oldRefunds,
     newRefunds,
+    oldProfitTax,
+    newProfitTax,
     oldTotalTax,
     newTotalTax,
     split,
