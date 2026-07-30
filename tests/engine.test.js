@@ -1419,4 +1419,21 @@ test('split is null on an OLD-route sale and populated on DUAL_ERA', () => {
   approxEqual(rDual.split.taxOnPre + rDual.split.taxOnPost, rDual.newCGT, 0.01);
 });
 
+test('pool accounting is reported, not assumed — stranded and used are distinct', () => {
+  // A large pool against a small gain strands most of itself. The UI note
+  // must be able to tell "used up" from "never recovered", because the card
+  // says so a few lines above and the two must not contradict.
+  const saleArgs = reformImpactFixture(5, 650000 * Math.pow(0.96, 5), 200000);
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 5 });
+  assert(r.strandedPool > 0, 'a big pool against a shrunken sale price must strand');
+  approxEqual(r.poolUsedAtSale + r.strandedPool, r.pooledAtSale, 0.01);
+});
+
+test('a fully absorbed pool reports nothing stranded', () => {
+  const saleArgs = reformImpactFixture(15, 1557762.83, 31958.21);
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 15 });
+  approxEqual(r.strandedPool, 0, 0.01);
+  approxEqual(r.poolUsedAtSale, r.pooledAtSale, 0.01);
+});
+
 summary();

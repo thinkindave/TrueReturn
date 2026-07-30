@@ -1106,6 +1106,13 @@ function calcReformImpact({ saleArgs, quarantineRows = [], years }) {
     };
   }
 
+  // poolUsed / strandedPool sit at different depths per regime: directly on
+  // detail for DUAL_ERA and OLD, but under the winning option for BEST_OF.
+  // Resolve here so callers never have to branch on the regime.
+  const newDetail = newOutcome.regime === 'BEST_OF'
+    ? (newOutcome.detail.winner === 'A' ? newOutcome.detail.optionA : newOutcome.detail.optionB)
+    : newOutcome.detail;
+
   return {
     // Sub-dollar deltas are suppressed on the arithmetic, never on
     // dwellingType — the rule follows the numbers so it stays correct if the
@@ -1122,6 +1129,8 @@ function calcReformImpact({ saleArgs, quarantineRows = [], years }) {
     newTotalTax,
     split,
     pooledAtSale: saleArgs.quarantinePool || 0,
+    poolUsedAtSale: newDetail.poolUsed || 0,
+    strandedPool: newDetail.strandedPool || 0,
   };
 }
 

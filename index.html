@@ -5306,11 +5306,23 @@
 
             // The pool's value is already inside the new-rules CGT figure —
             // saying so is what stops the table double-counting it (§4's
-            // reconciliation discipline applied here).
+            // reconciliation discipline applied here). But it may only be
+            // PARTLY used, or not used at all, when the sale gain is too
+            // small to absorb it: the card's stranded-losses note says so a
+            // few lines above, and this note must not contradict it.
             const poolNoteEl = document.getElementById(`${prefix}ReformPoolNote`);
             if (impact.pooledAtSale > 0) {
-              poolNoteEl.textContent = 'The ' + formatCurrency(impact.pooledAtSale) +
-                ' still pooled at sale is already used up in the tax line above.';
+              if (impact.strandedPool <= 0) {
+                poolNoteEl.textContent = 'The ' + formatCurrency(impact.pooledAtSale) +
+                  ' still pooled at sale is already used up in the tax line above.';
+              } else if (impact.poolUsedAtSale > 0) {
+                poolNoteEl.textContent = 'Of the ' + formatCurrency(impact.pooledAtSale) +
+                  ' still pooled at sale, ' + formatCurrency(impact.poolUsedAtSale) +
+                  ' is used up in the tax line above; the rest is never recovered.';
+              } else {
+                poolNoteEl.textContent = 'None of the ' + formatCurrency(impact.pooledAtSale) +
+                  ' still pooled at sale could be used against this gain.';
+              }
               poolNoteEl.hidden = false;
             } else {
               poolNoteEl.textContent = '';
