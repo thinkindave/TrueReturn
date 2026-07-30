@@ -602,8 +602,10 @@
     .reform-impact-toggle {
       background: none;
       border: none;
-      padding: 0;
-      margin-left: 0.25rem;
+      /* Padded for a usable tap target, with a compensating negative margin
+         so the line rhythm matches the sibling .proj-line blocks. */
+      padding: 0.375rem 0.25rem;
+      margin: -0.375rem 0 -0.375rem 0.125rem;
       font: inherit;
       color: var(--accent);
       text-decoration: underline;
@@ -635,11 +637,12 @@
       color: var(--text-secondary);
       border-bottom: 1px solid var(--border-default);
     }
-    .reform-impact-table .reform-sub td:first-child {
+    .reform-impact-table .reform-sub th:first-child {
       padding-left: 0.75rem;
       color: var(--text-secondary);
     }
-    .reform-impact-table .reform-total td {
+    .reform-impact-table .reform-total td,
+    .reform-impact-table .reform-total th {
       border-top: 1px solid var(--border-default);
       font-weight: 600;
       color: var(--text-primary);
@@ -3351,19 +3354,19 @@
           </div>
           <div class="proj-line reform-impact" id="proj5ReformImpact" hidden>
             <span id="proj5ReformImpactText"></span>
-            <button type="button" class="reform-impact-toggle" id="proj5ReformImpactToggle" aria-expanded="false" aria-controls="proj5ReformImpactDetail">see how</button>
+            <button type="button" class="reform-impact-toggle" id="proj5ReformImpactToggle" aria-expanded="false" aria-controls="proj5ReformImpactDetail" aria-label="see how the 2027 changes apply over 5 years">see how</button>
             <div class="reform-impact-detail" id="proj5ReformImpactDetail" hidden>
               <table class="reform-impact-table">
                 <thead>
                   <tr><th scope="col">The same sale, two rulebooks</th><th scope="col">Old rules</th><th scope="col">New rules</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td>Capital gains tax at sale</td><td id="proj5ReformOldCgt">-</td><td id="proj5ReformNewCgt">-</td></tr>
-                  <tr class="reform-sub" id="proj5ReformSplitPre" hidden><td>gain to 30 Jun 2027 (50% discount)</td><td>&mdash;</td><td id="proj5ReformNewPre">-</td></tr>
-                  <tr class="reform-sub" id="proj5ReformSplitPost" hidden><td>gain after 30 Jun 2027 (indexed)</td><td>&mdash;</td><td id="proj5ReformNewPost">-</td></tr>
-                  <tr><td>Negative-gearing refunds along the way</td><td id="proj5ReformOldRefunds">-</td><td id="proj5ReformNewRefunds">-</td></tr>
-                  <tr><td>Tax on rental profits along the way</td><td id="proj5ReformOldProfitTax">-</td><td id="proj5ReformNewProfitTax">-</td></tr>
-                  <tr class="reform-total"><td id="proj5ReformTotalLabel">Total tax</td><td id="proj5ReformOldTotal">-</td><td id="proj5ReformNewTotal">-</td></tr>
+                  <tr><th scope="row">Capital gains tax at sale</th><td id="proj5ReformOldCgt">-</td><td id="proj5ReformNewCgt">-</td></tr>
+                  <tr class="reform-sub" id="proj5ReformSplitPre" hidden><th scope="row">tax on gain to 30 Jun 2027 (50% discount)</th><td aria-label="not applicable">&mdash;</td><td id="proj5ReformNewPre">-</td></tr>
+                  <tr class="reform-sub" id="proj5ReformSplitPost" hidden><th scope="row">tax on gain after 30 Jun 2027 (indexed)</th><td aria-label="not applicable">&mdash;</td><td id="proj5ReformNewPost">-</td></tr>
+                  <tr><th scope="row">Negative-gearing refunds along the way</th><td id="proj5ReformOldRefunds">-</td><td id="proj5ReformNewRefunds">-</td></tr>
+                  <tr><th scope="row">Tax on rental profits along the way</th><td id="proj5ReformOldProfitTax">-</td><td id="proj5ReformNewProfitTax">-</td></tr>
+                  <tr class="reform-total"><th scope="row" id="proj5ReformTotalLabel">Total tax</th><td id="proj5ReformOldTotal">-</td><td id="proj5ReformNewTotal">-</td></tr>
                 </tbody>
               </table>
               <p class="reform-impact-note" id="proj5ReformPoolNote" hidden></p>
@@ -3518,19 +3521,19 @@
           </div>
           <div class="proj-line reform-impact" id="proj10ReformImpact" hidden>
             <span id="proj10ReformImpactText"></span>
-            <button type="button" class="reform-impact-toggle" id="proj10ReformImpactToggle" aria-expanded="false" aria-controls="proj10ReformImpactDetail">see how</button>
+            <button type="button" class="reform-impact-toggle" id="proj10ReformImpactToggle" aria-expanded="false" aria-controls="proj10ReformImpactDetail" aria-label="see how the 2027 changes apply over 10 years">see how</button>
             <div class="reform-impact-detail" id="proj10ReformImpactDetail" hidden>
               <table class="reform-impact-table">
                 <thead>
                   <tr><th scope="col">The same sale, two rulebooks</th><th scope="col">Old rules</th><th scope="col">New rules</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td>Capital gains tax at sale</td><td id="proj10ReformOldCgt">-</td><td id="proj10ReformNewCgt">-</td></tr>
-                  <tr class="reform-sub" id="proj10ReformSplitPre" hidden><td>gain to 30 Jun 2027 (50% discount)</td><td>&mdash;</td><td id="proj10ReformNewPre">-</td></tr>
-                  <tr class="reform-sub" id="proj10ReformSplitPost" hidden><td>gain after 30 Jun 2027 (indexed)</td><td>&mdash;</td><td id="proj10ReformNewPost">-</td></tr>
-                  <tr><td>Negative-gearing refunds along the way</td><td id="proj10ReformOldRefunds">-</td><td id="proj10ReformNewRefunds">-</td></tr>
-                  <tr><td>Tax on rental profits along the way</td><td id="proj10ReformOldProfitTax">-</td><td id="proj10ReformNewProfitTax">-</td></tr>
-                  <tr class="reform-total"><td id="proj10ReformTotalLabel">Total tax</td><td id="proj10ReformOldTotal">-</td><td id="proj10ReformNewTotal">-</td></tr>
+                  <tr><th scope="row">Capital gains tax at sale</th><td id="proj10ReformOldCgt">-</td><td id="proj10ReformNewCgt">-</td></tr>
+                  <tr class="reform-sub" id="proj10ReformSplitPre" hidden><th scope="row">tax on gain to 30 Jun 2027 (50% discount)</th><td aria-label="not applicable">&mdash;</td><td id="proj10ReformNewPre">-</td></tr>
+                  <tr class="reform-sub" id="proj10ReformSplitPost" hidden><th scope="row">tax on gain after 30 Jun 2027 (indexed)</th><td aria-label="not applicable">&mdash;</td><td id="proj10ReformNewPost">-</td></tr>
+                  <tr><th scope="row">Negative-gearing refunds along the way</th><td id="proj10ReformOldRefunds">-</td><td id="proj10ReformNewRefunds">-</td></tr>
+                  <tr><th scope="row">Tax on rental profits along the way</th><td id="proj10ReformOldProfitTax">-</td><td id="proj10ReformNewProfitTax">-</td></tr>
+                  <tr class="reform-total"><th scope="row" id="proj10ReformTotalLabel">Total tax</th><td id="proj10ReformOldTotal">-</td><td id="proj10ReformNewTotal">-</td></tr>
                 </tbody>
               </table>
               <p class="reform-impact-note" id="proj10ReformPoolNote" hidden></p>
@@ -3688,19 +3691,19 @@
           </div>
           <div class="proj-line reform-impact" id="projLifeReformImpact" hidden>
             <span id="projLifeReformImpactText"></span>
-            <button type="button" class="reform-impact-toggle" id="projLifeReformImpactToggle" aria-expanded="false" aria-controls="projLifeReformImpactDetail">see how</button>
+            <button type="button" class="reform-impact-toggle" id="projLifeReformImpactToggle" aria-expanded="false" aria-controls="projLifeReformImpactDetail" aria-label="see how the 2027 changes apply over 15 years">see how</button>
             <div class="reform-impact-detail" id="projLifeReformImpactDetail" hidden>
               <table class="reform-impact-table">
                 <thead>
                   <tr><th scope="col">The same sale, two rulebooks</th><th scope="col">Old rules</th><th scope="col">New rules</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td>Capital gains tax at sale</td><td id="projLifeReformOldCgt">-</td><td id="projLifeReformNewCgt">-</td></tr>
-                  <tr class="reform-sub" id="projLifeReformSplitPre" hidden><td>gain to 30 Jun 2027 (50% discount)</td><td>&mdash;</td><td id="projLifeReformNewPre">-</td></tr>
-                  <tr class="reform-sub" id="projLifeReformSplitPost" hidden><td>gain after 30 Jun 2027 (indexed)</td><td>&mdash;</td><td id="projLifeReformNewPost">-</td></tr>
-                  <tr><td>Negative-gearing refunds along the way</td><td id="projLifeReformOldRefunds">-</td><td id="projLifeReformNewRefunds">-</td></tr>
-                  <tr><td>Tax on rental profits along the way</td><td id="projLifeReformOldProfitTax">-</td><td id="projLifeReformNewProfitTax">-</td></tr>
-                  <tr class="reform-total"><td id="projLifeReformTotalLabel">Total tax</td><td id="projLifeReformOldTotal">-</td><td id="projLifeReformNewTotal">-</td></tr>
+                  <tr><th scope="row">Capital gains tax at sale</th><td id="projLifeReformOldCgt">-</td><td id="projLifeReformNewCgt">-</td></tr>
+                  <tr class="reform-sub" id="projLifeReformSplitPre" hidden><th scope="row">tax on gain to 30 Jun 2027 (50% discount)</th><td aria-label="not applicable">&mdash;</td><td id="projLifeReformNewPre">-</td></tr>
+                  <tr class="reform-sub" id="projLifeReformSplitPost" hidden><th scope="row">tax on gain after 30 Jun 2027 (indexed)</th><td aria-label="not applicable">&mdash;</td><td id="projLifeReformNewPost">-</td></tr>
+                  <tr><th scope="row">Negative-gearing refunds along the way</th><td id="projLifeReformOldRefunds">-</td><td id="projLifeReformNewRefunds">-</td></tr>
+                  <tr><th scope="row">Tax on rental profits along the way</th><td id="projLifeReformOldProfitTax">-</td><td id="projLifeReformNewProfitTax">-</td></tr>
+                  <tr class="reform-total"><th scope="row" id="projLifeReformTotalLabel">Total tax</th><td id="projLifeReformOldTotal">-</td><td id="projLifeReformNewTotal">-</td></tr>
                 </tbody>
               </table>
               <p class="reform-impact-note" id="projLifeReformPoolNote" hidden></p>
