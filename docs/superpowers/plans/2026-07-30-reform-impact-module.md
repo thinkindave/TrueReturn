@@ -34,7 +34,7 @@ node tests/engine.test.js
 
 **The test harness.** `tests/harness.js` exports `test(name, fn)`, `assert`, `approxEqual(actual, expected, tolerance)` (default tolerance 0.01) and `summary()`. `summary()` must stay the last line of the suite. Tests are plain functions that throw.
 
-**The `minTests` ratchet.** `.claude/smoke-test.js` asserts each suite runs at least N tests, so a suite that silently stops running its tests fails the check. `tests/engine.test.js` currently runs 117 and the ratchet is set to 116. This plan adds 8 tests; Task 6 raises the ratchet.
+**The `minTests` ratchet.** `.claude/smoke-test.js` asserts each suite runs at least N tests, so a suite that silently stops running its tests fails the check. `tests/engine.test.js` currently runs 117 and the ratchet is set to 116. This plan adds 9 tests (2 in Task 1, 7 in Task 2); Task 6 raises the ratchet.
 
 **Verifying in the browser.** Screenshots come back blank for this page — do not attempt visual verification and do not claim it. Verify with `javascript_tool` DOM reads instead. The preview config is `.claude/launch.json` (port 8480, serves the repo root). **Clear `localStorage.removeItem('truereturn_state')` and reload before reading any figure**, or you will read a stale saved property instead of the default one. The browser also caches `engine.js`: after editing it run `fetch('/engine.js',{cache:'reload'})` and then navigate, or you will debug a phantom bug against stale code.
 
@@ -103,7 +103,7 @@ function reformImpactFixture(years, salePrice, pool, overrides) {
 
 test('the CGT-only delta is negative at 5 years — the trap this module avoids', () => {
   const saleArgs = reformImpactFixture(5, 869846.63, 62779.64);
-  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 5, marginalRate: 0.37 });
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 5 });
   // New-rules CGT is LOWER than old-rules CGT: the pool offsets a still-small
   // gain by more than the lost 50% discount costs. Shipping this figure alone
   // would claim the reform SAVED the investor money.
@@ -262,17 +262,19 @@ test('total-tax delta is positive at all three periods — sign is corrected', (
   // is deductible under both rulebooks; every later loss year is quarantined
   // under the new rules only.
   const rows = [
-    { fyStartISO: '2026-07-01', netResult: -20592, quarantined: 0 },
-    { fyStartISO: '2027-07-01', netResult: -19500, quarantined: 19500 },
-    { fyStartISO: '2028-07-01', netResult: -18200, quarantined: 18200 },
-    { fyStartISO: '2029-07-01', netResult: -16800, quarantined: 16800 },
-    { fyStartISO: '2030-07-01', netResult: -8280, quarantined: 8280 },
+    // refund and taxOnProfit are fields buildQuarantineSchedule emits and
+    // calcReformImpact reads directly — a row without them scores zero.
+    { fyStartISO: '2026-07-01', netResult: -20592, quarantined: 0, refund: 20592 * 0.37, taxOnProfit: 0 },
+    { fyStartISO: '2027-07-01', netResult: -19500, quarantined: 19500, refund: 0, taxOnProfit: 0 },
+    { fyStartISO: '2028-07-01', netResult: -18200, quarantined: 18200, refund: 0, taxOnProfit: 0 },
+    { fyStartISO: '2029-07-01', netResult: -16800, quarantined: 16800, refund: 0, taxOnProfit: 0 },
+    { fyStartISO: '2030-07-01', netResult: -8280, quarantined: 8280, refund: 0, taxOnProfit: 0 },
   ];
   const periods = [[5, 869846.63, 62779.64], [10, 1164051.00, 87190.03], [15, 1557762.83, 31958.21]];
   periods.forEach(([years, price, pool]) => {
     const r = E.calcReformImpact({
       saleArgs: reformImpactFixture(years, price, pool),
-      quarantineRows: rows, years: years, marginalRate: 0.37,
+      quarantineRows: rows, years: years,
     });
     assert(r.delta > 0, years + 'yr: the reform must cost, not save, once refunds are counted');
     assert.strictEqual(r.show, true, years + 'yr must show the module');
@@ -286,7 +288,7 @@ test('total-tax delta is positive at all three periods — sign is corrected', (
   // the correction explicitly rather than leaving it implied by the loop.
   const r5 = E.calcReformImpact({
     saleArgs: reformImpactFixture(5, 869846.63, 62779.64),
-    quarantineRows: rows, years: 5, marginalRate: 0.37,
+    quarantineRows: rows, years: 5,
   });
   assert(r5.newCGT - r5.oldCGT < 0 && r5.delta > 0,
     'at 5 years the CGT-only delta is negative but the total-tax delta is positive');
@@ -294,12 +296,12 @@ test('total-tax delta is positive at all three periods — sign is corrected', (
 
 test('pre-boundary refunds are identical under both rulebooks', () => {
   const rows = [
-    { fyStartISO: '2026-07-01', netResult: -20592, quarantined: 0 },
-    { fyStartISO: '2027-07-01', netResult: -19500, quarantined: 19500 },
+    { fyStartISO: '2026-07-01', netResult: -20592, quarantined: 0, refund: 20592 * 0.37, taxOnProfit: 0 },
+    { fyStartISO: '2027-07-01', netResult: -19500, quarantined: 19500, refund: 0, taxOnProfit: 0 },
   ];
   const r = E.calcReformImpact({
     saleArgs: reformImpactFixture(5, 869846.63, 62779.64),
-    quarantineRows: rows, years: 5, marginalRate: 0.37,
+    quarantineRows: rows, years: 5,
   });
   // 20592 * 0.37 = 7619.04 — deductible under both rulebooks.
   approxEqual(r.newRefunds, 7619.04, 0.5);
@@ -309,10 +311,10 @@ test('pre-boundary refunds are identical under both rulebooks', () => {
 });
 
 test('new refunds are never zero merely because quarantine applies', () => {
-  const rows = [{ fyStartISO: '2026-07-01', netResult: -20592, quarantined: 0 }];
+  const rows = [{ fyStartISO: '2026-07-01', netResult: -20592, quarantined: 0, refund: 20592 * 0.37, taxOnProfit: 0 }];
   const r = E.calcReformImpact({
     saleArgs: reformImpactFixture(15, 1557762.83, 31958.21),
-    quarantineRows: rows, years: 15, marginalRate: 0.37,
+    quarantineRows: rows, years: 15,
   });
   assert(r.newRefunds > 0, 'losses before 1 July 2027 stay deductible under the new rules');
 });
@@ -323,7 +325,7 @@ test('new build: delta is exactly zero and the module hides itself', () => {
   // old-rules calculation. The reform genuinely does nothing to them.
   [[5, 869846.63], [10, 1164051.00], [15, 1557762.83]].forEach(([years, price]) => {
     const saleArgs = reformImpactFixture(years, price, 0, { dwellingType: 'newBuild' });
-    const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years, marginalRate: 0.37 });
+    const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years });
     approxEqual(r.delta, 0, 0.01);
     assert.strictEqual(r.show, false, years + 'yr new build must hide the module');
   });
@@ -331,7 +333,7 @@ test('new build: delta is exactly zero and the module hides itself', () => {
 
 test('sub-dollar deltas are suppressed on the arithmetic, not on dwellingType', () => {
   const saleArgs = reformImpactFixture(15, 1557762.83, 31958.21);
-  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 15, marginalRate: 0.37 });
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 15 });
   // An established property with a real delta must NOT be suppressed.
   assert.strictEqual(r.show, true, 'established with a real delta must show');
   assert.strictEqual(saleArgs.dwellingType, 'established', 'gate is arithmetic, not type');
@@ -344,7 +346,7 @@ test('the negative arm is reachable — low growth leaves the property better of
   const saleArgs = reformImpactFixture(15, salePrice, 31958.21, {
     deemedValue: 650000 * Math.pow(1.03, E.yearFrac('2026-07-30', E.DEEMED_DATE_ISO)),
   });
-  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 15, marginalRate: 0.37 });
+  const r = E.calcReformImpact({ saleArgs, quarantineRows: [], years: 15 });
   assert(r.delta < 0, 'a low-growth hold must be able to produce a negative delta');
   assert.strictEqual(r.show, true, 'a negative delta still shows — it is not suppressed');
 });
@@ -353,13 +355,13 @@ test('split is null on an OLD-route sale and populated on DUAL_ERA', () => {
   // A sale before 1 July 2027 routes OLD: single era, so no split to show.
   const oldRoute = reformImpactFixture(0, 650000, 0, { saleDate: '2027-01-30' });
   const rOld = E.calcReformImpact({
-    saleArgs: oldRoute, quarantineRows: [], years: 0, marginalRate: 0.37,
+    saleArgs: oldRoute, quarantineRows: [], years: 0,
   });
   assert.strictEqual(rOld.split, null, 'OLD route has no era split');
 
   const rDual = E.calcReformImpact({
     saleArgs: reformImpactFixture(15, 1557762.83, 31958.21),
-    quarantineRows: [], years: 15, marginalRate: 0.37,
+    quarantineRows: [], years: 15,
   });
   assert(rDual.split !== null, 'DUAL_ERA must carry a split');
   approxEqual(rDual.split.taxOnPre + rDual.split.taxOnPost, rDual.newCGT, 0.01);
@@ -384,7 +386,7 @@ Expected: several failures. If any test passes immediately, read it and confirm 
 node tests/engine.test.js
 ```
 
-Expected: `125 passed, 0 failed`.
+Expected: `126 passed, 0 failed`.
 
 - [ ] **Step 5: Commit**
 
@@ -635,7 +637,6 @@ In `index.html`, insert immediately **after** the sensitivity-band `if (saleOutc
             saleArgs,
             quarantineRows: quarantineSched.rows,
             years,
-            marginalRate: marginalTaxRate,
           });
           if (!impact.show) {
             // Blank on hide so a later throw can never leave stale figures
@@ -833,7 +834,7 @@ Change line 23 from:
 to:
 
 ```js
-  { label: 'tests/engine.test.js', file: path.join(TESTS_DIR, 'engine.test.js'), minTests: 124 }
+  { label: 'tests/engine.test.js', file: path.join(TESTS_DIR, 'engine.test.js'), minTests: 125 }
 ```
 
 - [ ] **Step 2: Add the structural check**
@@ -866,7 +867,7 @@ Insert immediately **before** the `// Result` comment near line 360:
 node .claude/smoke-test.js
 ```
 
-Expected: `Result: PASS (14 passed, 0 failed)`, with `tests/engine.test.js` reporting 125 tests.
+Expected: `Result: PASS (14 passed, 0 failed)`, with `tests/engine.test.js` reporting 126 tests.
 
 - [ ] **Step 4: Commit**
 
@@ -959,7 +960,7 @@ git commit -m "docs: UI spec to v3.1 -- reform impact module measures total tax 
 
 ## Definition of done
 
-- [ ] `node .claude/smoke-test.js` reports `PASS (14 passed, 0 failed)` with 125 engine tests
+- [ ] `node .claude/smoke-test.js` reports `PASS (14 passed, 0 failed)` with 126 engine tests
 - [ ] All three cards show the module on the default property, with the measured figures from Task 5 Step 3
 - [ ] A new build hides all three modules
 - [ ] The `see how` expander opens and closes, and `aria-expanded` tracks it
