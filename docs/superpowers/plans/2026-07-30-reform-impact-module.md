@@ -458,14 +458,14 @@ In `index.html`, immediately **after** the line `.benchmark-line strong.negative
     }
     .reform-impact-table thead th {
       color: var(--text-secondary);
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-default);
     }
     .reform-impact-table .reform-sub td:first-child {
       padding-left: 0.75rem;
       color: var(--text-secondary);
     }
     .reform-impact-table .reform-total td {
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--border-default);
       font-weight: 600;
       color: var(--text-primary);
     }
