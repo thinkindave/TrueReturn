@@ -141,10 +141,7 @@ One sentence, verb swapping on sign, with a `see how` expander:
 
 > The 2027 tax changes **reduce** the tax on this property by **$15,354** over 15 years. *see how*
 
-(Re-measured in the running app **after** the rental-profit term landed: the
-3% sweep is unchanged at +$11,089 / +$7,085 / −$15,354, because at 3% growth
-the property never turns profitable within 15 years, so the profit-tax term is
-zero on both sides. These figures are current, not pre-v3.1.)
+
 
 **The negative arm is measured, not hypothetical.** Sweeping `expectedGrowth`
 on the default property in the shipped build (simple mode, MTR pinned to
@@ -155,8 +152,14 @@ on the default property in the shipped build (simple mode, MTR pinned to
 | 0% | +$31,039 | +$62,371 | +$84,943 |
 | 2% | +$18,809 | +$27,025 | +$22,250 |
 | **3%** | +$11,089 | +$7,085 | **−$15,354** |
-| 4% | +$3,077 | +$1,776 | +$14,597 |
-| 6% (default) | +$11,171 | +$37,174 | +$100,235 |
+| 4% | +$3,077 | +$1,776 | +$11,880 |
+| 6% (default) | +$11,171 | +$36,902 | +$79,527 |
+| 8% | +$25,998 | +$78,733 | +$168,173 |
+
+Re-measured in the running app after the rental-profit term landed. Only the
+4%, 6% and 8% rows moved: below ~4% growth the property never turns profitable
+within the modelled hold, so the profit-tax term is zero on both sides and
+those rows are unchanged.
 
 At 3% growth over 15 years the indexed post-2027 cost base outruns the gain,
 so the reform genuinely leaves this property better off. The delta is also
