@@ -20,7 +20,7 @@ const HTML_PATH = path.join(__dirname, '../index.html');
 const TESTS_DIR = path.join(__dirname, '../tests');
 const TEST_SUITES = [
   { label: 'tests/unit.js', file: path.join(TESTS_DIR, 'unit.js'), minTests: 199 },
-  { label: 'tests/engine.test.js', file: path.join(TESTS_DIR, 'engine.test.js'), minTests: 125 }
+  { label: 'tests/engine.test.js', file: path.join(TESTS_DIR, 'engine.test.js'), minTests: 128 }
 ];
 
 // Files in tests/ that are not themselves suites.

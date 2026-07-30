@@ -1436,4 +1436,33 @@ test('a fully absorbed pool reports nothing stranded', () => {
   approxEqual(r.poolUsedAtSale, r.pooledAtSale, 0.01);
 });
 
+test('the year window slices the schedule — a 5-year card ignores years 6-15', () => {
+  // index.html passes the SAME full 15-row schedule to all three periods, so
+  // this bound is the only thing keeping the cards distinct. Without it the
+  // 5-year card reports fifteen years of refunds.
+  const rows = [];
+  for (let y = 0; y < 15; y++) {
+    const loss = y === 0;
+    rows.push({
+      fyStartISO: (2026 + y) + '-07-01',
+      netResult: loss ? -20592 : 10000,
+      quarantined: 0,
+      refund: loss ? 20592 * 0.37 : 0,
+      taxOnProfit: 0,
+    });
+  }
+  const at5 = E.calcReformImpact({
+    saleArgs: reformImpactFixture(5, 869846.63, 62779.64), quarantineRows: rows, years: 5,
+  });
+  const at15 = E.calcReformImpact({
+    saleArgs: reformImpactFixture(15, 1557762.83, 31958.21), quarantineRows: rows, years: 15,
+  });
+  // Years 2-5 are profitable: 4 years * 10000 * 0.37 = 14800 under old rules.
+  approxEqual(at5.oldProfitTax, 14800, 0.01);
+  // Years 2-15 are profitable: 14 * 10000 * 0.37 = 51800.
+  approxEqual(at15.oldProfitTax, 51800, 0.01);
+  assert(at15.oldProfitTax > at5.oldProfitTax,
+    'a longer hold must count more years, or the window is not being applied');
+});
+
 summary();
