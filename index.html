@@ -4096,6 +4096,19 @@
           body.hidden = expanded;
         });
       });
+      // Reform impact "see how" expander (UI spec §3a v3.1, issue #17).
+      // Bound once at init like the section headers above — these three
+      // blocks are static markup, never recreated, so no delegation needed.
+      document.querySelectorAll('.reform-impact-toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+          const detail = document.getElementById(toggle.getAttribute('aria-controls'));
+          if (!detail) return;
+          const expanded = toggle.getAttribute('aria-expanded') === 'true';
+          toggle.setAttribute('aria-expanded', String(!expanded));
+          detail.hidden = expanded;
+          toggle.textContent = expanded ? 'see how' : 'hide';
+        });
+      });
       document.querySelectorAll('.period-header').forEach(header => {
         const body = header.parentElement.querySelector('.period-body');
         header.setAttribute('aria-expanded', 'false');
