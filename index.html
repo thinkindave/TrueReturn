@@ -1169,6 +1169,20 @@
       transform: rotate(-90deg);
     }
 
+    /* Everything below the headline strip that belongs to this period — the
+       always-visible prose lines plus the collapsible body. The rail lives here
+       rather than on .period-body so it starts under the headline pill and runs
+       unbroken to the last section: the prose lines each carry their own
+       vertical margin, so a rail applied per .proj-line would break into
+       segments. Because the wrapper is present in both states, the prose keeps
+       the same indent whether the period is open or closed and does not shift
+       horizontally on expand. Reuses the 3px/--border-subtle rail idiom already
+       carried by .proj-section--assumptions. */
+    .period-detail {
+      border-left: 3px solid var(--border-subtle);
+      padding-left: 0.5rem;
+    }
+
     .period-body {
       display: flex;
       flex-direction: column;
@@ -3353,6 +3367,7 @@
               <span class="period-headline-value" id="proj5HeadlineReturnOnCash">-</span>
             </div>
           </div>
+          <div class="period-detail">
           <div class="proj-line sensitivity-band" id="proj5Sensitivity" hidden></div>
           <div class="proj-line sensitivity-band" id="proj5CgtTreatment" hidden>
             <span id="proj5CgtTreatmentText"></span>
@@ -3498,6 +3513,7 @@
           </div>
 
           </div><!-- /period-body 5yr -->
+          </div><!-- /period-detail 5yr -->
         </div>
 
         <!-- 10 Year -->
@@ -3520,6 +3536,7 @@
               <span class="period-headline-value" id="proj10HeadlineReturnOnCash">-</span>
             </div>
           </div>
+          <div class="period-detail">
           <div class="proj-line sensitivity-band" id="proj10Sensitivity" hidden></div>
           <div class="proj-line sensitivity-band" id="proj10CgtTreatment" hidden>
             <span id="proj10CgtTreatmentText"></span>
@@ -3665,6 +3682,7 @@
           </div>
 
           </div><!-- /period-body 10yr -->
+          </div><!-- /period-detail 10yr -->
         </div>
 
         <!-- 15 Year -->
@@ -3687,6 +3705,7 @@
               <span class="period-headline-value" id="projLifeHeadlineReturnOnCash">-</span>
             </div>
           </div>
+          <div class="period-detail">
           <div class="proj-line sensitivity-band" id="projLifeSensitivity" hidden></div>
           <div class="proj-line sensitivity-band" id="projLifeCgtTreatment" hidden>
             <span id="projLifeCgtTreatmentText"></span>
@@ -3835,6 +3854,7 @@
           </div>
 
           </div><!-- /period-body 15yr -->
+          </div><!-- /period-detail 15yr -->
         </div>
       </div>
       <p class="projections-disclaimer">This tool provides general information only and does not constitute financial advice. You should consider your own circumstances and seek professional advice.</p>
