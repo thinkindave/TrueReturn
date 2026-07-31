@@ -345,7 +345,7 @@ function buildQuarantineSchedule({ annualResults, ngRegime, marginalRate }) {
   let pool = 0, totalRefunds = 0, totalTaxOnProfit = 0;
   const rows = annualResults.map(r => {
     const inQuarantineEra = ngRegime === 'QUARANTINE_FROM_2027' && r.fyStartISO >= BOUNDARY_ISO;
-    let refund = 0, quarantined = 0, taxOnProfit = 0;
+    let refund = 0, quarantined = 0, taxOnProfit = 0, absorbed = 0;
     if (r.netResult < 0) {
       if (inQuarantineEra) {
         quarantined = -r.netResult;
@@ -354,13 +354,16 @@ function buildQuarantineSchedule({ annualResults, ngRegime, marginalRate }) {
         refund = -r.netResult * marginalRate;
       }
     } else if (r.netResult > 0) {
-      const absorbed = Math.min(pool, r.netResult);
+      absorbed = Math.min(pool, r.netResult);
       pool -= absorbed;
       taxOnProfit = (r.netResult - absorbed) * marginalRate;
     }
     totalRefunds += refund;
     totalTaxOnProfit += taxOnProfit;
-    return { ...r, refund, quarantined, taxOnProfit };
+    // `absorbed` is reported, not just consumed, so a caller can say WHY a
+    // profitable year carries no tax. Deriving it as netResult -
+    // taxOnProfit/marginalRate would divide by a rate that can be zero.
+    return { ...r, refund, quarantined, taxOnProfit, absorbed };
   });
   return { rows, poolAtSale: pool, totalRefunds, totalTaxOnProfit };
 }

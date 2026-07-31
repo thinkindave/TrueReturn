@@ -365,6 +365,40 @@ test('profit beyond the pool is taxed normally', () => {
   approxEqual(r.rows[1].taxOnProfit, 2000 * 0.39, 0.001);
 });
 
+// `absorbed` is what the snapshot's Est. Benefit note needs in order to say
+// WHY a profitable year is untaxed. It must come off the schedule rather than
+// be re-derived as netResult - taxOnProfit/marginalRate, which divides by a
+// rate that can legitimately be zero.
+test('rows report how much profit the pool absorbed', () => {
+  const r = E.buildQuarantineSchedule({
+    annualResults: [
+      { fyStartISO: '2027-07-01', netResult: -12000 },
+      { fyStartISO: '2028-07-01', netResult: 5000 },   // fully absorbed
+      { fyStartISO: '2029-07-01', netResult: 9000 },   // 7000 left: partial
+      { fyStartISO: '2030-07-01', netResult: 4000 },   // pool empty: none
+    ],
+    ngRegime: 'QUARANTINE_FROM_2027', marginalRate: 0.39,
+  });
+  assert.strictEqual(r.rows[0].absorbed, 0);           // a loss absorbs nothing
+  approxEqual(r.rows[1].absorbed, 5000, 0.001);
+  approxEqual(r.rows[2].absorbed, 7000, 0.001);
+  assert.strictEqual(r.rows[3].absorbed, 0);
+  // absorbed and taxOnProfit must describe the same split of the same profit
+  approxEqual(r.rows[2].taxOnProfit, (9000 - 7000) * 0.39, 0.001);
+  approxEqual(r.rows[3].taxOnProfit, 4000 * 0.39, 0.001);
+});
+
+test('absorbed stays zero for every row when NG is not quarantined', () => {
+  const r = E.buildQuarantineSchedule({
+    annualResults: [
+      { fyStartISO: '2027-07-01', netResult: -12000 },
+      { fyStartISO: '2028-07-01', netResult: 5000 },
+    ],
+    ngRegime: 'FULL', marginalRate: 0.39,
+  });
+  for (const row of r.rows) assert.strictEqual(row.absorbed, 0);
+});
+
 console.log('\nproRateAnnualResults');
 
 test('pro-rates a constant annual amount across income years by days', () => {

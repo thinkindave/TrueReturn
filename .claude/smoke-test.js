@@ -401,6 +401,46 @@ if (inlineHandlers && inlineHandlers.length > 0) {
   ok('Reform impact module reads calcReformImpact output with the real quarantine schedule');
 })();
 
+(function checkSnapshotProfitYearReadsThePool() {
+  // Issue #20. The snapshot's Est. Benefit must take a profitable year's tax
+  // from the quarantine schedule, not from the pool-blind snTaxBenefit local.
+  // snTaxBenefit charges the whole profit at MTR, which is the OLD rulebook's
+  // answer on a page that assumes the reform applies (UI spec §2 Group 1) — it
+  // summed to $20,708 across years 10-15 on the default property, exactly the
+  // reform module's old-rules rental-profit row, while the module's new-rules
+  // row read $0.
+  const branchWired = /snIsPoolAbsorbedProfitYear\s*=\s*!!\([\s\S]{0,120}\.absorbed\s*>\s*0/.test(html);
+  if (!branchWired) {
+    fail('No snIsPoolAbsorbedProfitYear branch gated on the schedule row\'s absorbed amount — a profitable year may be back to charging the full profit at MTR');
+    return;
+  }
+  // The figure itself has to come off the row. If this branch ever renders
+  // snTaxBenefit again it is the old bug verbatim.
+  const readsTaxOnProfit = /snPoolTaxOnProfit\s*=\s*snQuarantineRow\.taxOnProfit/.test(html);
+  if (!readsTaxOnProfit) {
+    fail('The pool-absorbed profit branch is not reading snQuarantineRow.taxOnProfit — the rendered figure may be recomputed in the DOM layer');
+    return;
+  }
+  // A bare $0 against a profitable year is a fresh honesty defect: it reads as
+  // rental profit being untaxed. The note carrying the counterweight — the
+  // relief is finite and drawn from a pool that will not be there at sale — is
+  // required, not polish (quarantined-losses redesign spec §3).
+  //
+  // Matched on the opening clause only: the shipped string escapes its
+  // apostrophe (there\'s), so pinning the whole sentence would need the escape
+  // baked into the pattern. The clause is distinctive enough to catch removal.
+  // The sentence must stay NEUTRAL — an earlier draft said using the pool
+  // "leaves less of it to offset your capital gain at sale", which frames §4's
+  // channel A as a cost. That is the factual error §4 records, and the
+  // direction flips on the marginal rate anyway (code review, issue #20).
+  const hasCounterweight = /This uses up part of your quarantined-loss pool/.test(html);
+  if (!hasCounterweight) {
+    fail('The pool-absorbed profit note has lost its counterweight sentence — a $0 charge on a profitable year would stand unexplained');
+    return;
+  }
+  ok('Snapshot profit-year Est. Benefit reads the quarantine schedule and keeps its counterweight note');
+})();
+
 // Result
 console.log('');
 console.log('Result:', failed === 0 ? 'PASS' : 'FAIL', `(${passed} passed, ${failed} failed)`);

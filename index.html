@@ -5042,6 +5042,13 @@
       // while it exists (redesign spec §3).
       const snQuarantineRow = quarantineSched.rows[snapshotYear - 1];
       const snIsQuarantinedLossYear = !!(snQuarantineRow && snQuarantineRow.quarantined > 0);
+      // A profitable year the pool ate into. snTaxBenefit is pool-blind — it
+      // charges the full profit at MTR, which is the OLD rulebook's answer on a
+      // page that assumes the reform applies. The schedule already holds the
+      // right figure. Gated on absorbed > 0, never on dwellingType or ngRoute:
+      // only a quarantine-era pool can absorb anything, so the arithmetic is
+      // its own gate and stays correct if the routing changes.
+      const snIsPoolAbsorbedProfitYear = !!(snQuarantineRow && snQuarantineRow.absorbed > 0.5);
       const snIsPreQuarantineLossYear = ngQuarantined && !snIsQuarantinedLossYear &&
         !!(snQuarantineRow && snQuarantineRow.fyStartISO < BOUNDARY_ISO && snNetRentalPosition < 0);
       const tbNoteEl = document.getElementById('resTaxBenefitNote');
@@ -5054,6 +5061,50 @@
           tbNoteEl.textContent = 'Quarantined: under the old rules this would have been about ' +
             formatCurrency(snTaxBenefit) +
             ' back. It\'s added to your quarantined losses instead, claimable at sale.';
+          tbNoteEl.hidden = false;
+        }
+      } else if (snIsPoolAbsorbedProfitYear) {
+        // The note is not optional polish. A $0 charge against a profitable
+        // year, unexplained, reads as rental profit being untaxed — the same
+        // family of misread the quarantined-losses redesign spec §3 forbids for
+        // the pool row. The third sentence is the counterweight: relief here is
+        // finite, drawn from a pool that will not be there at sale.
+        //
+        // It states the mechanism and stops. It must NOT say or imply the trade
+        // is a bad one — §4 rules that printing channel A as a cost is a factual
+        // error, because a pool dollar spent on rental profit is money kept. The
+        // direction is not even fixed: absorbing profit saves 1.0 x MTR, while
+        // the same dollar at sale saves 0.5 x MTR against the pre-2027 component
+        // (applyOffsets deducts the pool BEFORE the 50% discount) but
+        // max(MTR, 30%) against the post-2027 one — so at 0.19 the floor makes
+        // saving it for sale genuinely better, and at 0.37 it does not. An
+        // unconditional claim either way is wrong on one arm, the same trap
+        // §9's leverage clause and §4's struck "Less" bullet both document.
+        const snPoolTaxOnProfit = snQuarantineRow.taxOnProfit;
+        // Which SENTENCE renders keys on how the profit split, not on the tax:
+        // taxOnProfit is (profit - absorbed) x rate, so at a 0% marginal rate a
+        // partial absorption would compute $0 tax and wrongly claim the pool
+        // covered the whole year. Same hazard the engine's `absorbed` field was
+        // added to avoid — no use defending against it there and reintroducing
+        // it here. The FIGURE still keys on the tax, because at a 0% rate the
+        // tax genuinely is nil. Half-dollar thresholds throughout: sub-cent
+        // floating-point residue in the running pool must not trip a branch
+        // that would then print "covers $0" or "-$0/yr".
+        const snProfitBeyondPool = snQuarantineRow.netResult - snQuarantineRow.absorbed;
+        if (tbEl) {
+          tbEl.textContent = snPoolTaxOnProfit >= 0.5
+            ? '-' + formatCurrency(snPoolTaxOnProfit) + '/yr'
+            : formatCurrency(0) + '/yr';
+          tbEl.className = 'proj-highlight-value' + (snPoolTaxOnProfit >= 0.5 ? ' negative' : '');
+        }
+        if (tbNoteEl) {
+          tbNoteEl.textContent = (snProfitBeyondPool >= 0.5
+              ? 'Your quarantined losses cover ' + formatCurrency(snQuarantineRow.absorbed) +
+                ' of this year\'s rental profit; tax applies to the rest. '
+              : 'Your quarantined losses cover this year\'s rental profit, so there\'s no tax on it. ') +
+            'Under the old rules this year would have cost about ' +
+            formatCurrency(Math.abs(snTaxBenefit)) +
+            '. This uses up part of your quarantined-loss pool, so there\'s less of it left at sale.';
           tbNoteEl.hidden = false;
         }
       } else if (snIsPreQuarantineLossYear) {
