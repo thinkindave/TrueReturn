@@ -470,6 +470,68 @@ if (inlineHandlers && inlineHandlers.length > 0) {
   ok(`Card and chart both derive CAGR from engine annualizedReturn (${engineCalls.length} sites, no inline formula)`);
 })();
 
+// 17. NaN tripwire on numeric input reads.
+//
+//     #18 routed both CAGR sites through engine.annualizedReturn. Its guard is
+//     `cashInvested <= 0 || years <= 0`, and BOTH comparisons are false for NaN
+//     — so a NaN would flow past it, through Math.pow, and out as NaN. The card
+//     renders via .toFixed(2) at three unguarded sites, so it would print
+//     "NaN%": exactly the symptom of issue #13.
+//
+//     Before #18 this could not happen, but only by accident of the old code's
+//     SHAPE: `roeBase > 0` is false for NaN, so NaN fell to the -100 arm. That
+//     accidental sink is gone. What stands in its place is a convention — every
+//     numeric input in this file is read as `parseFloat(...) || 0`, where the
+//     `|| 0` catches NaN because NaN is falsy.
+//
+//     That convention is now load-bearing and completely invisible at the call
+//     site. A new input field read with a bare parseFloat would reintroduce #13
+//     silently. This check pins it: every parseFloat must be one of
+//       a) sanitised          — carries a `|| 0` fallback (all user-input reads)
+//       b) a known constant   — parseFloat(SIMPLE_MODE_TAX)
+//       c) internal geometry  — the sparkline's own computed coordinates
+//     Adding a raw parseFloat on a field value fails here. If you are adding one
+//     deliberately and it genuinely cannot be NaN, extend GEOMETRY_ALLOWLIST and
+//     say why. The real fix, if this ever fires for a reachable input, is to
+//     widen the engine guard to `!(cashInvested > 0) || !(years > 0)`.
+//
+//     Scope: parseFloat only, because it is this file's sole idiom for reading
+//     numeric input. `Number()` is not used for input, and the two parseInt
+//     calls read a <select> year and a dataset index, neither of which feeds the
+//     CAGR path. If input reading ever moves to another idiom, widen this.
+(function checkNumericInputsCannotYieldNaN() {
+  const GEOMETRY_ALLOWLIST = [
+    'parseFloat(yp(',   // sparkline y-coordinate, from its own scale function
+    'parseFloat(gy)',   // sparkline gridline offset, computed above
+  ];
+  const offenders = [];
+
+  html.split('\n').forEach((line, i) => {
+    const calls = (line.match(/parseFloat\(/g) || []).length;
+    if (calls === 0) return;
+
+    const sanitised = (line.match(/\|\|\s*0/g) || []).length;
+    const constants = (line.match(/parseFloat\(SIMPLE_MODE_TAX\)/g) || []).length;
+    const geometry = GEOMETRY_ALLOWLIST
+      .reduce((n, pat) => n + line.split(pat).length - 1, 0);
+
+    if (sanitised + constants + geometry < calls) {
+      offenders.push(`  line ${i + 1}: ${line.trim().slice(0, 100)}`);
+    }
+  });
+
+  if (offenders.length > 0) {
+    fail(
+      `${offenders.length} parseFloat call(s) lack a NaN sink — a NaN here reaches ` +
+      `engine annualizedReturn, whose guard does not catch it, and renders "NaN%" (#13, #18):\n` +
+      offenders.join('\n') +
+      `\n  Fix: add a \`|| 0\` fallback, or allowlist it in this check with a reason.`
+    );
+    return;
+  }
+  ok('All numeric input reads carry a NaN sink (parseFloat ... || 0), so NaN cannot reach the CAGR path');
+})();
+
 // Result
 console.log('');
 console.log('Result:', failed === 0 ? 'PASS' : 'FAIL', `(${passed} passed, ${failed} failed)`);
