@@ -5473,12 +5473,12 @@
         }
 
         const totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow;
-        // A loss larger than the cash invested makes the ROE base negative,
-        // and a negative base to a fractional power is NaN (#13). Floor at
-        // -100% p.a. (total loss), matching engine.js annualizedReturn's
-        // ratio<=0 behaviour.
-        const roeBase = totalUpfront > 0 ? 1 + totalProfit / totalUpfront : 0;
-        const annualisedReturn = roeBase > 0 ? (Math.pow(roeBase, 1 / years) - 1) * 100 : -100;
+        // CAGR comes from the engine so this card and the projection chart
+        // cannot disagree in the degenerate cases (#18). A loss larger than the
+        // cash invested returns -1 there; invalid inputs return null and floor
+        // at -100% here, since the render sites call .toFixed(2) unguarded.
+        const annualisedReturnRate = annualizedReturn(totalProfit, totalUpfront, years);
+        const annualisedReturn = annualisedReturnRate === null ? -100 : annualisedReturnRate * 100;
 
         const bodyCashOutEl = document.getElementById(`${prefix}BodyCashOut`);
         if (bodyCashOutEl) {
@@ -6098,8 +6098,8 @@
               remainingLoan,
             });
             totalProfit = (trueCashReturn - totalUpfront) + cumulativeCashFlow;
-            const returnBase = 1 + totalProfit / totalUpfront;
-            annualisedReturn = returnBase > 0 ? (Math.pow(returnBase, 1 / y) - 1) * 100 : null;
+            const rate = annualizedReturn(totalProfit, totalUpfront, y);
+            annualisedReturn = rate === null ? null : rate * 100;
           }
 
           if (metric === 'value') data.push(futureValue);

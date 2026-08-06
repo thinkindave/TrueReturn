@@ -290,10 +290,14 @@ if (inlineHandlers && inlineHandlers.length > 0) {
 //    annualisedReturn, the shipped "Annual Cash Return" figure would move for
 //    every existing user. This check pins both halves of that contract.
 (function checkLeverageLineUsesExistingAnnualisedReturn() {
-  const roeBaseLine = 'const roeBase = totalUpfront > 0 ? 1 + totalProfit / totalUpfront : 0;';
-  const hasRoeBase = html.includes(roeBaseLine);
+  // #18 replaced the inline roeBase formula with an engine call, so this half
+  // now pins the derivation it became: the local must be the engine's CAGR,
+  // floored at -100 rather than blanked (tax spec §13.3, "never blanked").
+  const rateLine = 'const annualisedReturnRate = annualizedReturn(totalProfit, totalUpfront, years);';
+  const floorLine = "const annualisedReturn = annualisedReturnRate === null ? -100 : annualisedReturnRate * 100;";
+  const hasRoeBase = html.includes(rateLine) && html.includes(floorLine);
   if (!hasRoeBase) {
-    fail('Inline roeBase computation not found or altered — expected: ' + roeBaseLine);
+    fail('Card CAGR local not found or altered — expected:\n    ' + rateLine + '\n    ' + floorLine);
   }
 
   // Requires the SHORTHAND property `annualisedReturn,` — i.e. the existing
@@ -439,6 +443,31 @@ if (inlineHandlers && inlineHandlers.length > 0) {
     return;
   }
   ok('Snapshot profit-year Est. Benefit reads the quarantine schedule and keeps its counterweight note');
+})();
+
+(function checkNoInlineCagrRecomputation() {
+  // Issue #18. The CAGR formula was written out twice in the DOM layer, and the
+  // two copies disagreed in the degenerate case: the projection card floored a
+  // total loss at -100%, the Total Profit chart returned null and its tooltip
+  // silently dropped the rate. Same property, same year, two answers, one of
+  // them invisible — and tax spec §13.3 forbids blanking a negative return.
+  //
+  // engine.js annualizedReturn already owns the contract (-1 on ratio <= 0,
+  // null on a non-positive stake or period) and is tested for it. Both call
+  // sites must read it rather than restate the formula, so they cannot drift
+  // again. Assert no inline `Math.pow(base, 1 / period)` CAGR survives.
+  const inlineCagr = html.match(/Math\.pow\([A-Za-z_$][\w$]*,\s*1\s*\/\s*(y|years)\b\s*\)/g) || [];
+  if (inlineCagr.length > 0) {
+    fail(`index.html still computes CAGR inline ${inlineCagr.length} time(s) (${inlineCagr.join(', ')}) — both sites must call engine annualizedReturn so the card and the chart cannot disagree at a total loss`);
+    return;
+  }
+  // Both sites must pass the same three arguments to the engine helper.
+  const engineCalls = html.match(/annualizedReturn\(\s*totalProfit\s*,\s*totalUpfront\s*,/g) || [];
+  if (engineCalls.length < 2) {
+    fail(`Expected both the projection card and the chart to call annualizedReturn(totalProfit, totalUpfront, ...) — found ${engineCalls.length}`);
+    return;
+  }
+  ok(`Card and chart both derive CAGR from engine annualizedReturn (${engineCalls.length} sites, no inline formula)`);
 })();
 
 // Result

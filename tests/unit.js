@@ -4,7 +4,8 @@
 
 const { assert, test, approxEqual, summary } = require('./harness.js');
 const { formatCurrency, calcStampDuty, calcDepreciation, stateDefaults, calcLeverageLine,
-        calcBenchmarkLine, calcBenchmark, BENCHMARK_PRESETS, addYearsISO } = require('../engine.js');
+        calcBenchmarkLine, calcBenchmark, BENCHMARK_PRESETS, addYearsISO,
+        annualizedReturn } = require('../engine.js');
 
 // ---------------------------------------------------------------------------
 // formatCurrency tests
@@ -661,28 +662,37 @@ test('label truncates property name exceeding 18 chars with Unicode ellipsis', (
 // ---------------------------------------------------------------------------
 // calcAnnualisedReturn — CAGR formula
 //
-// NOTE: There is no standalone pure function for this in index.html.
-// The formula is inlined at two separate DOM-dependent calculation sites
-// (projections loop ~line 3152, buildPropertyDatasets ~line 3303).
-// The helper below is a direct transcription of that inlined formula:
+// NOTE (2026-08-06, #18): index.html NO LONGER inlines this formula. Both DOM
+// call sites — the projection card and buildPropertyDatasets' chart loop — now
+// call engine.js's annualizedReturn(), which owns the degenerate-case contract
+// (-1 on total loss, null on invalid inputs). Smoke check 16 pins that.
 //
-//   const annualisedReturn = totalUpfront > 0
-//     ? (Math.pow(1 + totalProfit / totalUpfront, 1 / years) - 1) * 100
-//     : 0;
-//
-// If the formula in index.html changes these tests will not automatically
-// detect the divergence — treat a passing result here as arithmetic
-// confirmation only. Keep this note updated if the source changes.
+// This helper is therefore no longer a transcription: it calls the same engine
+// function and applies the CARD's presentation wrapper (fraction -> percent,
+// null floored to -100). So these tests now track the real implementation
+// rather than a copy that could silently diverge. The chart's wrapper differs
+// only in that it keeps null rather than flooring — see index.html.
 // ---------------------------------------------------------------------------
 
 function calcAnnualisedReturn(totalProfit, totalUpfront, years) {
-  return totalUpfront > 0 ? (Math.pow(1 + totalProfit / totalUpfront, 1 / years) - 1) * 100 : 0;
+  const rate = annualizedReturn(totalProfit, totalUpfront, years);
+  return rate === null ? -100 : rate * 100;
 }
 
 console.log('\ncalcAnnualisedReturn (CAGR)');
 
-test('zero upfront returns 0 (guard against division by zero)', () => {
-  assert.strictEqual(calcAnnualisedReturn(50000, 0, 10), 0);
+test('zero upfront floors at -100 (engine returns null, card floors it)', () => {
+  // Pre-#18 the inlined card formula returned 0 here. The engine's contract is
+  // null for cashInvested <= 0, and the card floors null at -100 so the render
+  // sites' unguarded .toFixed(2) cannot blank (tax spec §13.3). Unreachable
+  // from the UI — fixed acquisition costs floor totalUpfront at ~$2,300.
+  assert.strictEqual(calcAnnualisedReturn(50000, 0, 10), -100);
+});
+
+test('loss larger than cash invested floors at -100, never NaN (#13, #18)', () => {
+  // The degenerate case #18 was filed for: card and chart disagreed here.
+  assert.strictEqual(calcAnnualisedReturn(-200000, 150000, 5), -100);
+  assert.strictEqual(calcAnnualisedReturn(-150000, 150000, 5), -100);
 });
 
 test('zero profit over any period returns 0%', () => {

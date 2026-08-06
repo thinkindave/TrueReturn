@@ -80,6 +80,14 @@ totalTax = CGT at sale
 
 Giving +$11,171 / +$36,902 / +$79,527 at 5/10/15 years — correct sign at every period.
 
+**These three figures drift with the calendar, and no longer reproduce (noted 2026-07-31, issue #20).** They were correct on the day they were measured. The UI supplies **today** as the contract date (§2 Group 1) and each period's sale date is today + N years, so the slice of the hold falling before 1 July 2027 shrinks by a day every day. Measured across a single midnight: **+$11,171 / +$36,902 / +$79,527 on 30 July became +$11,157 / +$36,894 / +$79,525 on 31 July**, with the 5-year headline Cash Out Position moving $330,736 → $330,749 at the same time. Confirmed as calendar drift and not a code change by stashing the issue #20 patch and re-measuring: the baseline build produced the drifted figures too.
+
+The drift is small and will keep shrinking — after 1 July 2027 no pre-boundary slice remains and these figures stop moving — but it is not zero, and it is invisible: nothing fails, the numbers simply stop matching the spec. Consequences for anyone editing this document:
+
+- **Do not treat a recorded figure here as a fixture.** Re-measure before citing one, and record the date you measured it. This is §9's "do not carry a figure forward on trust" rule, generalised: §9's figures failed because they were never true; these failed *despite* being true when written.
+- **Not every figure is affected.** Anything derived from the 2027 CGT boundary drifts; anything derived from rental arithmetic does not. The **$20,708** rental-profit total (§3a, and the basis of issue #20) is stable, and was unmoved across the same midnight.
+- **§9's leverage figures and §9a's benchmark table have not been re-checked** against this. They carry the same shape of claim and may have drifted too. Unresolved, deliberately — a PO decision, not a silent fix.
+
 **All three recovery channels are counted (§4 compliance).** An earlier draft used `CGT − refunds` alone, which omits **$20,708** at 15 years and overstates the reform's cost by 21%. Once the property turns profitable in year 10, the quarantine pool absorbs **every dollar** of profit, so the new rules charge no tax on it while the old rules tax all of it. That is recovery channel **A** in §4 — "recovered along the way: pool absorbing profitable rental years" — which §4 rules an honest module must show. The earlier draft counted channels W and V and dropped A.
 
 **Refunds are not zero under the new rules.** Quarantine applies only to income years starting on/after 1 July 2027, so ~11 months of losses stay deductible under both rulebooks ($7,619 on the default property, identical on both sides). The new-rules refund column must never be rendered as a flat zero.
