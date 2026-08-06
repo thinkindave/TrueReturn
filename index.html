@@ -251,20 +251,6 @@
       color: var(--text-primary);
     }
 
-    .intro-tip {
-      font-size: 0.8125rem;
-      color: var(--text-muted);
-      margin: 0.5rem 0 0;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    .intro-tip-icon {
-      color: var(--accent);
-      flex-shrink: 0;
-    }
-
     @media (max-width: 480px) {
       .intro-strip {
         padding: 0.875rem 1rem;
@@ -2327,6 +2313,25 @@
     margin-bottom: 0;
   }
 
+  /* Hint line under a module heading. Spacing assumes a module header above,
+     which supplies its own margin-bottom, and content below.
+     --text-secondary, not --text-muted: muted gives 3.04-3.67:1 on the dark
+     card gradient, under the 4.5:1 AA needs at this size. This clears AA in
+     both themes and matches .prop-col-label directly below it. */
+  .module-tip {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    margin: 0 0 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .module-tip-icon {
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
   .property-table-actions {
     display: flex;
     align-items: center;
@@ -2920,7 +2925,6 @@
       <span id="reformBannerText"></span>
       <button type="button" class="reform-banner-dismiss" id="reformBannerDismiss" aria-label="Dismiss">×</button>
     </div>
-    <p class="intro-tip"><svg class="intro-tip-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7.5V18H9v-2.5l-.7-.5A7 7 0 0 1 12 2z"/><path d="M9 21h6"/><path d="M10 18v1"/><path d="M14 18v1"/></svg> Tip: Duplicate a property to test different scenarios.</p>
   </div>
 
   <div class="app-layout">
@@ -2971,6 +2975,7 @@
             </div>
             <input type="file" id="importFileInput" accept=".json" style="display:none">
           </div>
+          <p class="module-tip"><svg class="module-tip-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7.5V18H9v-2.5l-.7-.5A7 7 0 0 1 12 2z"/><path d="M9 21h6"/><path d="M10 18v1"/><path d="M14 18v1"/></svg> Tip: Copy a property to test different scenarios.</p>
           <div class="property-table-labels">
             <div class="prop-col-label"></div>
             <div class="prop-col-label">Name <span class="help-tip" data-tip="Label for this property — used in charts and comparisons">?</span></div>
@@ -3075,7 +3080,7 @@
                 <input type="hidden" data-field="benchmark" value="">
                 <input type="hidden" data-field="marginalTaxRate" value="0.37">
                 <div class="prop-col prop-col-delete">
-                  <button class="copy-row-btn" title="Duplicate property">
+                  <button class="copy-row-btn" title="Copy property">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     <span class="card-btn-label">Copy</span>
                   </button>
