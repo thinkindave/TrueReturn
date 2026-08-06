@@ -19,7 +19,7 @@ const HTML_PATH = path.join(__dirname, '../index.html');
 // that silently shrinks (or stops running its tests at all) fails the check.
 const TESTS_DIR = path.join(__dirname, '../tests');
 const TEST_SUITES = [
-  { label: 'tests/unit.js', file: path.join(TESTS_DIR, 'unit.js'), minTests: 199 },
+  { label: 'tests/unit.js', file: path.join(TESTS_DIR, 'unit.js'), minTests: 248 },
   { label: 'tests/engine.test.js', file: path.join(TESTS_DIR, 'engine.test.js'), minTests: 138 }
 ];
 
