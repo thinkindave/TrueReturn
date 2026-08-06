@@ -4913,15 +4913,11 @@
       const quarantineSched = buildQuarantineSchedule({
         annualResults: annualResults, ngRegime: ngRoute.ng,
         marginalRate: marginalTaxRate });
-      // Pool available at the end of projection year y (used at sale).
-      function quarantinePoolAtYear(y) {
-        let pool = 0;
-        for (let i = 0; i < y && i < quarantineSched.rows.length; i++) {
-          pool += quarantineSched.rows[i].quarantined;
-          pool -= Math.min(pool, Math.max(0, quarantineSched.rows[i].netResult));
-        }
-        return pool;
-      }
+      // The pool at the end of projection year y (used at sale) comes from
+      // engine.js's quarantinePoolAtYear — a bare global here, since engine.js
+      // is loaded as a classic script. Called directly at each site rather than
+      // through a local wrapper: a local of that name would shadow the very
+      // function it needs to call (#21).
 
       // Snapshot year projections
       const snapshotYear = _snapshotYear;
@@ -5208,7 +5204,7 @@
           acquisitionCosts: purchasePrice + stampDuty + conveyancing + BUILDING_PEST,
           div43Claimed: div43Pre, div43ClaimedPost: div43Post,
           deemedValue,
-          quarantinePool: quarantinePoolAtYear(years),
+          quarantinePool: quarantinePoolAtYear(quarantineSched.rows, years),
           marginalRate: marginalTaxRate,
           remainingLoan,
         };
@@ -5225,7 +5221,7 @@
         // (engine: buildQuarantineSchedule). On the default property it goes
         // $62,780 (5yr) → $87,190 (10yr) → $31,958 (15yr) — the decline is
         // relief arriving early, not an error. The tip explains both paths.
-        const periodPool = quarantinePoolAtYear(years);
+        const periodPool = quarantinePoolAtYear(quarantineSched.rows, years);
         const quarRowEl = document.getElementById(`${prefix}QuarantinedRow`);
         const quarValEl = document.getElementById(`${prefix}Quarantined`);
         const quarTipEl = document.getElementById(`${prefix}QuarantinedTip`);
@@ -5850,15 +5846,10 @@
         annualResults: annualResults, ngRegime: ngRoute.ng,
         marginalRate: marginalRate });
 
-      // Pool available at the end of projection year y (used at sale).
-      return function quarantinePoolAtYear(y) {
-        let pool = 0;
-        for (let i = 0; i < y && i < quarantineSched.rows.length; i++) {
-          pool += quarantineSched.rows[i].quarantined;
-          pool -= Math.min(pool, Math.max(0, quarantineSched.rows[i].netResult));
-        }
-        return pool;
-      };
+      // Pool available at the end of projection year y (used at sale). Arrow,
+      // not a named function expression: the name would shadow the engine
+      // helper inside its own body and recurse (#21).
+      return (y) => quarantinePoolAtYear(quarantineSched.rows, y);
     }
 
     function calcScenarioProfit(entry, years, growthRate) {

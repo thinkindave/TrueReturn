@@ -399,6 +399,106 @@ test('absorbed stays zero for every row when NG is not quarantined', () => {
   for (const row of r.rows) assert.strictEqual(row.absorbed, 0);
 });
 
+// ── quarantinePoolAtYear (issue #21) ────────────────────────────────────
+// buildQuarantineSchedule reports poolAtSale — the pool after EVERY row. The
+// DOM needs the pool after a PREFIX of rows, because a sale at projection
+// year y only sees the first y income years. That prefix walk used to be
+// written out twice in index.html, re-deriving the absorption rule the engine
+// already owns. It lives here now so there is one copy of the rule.
+console.log('\nquarantinePoolAtYear');
+
+const poolSched = (annualResults, ngRegime = 'QUARANTINE_FROM_2027') =>
+  E.buildQuarantineSchedule({ annualResults, ngRegime, marginalRate: 0.39 }).rows;
+
+test('an empty prefix holds nothing', () => {
+  const rows = poolSched([
+    { fyStartISO: '2027-07-01', netResult: -12000 },
+  ]);
+  assert.strictEqual(E.quarantinePoolAtYear(rows, 0), 0);
+});
+
+test('losses accumulate as the prefix grows', () => {
+  const rows = poolSched([
+    { fyStartISO: '2027-07-01', netResult: -12000 },
+    { fyStartISO: '2028-07-01', netResult: -8000 },
+    { fyStartISO: '2029-07-01', netResult: -5000 },
+  ]);
+  approxEqual(E.quarantinePoolAtYear(rows, 1), 12000, 0.001);
+  approxEqual(E.quarantinePoolAtYear(rows, 2), 20000, 0.001);
+  approxEqual(E.quarantinePoolAtYear(rows, 3), 25000, 0.001);
+});
+
+test('profit years drain the prefix pool, and it never goes negative', () => {
+  const rows = poolSched([
+    { fyStartISO: '2027-07-01', netResult: -12000 },
+    { fyStartISO: '2028-07-01', netResult: 5000 },   // fully absorbed
+    { fyStartISO: '2029-07-01', netResult: 9000 },   // 7000 left: partial
+    { fyStartISO: '2030-07-01', netResult: 4000 },   // pool empty: none
+  ]);
+  approxEqual(E.quarantinePoolAtYear(rows, 1), 12000, 0.001);
+  approxEqual(E.quarantinePoolAtYear(rows, 2), 7000, 0.001);
+  assert.strictEqual(E.quarantinePoolAtYear(rows, 3), 0);
+  assert.strictEqual(E.quarantinePoolAtYear(rows, 4), 0);
+});
+
+test('a prefix past the end clamps to the full schedule, matching poolAtSale', () => {
+  const annual = [
+    { fyStartISO: '2027-07-01', netResult: -12000 },
+    { fyStartISO: '2028-07-01', netResult: 5000 },
+  ];
+  const full = E.buildQuarantineSchedule({
+    annualResults: annual, ngRegime: 'QUARANTINE_FROM_2027', marginalRate: 0.39,
+  });
+  approxEqual(E.quarantinePoolAtYear(full.rows, 99), full.poolAtSale, 0.001);
+});
+
+test('a non-quarantined regime never builds a pool at any prefix', () => {
+  const rows = poolSched([
+    { fyStartISO: '2027-07-01', netResult: -12000 },
+    { fyStartISO: '2028-07-01', netResult: -8000 },
+  ], 'FULL');
+  for (let y = 0; y <= 2; y++) assert.strictEqual(E.quarantinePoolAtYear(rows, y), 0);
+});
+
+// The regression that matters for #21: the helper must agree BIT-FOR-BIT with
+// the re-derivation it replaces in index.html, at every prefix length, or the
+// refactor moves a shipped figure. Randomised over mixed profit/loss runs that
+// straddle the 2027 boundary.
+test('bit-identical to the DOM re-derivation it replaces, over random schedules', () => {
+  const legacy = (rows, y) => {
+    let pool = 0;
+    for (let i = 0; i < y && i < rows.length; i++) {
+      pool += rows[i].quarantined;
+      pool -= Math.min(pool, Math.max(0, rows[i].netResult));
+    }
+    return pool;
+  };
+  // Deterministic PRNG so a failure is reproducible.
+  let seed = 20260806;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+
+  for (let trial = 0; trial < 400; trial++) {
+    const annual = [];
+    const n = 2 + Math.floor(rnd() * 14);
+    for (let i = 0; i < n; i++) {
+      annual.push({
+        fyStartISO: `${2024 + i}-07-01`,
+        // Deliberately awkward magnitudes and fractions, so any difference in
+        // operation order would surface as a float mismatch rather than cancel.
+        netResult: (rnd() - 0.45) * 37123.7391,
+      });
+    }
+    const regime = rnd() < 0.8 ? 'QUARANTINE_FROM_2027' : 'FULL';
+    const rows = poolSched(annual, regime);
+    for (let y = 0; y <= n + 1; y++) {
+      assert.strictEqual(
+        E.quarantinePoolAtYear(rows, y), legacy(rows, y),
+        `trial ${trial}, prefix ${y}: helper ${E.quarantinePoolAtYear(rows, y)} !== legacy ${legacy(rows, y)}`
+      );
+    }
+  }
+});
+
 console.log('\nproRateAnnualResults');
 
 test('pro-rates a constant annual amount across income years by days', () => {

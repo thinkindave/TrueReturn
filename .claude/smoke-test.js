@@ -20,7 +20,7 @@ const HTML_PATH = path.join(__dirname, '../index.html');
 const TESTS_DIR = path.join(__dirname, '../tests');
 const TEST_SUITES = [
   { label: 'tests/unit.js', file: path.join(TESTS_DIR, 'unit.js'), minTests: 199 },
-  { label: 'tests/engine.test.js', file: path.join(TESTS_DIR, 'engine.test.js'), minTests: 128 }
+  { label: 'tests/engine.test.js', file: path.join(TESTS_DIR, 'engine.test.js'), minTests: 138 }
 ];
 
 // Files in tests/ that are not themselves suites.
@@ -530,6 +530,69 @@ if (inlineHandlers && inlineHandlers.length > 0) {
     return;
   }
   ok('All numeric input reads carry a NaN sink (parseFloat ... || 0), so NaN cannot reach the CAGR path');
+})();
+
+// 18. The quarantine absorption rule has ONE owner.
+//
+//     engine.buildQuarantineSchedule decides how much of the pool a profitable
+//     rental year absorbs, and reports it per row as `absorbed`. index.html used
+//     to re-derive that — `pool -= Math.min(pool, Math.max(0, netResult))` —
+//     twice, character for character, so the rule lived in three places (#21).
+//     They were bit-identical, so nothing was wrong; the hazard was that a
+//     change to the engine would silently desynchronise the snapshot note from
+//     the projections pool row, with nothing failing to signal it.
+//
+//     Both DOM copies now call engine.quarantinePoolAtYear(rows, y). This check
+//     pins that: no re-derivation in the DOM, and the engine helper still there
+//     to be called.
+(function checkQuarantineAbsorptionHasOneOwner() {
+  // Three layers, because pinning the one spelling that was deleted would let
+  // a differently-written re-derivation walk straight back in. Between them
+  // these catch a renamed accumulator, a reordered Math.max, the non-compound
+  // form, an extracted temporary and the ternary form. Known residual gap: a
+  // re-derivation that renames the accumulator AND avoids Math.max (e.g.
+  // `p -= Math.min(p, nr > 0 ? nr : 0)`) at a NEW fourth site would pass — arm
+  // 2's exact count is the backstop when it replaces an existing site.
+  const suspects = [
+    // (a) any Math.min/Math.max reasoning about netResult. The DOM's only
+    //     legitimate uses of netResult are building annualResults rows and the
+    //     snapshot's `netResult - absorbed`, none of which clamp.
+    [/Math\.(?:min|max)\([^;]{0,80}netResult/g, 'a Math.min/Math.max applied to netResult'],
+    // (b) the min(accumulator, max(...)) shape, whatever things are called.
+    [/Math\.min\(\s*[\w.$\[\]]+\s*,\s*Math\.max\(/g, 'a min(x, max(...)) clamp'],
+    // (c) any accumulator literally named `pool` being mutated. After #21 every
+    //     mention of `pool` in index.html is prose in a comment.
+    [/\bpool\s*(?:\+=|-=|=[^=])/g, 'a mutated `pool` accumulator'],
+  ];
+  for (const [re, what] of suspects) {
+    const hits = html.match(re) || [];
+    if (hits.length > 0) {
+      fail(
+        `index.html appears to re-derive the pool-absorption rule — found ${hits.length}x ${what} ` +
+        `(${hits.map(h => h.replace(/\s+/g, ' ').slice(0, 50)).join(' | ')}). It must read the ` +
+        `engine's own answer via quarantinePoolAtYear(rows, y), or the snapshot note and the ` +
+        `projections pool row can drift apart silently (#21)`
+      );
+      return;
+    }
+  }
+  // The DOM must actually be calling the engine helper, not have dropped the
+  // pool entirely — that would zero the figure rather than desynchronise it.
+  // Exact count, not a minimum: a fourth call site should be a deliberate edit
+  // here, so it cannot mask a re-derivation added alongside the real three.
+  const callSites = html.match(/quarantinePoolAtYear\(\s*[\w.$]+\s*,/g) || [];
+  if (callSites.length !== 3) {
+    fail(
+      `Expected exactly 3 DOM sites (sale, period pool, chart closure) to call ` +
+      `quarantinePoolAtYear(rows, ...) — found ${callSites.length}`
+    );
+    return;
+  }
+  if (!/function quarantinePoolAtYear\(rows, y\)/.test(engineJs)) {
+    fail('engine.js no longer defines quarantinePoolAtYear(rows, y) — the DOM call sites have nothing to call');
+    return;
+  }
+  ok(`Quarantine absorption rule has one owner (engine helper, ${callSites.length} DOM call sites, no re-derivation)`);
 })();
 
 // Result

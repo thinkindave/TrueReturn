@@ -368,6 +368,29 @@ function buildQuarantineSchedule({ annualResults, ngRegime, marginalRate }) {
   return { rows, poolAtSale: pool, totalRefunds, totalTaxOnProfit };
 }
 
+// Pool standing at the end of projection year `y` — i.e. after the first `y`
+// rows only. buildQuarantineSchedule reports poolAtSale, the pool after every
+// row; a sale at year y sees just a prefix of them, so the projections and the
+// chart need this instead.
+//
+// Reads each row's own `quarantined` and `absorbed` rather than recomputing
+// Math.min(pool, netResult) (#21). The DOM used to re-derive that, twice, which
+// meant the absorption rule lived in three places and a change to the engine
+// would have silently desynchronised them. `y` beyond the schedule clamps.
+//
+// `rows` MUST be a whole buildQuarantineSchedule().rows, never a slice: each
+// row's `absorbed` was computed against the running pool from row 0, so a
+// mid-schedule slice would return a plausible but wrong figure rather than
+// throwing. Passing raw annualResults yields NaN — neither field exists there.
+function quarantinePoolAtYear(rows, y) {
+  let pool = 0;
+  for (let i = 0; i < y && i < rows.length; i++) {
+    pool += rows[i].quarantined;
+    pool -= rows[i].absorbed;
+  }
+  return pool;
+}
+
 // Splits a constant annual net rental amount across AU income years between
 // two dates, pro-rated by days (day count / 365.25 per year of amount).
 function proRateAnnualResults(isoFrom, isoTo, annualAmount) {
@@ -1147,7 +1170,7 @@ if (typeof module !== 'undefined' && module.exports) {
     routeRegimes,
     applyOffsets, calcOldRegimeCGT, interpolateDeemedValue,
     calcDualEraCGT, calcTimeApportionedCGT,
-    buildQuarantineSchedule, proRateAnnualResults,
+    buildQuarantineSchedule, quarantinePoolAtYear, proRateAnnualResults,
     calcNewBuildOptimizer, calcReformSale,
     runSaleScenario, compareSaleTiming,
     annualizedReturn, irrFromCashflows, calcEquityReturns,
