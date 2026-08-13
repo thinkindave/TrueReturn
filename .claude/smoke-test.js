@@ -10,6 +10,10 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const HTML_PATH = path.join(__dirname, '../index.html');
+// about.html is a hand-written explainer of what the engine does. It has no
+// runtime tie to engine.js — it does not even load it — so check 19 is the only
+// thing standing between it and silent drift.
+const ABOUT_PATH = path.join(__dirname, '../about.html');
 
 // Every test suite that must run. Each is executed in its own child process so
 // that (a) the shared module-level counters in tests/harness.js don't pool into
@@ -593,6 +597,441 @@ if (inlineHandlers && inlineHandlers.length > 0) {
     return;
   }
   ok(`Quarantine absorption rule has one owner (engine helper, ${callSites.length} DOM call sites, no re-derivation)`);
+})();
+
+// 19. The About page must still describe what the engine actually does.
+//
+//     about.html is prose. Nothing imports it, nothing renders from it, and it
+//     does not load engine.js — so when the engine changes underneath it, the
+//     page keeps confidently stating the old behaviour and no test goes red.
+//     That is not hypothetical: the page sat unedited from 31 March 2026 while
+//     index.html and engine.js took 56 commits, and by the time anyone read it
+//     four of its numbers were plainly wrong. Conveyancing was still described
+//     as a fixed $1,500 after it became a per-state figure. Insurance and
+//     council rates were still described as percentages of purchase price after
+//     they became flat per-state dollar amounts — on the page's own $650k QLD
+//     example, its "0.15%" implied $975 where the app charges $2,200. The
+//     depreciation rate for a new property read 1.75% against an engine that
+//     applies 2.5%, over age brackets the app no longer offers.
+//
+//     So every expectation below is DERIVED at runtime — from engine.js, and for
+//     the age brackets from the app's own <select>. No figure is written down in
+//     this file, deliberately: a hardcoded expectation drifts from the engine
+//     exactly the way the page did, and then certifies the drift as correct.
+//     Change a depreciation rate or a stateDefaults entry and this check fails
+//     until about.html — and the in-app tax note that repeats the same facts —
+//     is brought along with it.
+//
+//     Where a claim cannot be derived one-directionally, it is checked as an
+//     IDENTITY instead. The engine will not say what depreciation rate it
+//     applies, only what it returns, so the rate and the building-value fraction
+//     are both read off the page and multiplied back out against
+//     calcDepreciation. And the assertions are counted, not just present: a page
+//     that states the right figure beside a superseded one is still wrong.
+//
+//     Scope note: this pins figures that are mechanically checkable against the
+//     engine. Prose claims with no numeric counterpart in engine.js (the 2027
+//     reform wording, the stamp duty threshold vintage) are out of its reach and
+//     still need a human to read the page.
+(function checkAboutPageFiguresMatchEngine() {
+  if (!fs.existsSync(ABOUT_PATH)) {
+    fail('about.html not found at ' + ABOUT_PATH + ' — the About page figures cannot be checked against the engine');
+    return;
+  }
+  const about = fs.readFileSync(ABOUT_PATH, 'utf8');
+
+  let engineMod;
+  try {
+    engineMod = require(ENGINE_PATH);
+  } catch (e) {
+    fail('Could not require engine.js for the About page figure check: ' + e.message);
+    return;
+  }
+  const { stateDefaults, BUILDING_PEST, LOAN_ESTABLISHMENT, calcDepreciation } = engineMod;
+  if (typeof calcDepreciation !== 'function' || !stateDefaults
+      || typeof BUILDING_PEST !== 'number' || typeof LOAN_ESTABLISHMENT !== 'number') {
+    fail('engine.js must export calcDepreciation, stateDefaults, BUILDING_PEST and LOAN_ESTABLISHMENT — '
+      + 'without them the About page figures cannot be derived, and this check would pass vacuously');
+    return;
+  }
+
+  let bad = 0;
+
+  // 1-based line of a string, so a failure names a place and not just a number.
+  const lineOf = (source, needle) => {
+    const idx = source.indexOf(needle);
+    return idx === -1 ? '?' : source.slice(0, idx).split('\n').length;
+  };
+
+  // The <li> that owns a fact — used both as the SCOPE of the search and as the
+  // "page says" quote in a failure.
+  //
+  // Scoping matters as much here as it does for the in-app note below. about.html
+  // carries an unrelated "Sales costs — 3% of sale price" bullet, so a whole-file
+  // search for a 3% depreciation rate would be satisfied by a completely
+  // different sentence and report the page as correct. Every fact is therefore
+  // checked against the one bullet that is supposed to state it.
+  //
+  // Two structural hazards are reported rather than absorbed. Scoping by first
+  // match is only sound while an anchor is unique, so a second occurrence is a
+  // failure, not a coin toss. And the opening tag is matched as <li[^>]*> rather
+  // than the literal '<li>': a bullet that gained a class attribute would
+  // otherwise silently widen the scope to the previous bullet or read as removed.
+  const bulletWith = (source, anchor) => {
+    const hits = source.split(anchor).length - 1;
+    if (hits === 0) return { problem: 'missing' };
+    if (hits > 1) return { problem: 'ambiguous', hits };
+    const idx = source.indexOf(anchor);
+    const openRe = /<li[^>]*>/g;
+    let open = null;
+    let m;
+    while ((m = openRe.exec(source)) !== null && m.index <= idx) open = m;
+    const end = source.indexOf('</li>', idx);
+    if (!open || end === -1) return { problem: 'unbounded' };
+    return { text: source.slice(open.index, end + 5), line: lineOf(source, anchor) };
+  };
+  const reportBulletProblem = (res, anchor, what) => {
+    if (res.problem === 'ambiguous') {
+      fail(`"${anchor}" appears ${res.hits}× in about.html — the ${what} figures are scoped by first `
+        + `match, so the check can no longer be sure which bullet it is reading. Make the anchor unique.`);
+    } else if (res.problem === 'unbounded') {
+      fail(`Found "${anchor}" in about.html but could not bound it to a <li>…</li> — the ${what} `
+        + `figures cannot be scoped, so they are no longer being checked against engine.js`);
+    } else {
+      fail(`about.html no longer has a bullet containing "${anchor}" — the ${what} description has been `
+        + `reworded or removed, and its figures can no longer be held to engine.js`);
+    }
+    bad++;
+  };
+
+  // Counting the figures a bullet states, not just looking for the ones that
+  // should be there. Presence-only assertions let a superseded figure survive
+  // beside a correct one: a half-finished edit that adds the new range but
+  // leaves the old "0.15% of purchase price p.a." in the same <li> reads as
+  // green while the page contradicts itself.
+  // Must end on a digit, so "fixed $800, plus GST" reports "$800" and not "$800,".
+  const dollarFigures = text => text.match(/\$[\d,]*\d/g) || [];
+  const percentFigures = text => text.match(/[\d.]+%/g) || [];
+
+  // Engine values are raw numbers; both pages write money with thousands
+  // separators, so compare in the page's own spelling.
+  const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  // Anchored on both sides, because a bare substring test is satisfied by the
+  // wrong figure: "2.5%" sits inside "12.5%", and "$900" inside "$900,000".
+  // A loose match would then certify a neighbouring number as the right one,
+  // which is the failure mode this whole check exists to prevent.
+  //
+  // The trailing guard rejects a following digit, and a comma ONLY when digits
+  // follow it — i.e. a thousands separator continuing the number. An earlier
+  // version rejected any following comma, which made "fixed $800, plus GST"
+  // read as the page not stating $800 at all: a false failure on ordinary
+  // punctuation, and one that masked a real count assertion in testing.
+  const states = (source, figure) =>
+    new RegExp('(?<![\\d.,])' + figure.replace(/[$.]/g, '\\$&') + '(?!\\d)(?!,\\d)').test(source);
+
+  // --- Shared: what a depreciation sentence claims --------------------------
+  //
+  // The engine cannot be asked "what rate do you apply?". calcDepreciation only
+  // returns rate × fraction × price — a single product — so any check that
+  // recovered a rate from it would have to supply the fraction itself. An
+  // earlier version of this check did exactly that: it divided by `price * 0.75`,
+  // a copy of engine.js's building-value fraction hardcoded into the one file
+  // that claims to hardcode nothing. Two things were wrong with it. The page's
+  // own "of 75% of purchase price" claim went completely unguarded, and had the
+  // engine moved to a 70% fraction the check would have demanded the page state
+  // 2.3333% — a rate that exists nowhere.
+  //
+  // So BOTH numbers are parsed off the page and the PRODUCT is checked against
+  // the engine: statedRate × statedFraction × price === calcDepreciation(...).
+  // Nothing about the engine's internal split is assumed, and the fraction is
+  // pinned by the same assertion that pins the rates.
+  //
+  // The fraction is identified by ELIMINATION rather than by matching prose:
+  // strip the "R% (bracket wording)" groups and exactly one bare percentage must
+  // remain. That works unchanged across about.html's "of 75% of purchase price
+  // p.a." and the in-app note's terser "of 75% of the property value", and it
+  // doubles as the count guard — a second bare percentage means a superseded
+  // figure is still sitting in the sentence beside its replacement.
+  const parseDepreciationClaims = text => {
+    const groupRe = /([\d.]+)%\s*\(([^)]*)\)/g;
+    const groups = [];
+    let m;
+    while ((m = groupRe.exec(text)) !== null) {
+      groups.push({ rate: Number(m[1]), descriptor: m[2] });
+    }
+    const bare = (text.replace(/([\d.]+)%\s*\(([^)]*)\)/g, '').match(/[\d.]+%/g) || [])
+      .map(s => Number(s.replace('%', '')));
+    return { groups, bare };
+  };
+  // Every term is linear in price, so the value is arbitrary; this is the page's
+  // own worked example, which keeps the dollar figures in failure messages
+  // recognisable to whoever is reading the page.
+  const PRICE = 650000;
+  const statedDepreciation = (rate, fraction) => (rate / 100) * (fraction / 100) * PRICE;
+  const sameMoney = (a, b) => Math.abs(a - b) < 0.01;
+
+  // The age brackets are DERIVED from the app's own <select>, not restated here.
+  // Bracket wording was a quarter of what the last drift got wrong ("mid / 5–20
+  // yrs" against a select offering four different brackets), and a check that
+  // only looked at percentages would have stayed green through all of it.
+  const selectBlock = html.match(/<select[^>]*data-field="propertyAge"[^>]*>([\s\S]*?)<\/select>/);
+  const ageOptions = [];
+  if (selectBlock) {
+    const optRe = /<option[^>]*value="([^"]+)"[^>]*>([^<]*)<\/option>/g;
+    let om;
+    while ((om = optRe.exec(selectBlock[1])) !== null) {
+      ageOptions.push({ value: om[1], label: om[2].trim() });
+    }
+  }
+  const norm = s => s.toLowerCase().replace(/[,()]/g, ' ').replace(/\s+/g, ' ').trim();
+  // The distinctive half of an option label: three of the four begin
+  // "Established," and are told apart only by what follows it.
+  const bracketToken = label => norm(label.replace(/^\s*established\s*,?\s*/i, ''));
+
+  const bracketsKnown = ageOptions.length > 0;
+  if (!bracketsKnown) {
+    fail('No <select data-field="propertyAge"> with <option> children found in index.html — the age '
+      + 'brackets that about.html and the in-app tax note must agree with cannot be derived, so both '
+      + 'depreciation sentences would go unchecked');
+    bad++;
+  }
+
+  // --- Arm 1: the About page's depreciation bullet ---------------------------
+  const DEP_ANCHOR = 'Depreciation estimate';
+  const depBullet = bulletWith(about, DEP_ANCHOR);
+  if (depBullet.problem) {
+    reportBulletProblem(depBullet, DEP_ANCHOR, 'depreciation');
+  } else if (bracketsKnown) {
+    const claims = parseDepreciationClaims(depBullet.text);
+    if (claims.bare.length !== 1) {
+      fail(`about.html's depreciation bullet must state exactly one building-value fraction (the "of X% of `
+        + `purchase price" term) outside its per-bracket rates — found ${claims.bare.length}`
+        + `${claims.bare.length ? ' (' + claims.bare.map(b => b + '%').join(', ') + ')' : ''}.\n    `
+        + `Page says: ${depBullet.text}\n    `
+        + (claims.bare.length === 0
+            ? 'Without it the stated rates cannot be multiplied out and checked against calcDepreciation at all.'
+            : 'A leftover percentage means a superseded figure is still in the bullet beside its replacement.')
+        + `\n    Fix about.html:${depBullet.line}`);
+      bad++;
+    } else {
+      const fraction = claims.bare[0];
+      const claimed = new Set();
+      ageOptions.forEach(({ value, label }) => {
+        const token = bracketToken(label);
+        const group = claims.groups.find(g => norm(g.descriptor).includes(token));
+        if (!group) {
+          fail(`about.html's depreciation bullet does not cover the "${label}" age bracket that index.html's `
+            + `propertyAge <select> offers (looked for "${token}" in its bracket wording).\n    `
+            + `Page says: ${depBullet.text}\n    `
+            + `The bullet and the select have to describe the same brackets — the last drift was as much `
+            + `about stale brackets as about stale rates.\n    `
+            + `Fix about.html:${depBullet.line}, or index.html:${lineOf(html, 'data-field="propertyAge"')} if the select changed`);
+          bad++;
+          return;
+        }
+        claimed.add(group);
+        const stated = statedDepreciation(group.rate, fraction);
+        const actual = calcDepreciation(value, PRICE);
+        if (sameMoney(stated, actual)) return;
+        const impliedRate = Number(((actual / PRICE) * 100 / (fraction / 100)).toFixed(4));
+        fail(`about.html claims ${group.rate}% of ${fraction}% of purchase price for "${label}" — `
+          + `${money(Math.round(stated))} a year on a ${money(PRICE)} property — but engine `
+          + `calcDepreciation('${value}', ${PRICE}) returns ${money(Math.round(actual))}.\n    `
+          + `Page says: ${depBullet.text}\n    `
+          + `Either the rate or the ${fraction}% building-value fraction is wrong; holding the page's own `
+          + `${fraction}% fraction, the rate should read ${impliedRate}%.\n    `
+          + `Fix about.html:${depBullet.line}`);
+        bad++;
+      });
+      claims.groups.filter(g => !claimed.has(g)).forEach(g => {
+        fail(`about.html's depreciation bullet states a ${g.rate}% rate for "${g.descriptor}", which matches no `
+          + `age bracket the propertyAge <select> offers — a superseded rate left beside its replacement `
+          + `reads as green while the page contradicts itself.\n    `
+          + `Page says: ${depBullet.text}\n    Fix about.html:${depBullet.line}`);
+        bad++;
+      });
+    }
+  }
+
+  // --- Arm 2: the same rates in the in-app tax note -------------------------
+  // The About page and this note carry the same fact and drifted together, so
+  // they have to be pinned together — correcting only about.html would leave the
+  // note stating 1.75% to every user of the calculator itself, unguarded.
+  // Scoped to the note, not the whole file: index.html is 6,500 lines and a
+  // file-wide search would be satisfied by any unrelated "2.5%".
+  const NOTE_ANCHOR = 'Depreciation is estimated at';
+  const noteBlocks = html.match(/<div class="computed-note">[\s\S]*?<\/div>/g) || [];
+  const taxNote = noteBlocks.find(b => b.includes(NOTE_ANCHOR));
+  if (!taxNote) {
+    fail(`No .computed-note in index.html contains "${NOTE_ANCHOR}" — the in-app tax note has been removed `
+      + `or reworded, and its depreciation rates can no longer be held to the engine`);
+    bad++;
+  } else if (bracketsKnown) {
+    // The note is deliberately NOT held to the select's label wording the way
+    // about.html is — it is a compact in-app helper and writes its brackets
+    // tersely ("10-20y", not "Established, 10–20 years"). What it IS held to is
+    // the arithmetic: the set of rate × fraction products it states must be the
+    // set the engine actually computes, so a wrong rate or a wrong fraction
+    // fails here whatever the surrounding wording.
+    const noteClaims = parseDepreciationClaims(taxNote);
+    const noteLine = lineOf(html, NOTE_ANCHOR);
+    const quoted = taxNote.replace(/\s+/g, ' ').slice(0, 220) + '…';
+    if (noteClaims.bare.length !== 1) {
+      fail(`The in-app tax note must state exactly one building-value fraction (the "of X% of the property `
+        + `value" term) outside its per-bracket rates — found ${noteClaims.bare.length}`
+        + `${noteClaims.bare.length ? ' (' + noteClaims.bare.map(b => b + '%').join(', ') + ')' : ''}.\n    `
+        + `Note says: ${quoted}\n    `
+        + (noteClaims.bare.length === 0
+            ? 'Without it the stated rates cannot be multiplied out and checked against calcDepreciation at all.'
+            : 'A leftover percentage means a superseded figure is still in the note beside its replacement.')
+        + `\n    Fix index.html:${noteLine}`);
+      bad++;
+    } else {
+      const fraction = noteClaims.bare[0];
+      // asKey is the comparison (order-insensitive, cent-rounded); asMoney is the
+      // same set spelled for a human, sorted by value rather than lexically.
+      const uniq = values => [...new Set(values.map(v => Number(v.toFixed(2))))].sort((a, b) => b - a);
+      const asKey = values => uniq(values).join('|');
+      const asMoney = values => uniq(values).map(v => money(Math.round(v))).join(', ');
+      const statedValues = noteClaims.groups.map(g => statedDepreciation(g.rate, fraction));
+      const engineValues = ageOptions.map(o => calcDepreciation(o.value, PRICE));
+      if (asKey(statedValues) !== asKey(engineValues)) {
+        // Reported as the rates the note SHOULD carry, derived by holding its own
+        // stated fraction — the actionable form of "your products are wrong".
+        const shouldRead = [...new Set(engineValues.map(v =>
+          Number(((v / PRICE) * 100 / (fraction / 100)).toFixed(4))))].sort((a, b) => b - a);
+        fail(`The in-app tax note's depreciation rates do not multiply out to what engine calcDepreciation `
+          + `computes. Its ${noteClaims.groups.map(g => g.rate + '%').join(', ')} of ${fraction}% give `
+          + `${asMoney(statedValues)} a year on a ${money(PRICE)} property; the engine gives `
+          + `${asMoney(engineValues)}.\n    Note says: ${quoted}\n    `
+          + `Holding the note's own ${fraction}% fraction, the rates should read `
+          + `${shouldRead.map(r => r + '%').join(', ')}.\n    Fix index.html:${noteLine}`);
+        bad++;
+      }
+    }
+  }
+
+  // --- Arm 3: per-state cost ranges ----------------------------------------
+  // These three are the ones that went furthest wrong, because the engine did
+  // not just change a number — it changed the SHAPE of the answer, from a fixed
+  // fee and two percentages of price to eight flat per-state amounts. The page
+  // can only be honest about that as a range, so derive the range and demand
+  // both ends of it. Naming the state that carries each extreme keeps the
+  // failure message actionable when stateDefaults is what moved.
+  const stateKeys = Object.keys(stateDefaults);
+  const costFields = [
+    { field: 'conveyancing', anchor: 'Conveyancing',   what: 'conveyancing / legal fees' },
+    { field: 'insurance',    anchor: 'Insurance',      what: 'insurance' },
+    { field: 'council',      anchor: 'Council rates',  what: 'council rates' },
+  ];
+  costFields.forEach(({ field, anchor, what }) => {
+    const entries = stateKeys.map(s => ({ state: s, value: stateDefaults[s][field] }));
+    if (entries.some(e => typeof e.value !== 'number')) {
+      fail(`stateDefaults no longer carries a numeric .${field} for every state — `
+        + `the About page's ${what} range cannot be derived`);
+      bad++;
+      return;
+    }
+    const bullet = bulletWith(about, anchor);
+    if (bullet.problem) {
+      reportBulletProblem(bullet, anchor, what);
+      return;
+    }
+    const lo = entries.reduce((a, b) => (b.value < a.value ? b : a));
+    const hi = entries.reduce((a, b) => (b.value > a.value ? b : a));
+    [['lowest', lo], ['highest', hi]].forEach(([which, extreme]) => {
+      const figure = money(extreme.value);
+      if (!states(bullet.text, figure)) {
+        fail(`about.html does not state the ${which} ${what} figure, ${figure} (${extreme.state}).\n    `
+          + `Page says: ${bullet.text}\n    `
+          + `Engine does: a flat per-state amount from stateDefaults, `
+          + `${money(lo.value)} (${lo.state}) to ${money(hi.value)} (${hi.state}) — not a fixed fee or a % of price.\n    `
+          + `Fix about.html:${bullet.line}`);
+        bad++;
+        return;
+      }
+      // The page does not just quote a range, it ATTRIBUTES each end to a state.
+      // Checking the dollar amount alone would stay green through a stateDefaults
+      // edit that moved an extreme from one state to another without changing its
+      // value, leaving the page confidently naming the wrong state. Matched in a
+      // window around the figure so either order of "figure (STATE)" reads.
+      const at = bullet.text.indexOf(figure);
+      const window = bullet.text.slice(Math.max(0, at - 16), at + figure.length + 16);
+      if (!new RegExp('\\b' + extreme.state + '\\b').test(window)) {
+        fail(`about.html states ${figure} as the ${which} ${what} figure but does not attribute it to `
+          + `${extreme.state}, which is the state stateDefaults actually gives that value.\n    `
+          + `Page says: ${bullet.text}\n    `
+          + `Engine does: ${money(lo.value)} (${lo.state}) to ${money(hi.value)} (${hi.state}).\n    `
+          + `Fix about.html:${bullet.line}`);
+        bad++;
+      }
+    });
+    // Count as well as presence. stateDefaults gives these as flat dollar
+    // amounts, so the bullet should carry exactly two figures — the two ends of
+    // the range — and no percentage at all. This is what catches the half-done
+    // edit: adding the new range while leaving "0.15% of purchase price p.a." in
+    // the same <li> passes every presence test above while the page contradicts
+    // itself. A percentage here is a claim the engine does not support.
+    const dollars = dollarFigures(bullet.text);
+    const percents = percentFigures(bullet.text);
+    if (dollars.length !== 2) {
+      fail(`about.html's ${what} bullet states ${dollars.length} dollar figure(s) (${dollars.join(', ') || 'none'}) `
+        + `— expected exactly 2, the ends of the per-state range.\n    Page says: ${bullet.text}\n    `
+        + `Fix about.html:${bullet.line}`);
+      bad++;
+    }
+    if (percents.length > 0) {
+      fail(`about.html's ${what} bullet still states a percentage (${percents.join(', ')}), but stateDefaults `
+        + `gives ${field} as a flat per-state dollar amount, not a percentage of anything. This is the exact `
+        + `claim that was wrong before — a superseded percentage left beside the new range.\n    `
+        + `Page says: ${bullet.text}\n    Fix about.html:${bullet.line}`);
+      bad++;
+    }
+  });
+
+  // --- Arm 4: the two genuinely fixed fees ----------------------------------
+  // These two are correct on the page today, so this arm catches nothing right
+  // now — which is exactly the point of adding it. Conveyancing was also a fixed
+  // fee once, and the page's claim about it rotted the moment the engine moved
+  // it per-state. Pinning these means the same move on inspection or loan
+  // establishment fails here on the commit that makes it, instead of being
+  // discovered in the copy months later.
+  const fixedFees = [
+    { name: 'BUILDING_PEST',      value: BUILDING_PEST,      anchor: 'Building &amp; pest', what: 'building & pest inspection' },
+    { name: 'LOAN_ESTABLISHMENT', value: LOAN_ESTABLISHMENT, anchor: 'Loan establishment',  what: 'loan establishment fee' },
+  ];
+  fixedFees.forEach(({ name, value, anchor, what }) => {
+    const bullet = bulletWith(about, anchor);
+    if (bullet.problem) {
+      reportBulletProblem(bullet, anchor, what);
+      return;
+    }
+    const figure = money(value);
+    if (!states(bullet.text, figure)) {
+      fail(`about.html does not state the ${what} as ${figure}.\n    `
+        + `Page says: ${bullet.text}\n    `
+        + `Engine does: ${name} = ${figure}, a single fixed fee for every state.\n    `
+        + `Fix about.html:${bullet.line}`);
+      bad++;
+      return;
+    }
+    // One fee, one figure. If this bullet ever carries two, the engine has most
+    // likely moved to a per-state range and only half the sentence was updated.
+    const dollars = dollarFigures(bullet.text);
+    if (dollars.length !== 1) {
+      fail(`about.html's ${what} bullet states ${dollars.length} dollar figures (${dollars.join(', ')}) but `
+        + `${name} is a single fixed fee — a second figure suggests a half-finished edit.\n    `
+        + `Page says: ${bullet.text}\n    Fix about.html:${bullet.line}`);
+      bad++;
+    }
+  });
+
+  if (bad === 0) {
+    ok(`About page figures match engine.js (${ageOptions.length} age brackets multiplied out against `
+      + `calcDepreciation in about.html and the in-app tax note, ${costFields.length} per-state cost ranges `
+      + `with state attribution over ${stateKeys.length} states, ${fixedFees.length} fixed fees)`);
+  }
 })();
 
 // Result
