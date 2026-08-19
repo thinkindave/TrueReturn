@@ -3283,12 +3283,19 @@
           <div class="tax-rate-row advanced-only">
             <span class="tax-rate-label">Marginal Tax Rate</span>
             <select id="marginalTaxRateSelect" class="tax-rate-select">
-              <option value="0">0% (up to $18,200)</option>
-              <option value="0.19">19% ($18,201 – $45,000)</option>
-              <option value="0.325">32.5% ($45,001 – $120,000)</option>
-              <option value="0.37" selected>37% ($120,001 – $180,000)</option>
-              <option value="0.45">45% ($180,001+)</option>
-              <option value="0.47">47% ($180,001+ incl. Medicare)</option>
+              <!-- Income ranges deliberately removed (#27): they stated the
+                   pre-2024 brackets and contradicted about.html. The RATES here
+                   are unchanged and still feed every tax calculation — two of
+                   them (19%, 32.5%) are themselves stale and are tracked on #27
+                   for the July 2027 sweep, where they can be checked against a
+                   primary source and corrected together with the ranges. Do not
+                   re-add ranges without fixing the rates in the same pass. -->
+              <option value="0">0%</option>
+              <option value="0.19">19%</option>
+              <option value="0.325">32.5%</option>
+              <option value="0.37" selected>37%</option>
+              <option value="0.45">45%</option>
+              <option value="0.47">47% (incl. Medicare)</option>
             </select>
           </div>
           <div class="line-item" style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
